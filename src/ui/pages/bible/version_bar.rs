@@ -588,13 +588,16 @@ fn render_search_bar(
     search_id: egui::Id,
 ) {
     let search_h = 32.0;
-    let (search_rect, _) = ui.allocate_exact_size(
+    let (search_rect, search_resp) = ui.allocate_exact_size(
         egui::vec2(ui.available_width(), search_h),
-        egui::Sense::hover(),
+        egui::Sense::click(),
     );
 
     let text_id = search_id.with("text");
     let is_search_focused = ui.ctx().memory(|m| m.has_focus(text_id));
+    if search_resp.clicked() && !is_search_focused {
+        ui.ctx().memory_mut(|m| m.request_focus(text_id));
+    }
 
     let border_color = if is_search_focused {
         theme.accent

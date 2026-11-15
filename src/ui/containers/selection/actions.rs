@@ -357,19 +357,22 @@ fn execute_inner(
             prompt_delete(kind, &ids, entries, state);
         }
         LibraryAction::Move(ids, folder) => {
-            for id in ids {
-                if let Some(db) = db {
-                    if id > 0 {
-                        match kind {
-                            LibraryKind::Song => db.move_song_to_folder(id, &folder)?,
-                            LibraryKind::Media => db.move_media_to_folder(id, &folder)?,
-                            LibraryKind::Text => db.move_text_to_folder(id, &folder)?,
-                            LibraryKind::Verse => db.move_verse_to_folder(id, &folder)?,
-                        }
-                    } else {
-                        move_in_memory(kind, state, deck, id, &folder);
+            if let Some(db) = db {
+                let real_ids: Vec<i64> = ids.iter().copied().filter(|&id| id > 0).collect();
+                let mem_ids: Vec<i64> = ids.iter().copied().filter(|&id| id <= 0).collect();
+                if !real_ids.is_empty() {
+                    match kind {
+                        LibraryKind::Song => db.move_songs_to_folder(&real_ids, &folder)?,
+                        LibraryKind::Media => db.move_media_items_to_folder(&real_ids, &folder)?,
+                        LibraryKind::Text => db.move_texts_to_folder(&real_ids, &folder)?,
+                        LibraryKind::Verse => db.move_verses_to_folder(&real_ids, &folder)?,
                     }
-                } else {
+                }
+                for id in mem_ids {
+                    move_in_memory(kind, state, deck, id, &folder);
+                }
+            } else {
+                for id in ids {
                     move_in_memory(kind, state, deck, id, &folder);
                 }
             }

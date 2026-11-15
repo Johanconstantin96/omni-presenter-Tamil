@@ -44,16 +44,32 @@ impl AppDb {
 
     /// Moves a song to a given folder
     pub fn move_song_to_folder(&self, song_id: i64, folder: &str) -> Result<()> {
+        self.move_songs_to_folder(&[song_id], folder)
+    }
+
+    /// Moves multiple songs to a given folder in a single atomic transaction
+    pub fn move_songs_to_folder(&self, song_ids: &[i64], folder: &str) -> Result<()> {
+        if song_ids.is_empty() {
+            return Ok(());
+        }
         let trimmed = folder.trim();
-        let conn = self.conn.lock().unwrap();
-        let _ = conn.execute(
-            "INSERT OR IGNORE INTO folders (name) VALUES (?1);",
-            params![trimmed],
-        );
-        conn.execute(
-            "UPDATE songs SET folder = ?1, updated_at = CURRENT_TIMESTAMP WHERE id = ?2;",
-            params![trimmed, song_id],
-        )?;
+        let mut conn = self.conn.lock().unwrap();
+        let tx = conn.transaction()?;
+        if !trimmed.is_empty() {
+            let _ = tx.execute(
+                "INSERT OR IGNORE INTO folders (name) VALUES (?1);",
+                params![trimmed],
+            );
+        }
+        {
+            let mut stmt = tx.prepare(
+                "UPDATE songs SET folder = ?1, updated_at = CURRENT_TIMESTAMP WHERE id = ?2;",
+            )?;
+            for &id in song_ids {
+                stmt.execute(params![trimmed, id])?;
+            }
+        }
+        tx.commit()?;
         Ok(())
     }
 

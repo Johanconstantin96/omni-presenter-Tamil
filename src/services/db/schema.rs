@@ -158,28 +158,6 @@ impl AppDb {
             let _ = conn.execute(mig, []);
         }
 
-        // Limpeza de pastas mockadas herdadas em bancos existentes
-        let _ = conn.execute("DELETE FROM folders WHERE name = 'Cantor Cristão';", []);
-        let _ = conn.execute(
-            "DELETE FROM category_folders WHERE name IN ('Geral', 'Favoritos');",
-            [],
-        );
-        let _ = conn.execute(
-            "UPDATE songs SET folder = '' WHERE folder = 'Cantor Cristão';",
-            [],
-        );
-        let _ = conn.execute(
-            "UPDATE media_items SET folder = '' WHERE folder = 'Geral';",
-            [],
-        );
-        let _ = conn.execute(
-            "UPDATE custom_texts SET folder = '' WHERE folder = 'Geral';",
-            [],
-        );
-        let _ = conn.execute(
-            "UPDATE saved_verses SET folder = '' WHERE folder = 'Favoritos';",
-            [],
-        );
         let _ = conn.execute("DELETE FROM themes WHERE id LIKE 'plugin_shader:%';", []);
         let _ = conn.execute(
             "DELETE FROM themes WHERE id IN ('hands_water', 'starry_sky');",

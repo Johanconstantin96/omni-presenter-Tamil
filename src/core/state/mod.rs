@@ -232,6 +232,7 @@ pub struct ControlPanelState {
     pub focus_dock_jump_input: bool,
     pub focused_container: Option<ContainerKind>,
     pub show_search: bool,
+    pub search_focus: bool,
     pub presentation_aspect_ratio: f32,
     /// Render slide-card previews with the presentation theme background.
     pub dock_preview_bg: bool,
@@ -369,6 +370,7 @@ impl Default for ControlPanelState {
             focus_dock_jump_input: false,
             focused_container: Some(ContainerKind::Selection),
             show_search: false,
+            search_focus: false,
             presentation_aspect_ratio: 16.0 / 9.0,
             dock_preview_bg: false,
             dock_height: 175.0,

@@ -132,6 +132,54 @@ fn test_sqlite_song_crud() {
 }
 
 #[test]
+fn test_batch_move_and_persistence_of_cantor_cristao_folder() {
+    let path = std::env::temp_dir().join(format!(
+        "test_cantor_cristao_{}.db",
+        crate::core::preferences::new_id("db")
+    ));
+    let _ = std::fs::remove_file(&path);
+
+    {
+        let db = AppDb::open(&path).expect("open db");
+        let mut ids = Vec::new();
+        for i in 1..=50 {
+            let id = db
+                .add_song(&format!("Hino {}", i), "Cantor Cristão", &format!("Letra {}", i))
+                .expect("add song");
+            ids.push(id);
+        }
+        db.move_songs_to_folder(&ids, "Cantor Cristão")
+            .expect("batch move to Cantor Cristão");
+        let folders = db.get_folders().expect("get folders");
+        assert!(folders.contains(&"Cantor Cristão".to_string()));
+        let songs = db.get_all_songs().expect("get songs");
+        assert_eq!(songs.len(), 50);
+        for s in &songs {
+            assert_eq!(s.folder, "Cantor Cristão");
+        }
+    }
+
+    // Reopen the database from file (simulating app close and restart)
+    {
+        let db = AppDb::open(&path).expect("reopen db");
+        let folders = db.get_folders().expect("get folders after reopen");
+        assert!(
+            folders.contains(&"Cantor Cristão".to_string()),
+            "Cantor Cristão folder must persist across application restarts!"
+        );
+        let songs = db.get_all_songs().expect("get songs after reopen");
+        assert_eq!(songs.len(), 50);
+        for s in &songs {
+            assert_eq!(
+                s.folder, "Cantor Cristão",
+                "Songs must remain in Cantor Cristão after reopen!"
+            );
+        }
+    }
+    let _ = std::fs::remove_file(&path);
+}
+
+#[test]
 fn test_sqlite_theme_crud() {
     let db = AppDb::open_in_memory().expect("in-memory db failed");
     let themes = db.get_all_themes().expect("failed to get themes");

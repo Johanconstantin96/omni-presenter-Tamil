@@ -115,16 +115,29 @@ impl AppDb {
     }
 
     pub fn move_media_to_folder(&self, id: i64, folder: &str) -> Result<()> {
+        self.move_media_items_to_folder(&[id], folder)
+    }
+
+    pub fn move_media_items_to_folder(&self, ids: &[i64], folder: &str) -> Result<()> {
+        if ids.is_empty() {
+            return Ok(());
+        }
         let folder = folder.trim();
-        let conn = self.conn.lock().unwrap();
-        let _ = conn.execute(
-            "INSERT OR IGNORE INTO category_folders (category, name) VALUES ('media', ?1);",
-            params![folder],
-        );
-        conn.execute(
-            "UPDATE media_items SET folder = ?1 WHERE id = ?2;",
-            params![folder, id],
-        )?;
+        let mut conn = self.conn.lock().unwrap();
+        let tx = conn.transaction()?;
+        if !folder.is_empty() {
+            let _ = tx.execute(
+                "INSERT OR IGNORE INTO category_folders (category, name) VALUES ('media', ?1);",
+                params![folder],
+            );
+        }
+        {
+            let mut stmt = tx.prepare("UPDATE media_items SET folder = ?1 WHERE id = ?2;")?;
+            for &id in ids {
+                stmt.execute(params![folder, id])?;
+            }
+        }
+        tx.commit()?;
         Ok(())
     }
 
@@ -197,16 +210,31 @@ impl AppDb {
     }
 
     pub fn move_text_to_folder(&self, id: i64, folder: &str) -> Result<()> {
+        self.move_texts_to_folder(&[id], folder)
+    }
+
+    pub fn move_texts_to_folder(&self, ids: &[i64], folder: &str) -> Result<()> {
+        if ids.is_empty() {
+            return Ok(());
+        }
         let folder = folder.trim();
-        let conn = self.conn.lock().unwrap();
-        let _ = conn.execute(
-            "INSERT OR IGNORE INTO category_folders (category, name) VALUES ('text', ?1);",
-            params![folder],
-        );
-        conn.execute(
-            "UPDATE custom_texts SET folder = ?1, updated_at = CURRENT_TIMESTAMP WHERE id = ?2;",
-            params![folder, id],
-        )?;
+        let mut conn = self.conn.lock().unwrap();
+        let tx = conn.transaction()?;
+        if !folder.is_empty() {
+            let _ = tx.execute(
+                "INSERT OR IGNORE INTO category_folders (category, name) VALUES ('text', ?1);",
+                params![folder],
+            );
+        }
+        {
+            let mut stmt = tx.prepare(
+                "UPDATE custom_texts SET folder = ?1, updated_at = CURRENT_TIMESTAMP WHERE id = ?2;",
+            )?;
+            for &id in ids {
+                stmt.execute(params![folder, id])?;
+            }
+        }
+        tx.commit()?;
         Ok(())
     }
 
@@ -265,16 +293,29 @@ impl AppDb {
     }
 
     pub fn move_verse_to_folder(&self, id: i64, folder: &str) -> Result<()> {
+        self.move_verses_to_folder(&[id], folder)
+    }
+
+    pub fn move_verses_to_folder(&self, ids: &[i64], folder: &str) -> Result<()> {
+        if ids.is_empty() {
+            return Ok(());
+        }
         let folder = folder.trim();
-        let conn = self.conn.lock().unwrap();
-        let _ = conn.execute(
-            "INSERT OR IGNORE INTO category_folders (category, name) VALUES ('bible', ?1);",
-            params![folder],
-        );
-        conn.execute(
-            "UPDATE saved_verses SET folder = ?1 WHERE id = ?2;",
-            params![folder, id],
-        )?;
+        let mut conn = self.conn.lock().unwrap();
+        let tx = conn.transaction()?;
+        if !folder.is_empty() {
+            let _ = tx.execute(
+                "INSERT OR IGNORE INTO category_folders (category, name) VALUES ('bible', ?1);",
+                params![folder],
+            );
+        }
+        {
+            let mut stmt = tx.prepare("UPDATE saved_verses SET folder = ?1 WHERE id = ?2;")?;
+            for &id in ids {
+                stmt.execute(params![folder, id])?;
+            }
+        }
+        tx.commit()?;
         Ok(())
     }
 

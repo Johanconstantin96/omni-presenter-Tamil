@@ -46,7 +46,7 @@ Existing songs are never replaced. The selected songs and their folders are adde
 | `.docx`, `.odt` | Extracts paragraphs, retaining empty paragraphs as stanza boundaries. No visual layout or embedded images. |
 | `.odp` | Text per presentation page; each nonempty page becomes a stanza. |
 
-One source file produces one song, with the filename as the default title. Legacy binary `.ppt`/`.doc`, PDF, RTF and legacy text encodings are unsupported: convert them first. No macros or document scripts are run. Text/XML entries are limited to 16 MiB, compressed document files to 128 MiB, PPTX expanded slide XML to 64 MiB, and each selection to 500 files / 64 MiB of resulting lyrics.
+One source file produces one song, with the filename as the default title. Legacy binary `.ppt`/`.doc`, PDF, RTF and legacy text encodings are unsupported: convert them first. No macros or document scripts are run. Text/XML entries are limited to 16 MiB, compressed document files to 128 MiB, PPTX expanded slide XML to 64 MiB, and each selection to 10,000 files / 256 MiB of resulting lyrics.
 
 Header metadata before the first visible lyric line can use `//title:` / `//titulo:` / `//título:`, `//artist:` / `//artista:`, `//tags:` / `//etiquetas:` and `//folder:` / `//pasta:` / `//carpeta:`. Blank lines separate stanzas. Metadata is removed from imported lyrics; ordinary comments, stanza labels, inline styling, per-slide directives and conditional breaks remain editable.
 

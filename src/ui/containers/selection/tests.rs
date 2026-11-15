@@ -463,3 +463,29 @@ fn test_request_delete_opens_confirmation_dialog() {
         crate::core::state::ConfirmAction::DeleteSongs { ids: vec![202] }
     );
 }
+
+#[test]
+fn test_search_focus_in_toolbar() {
+    let mut state = ControlPanelState::default();
+    let deck = SlideDeck::default();
+    let ctx = egui::Context::default();
+    assert!(!state.show_search);
+    assert!(!state.search_focus);
+
+    state.show_search = true;
+    state.search_focus = true;
+
+    let raw = egui::RawInput {
+        screen_rect: Some(egui::Rect::from_min_size(
+            egui::pos2(0.0, 0.0),
+            egui::vec2(300.0, 600.0),
+        )),
+        ..Default::default()
+    };
+
+    let mut output = ctx.run_ui(raw, |ui| {
+        toolbar::toolbar(ui, &mut state, &deck, None);
+    });
+    output.textures_delta.clear();
+    assert!(!state.search_focus);
+}

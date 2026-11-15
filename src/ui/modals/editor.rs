@@ -37,7 +37,7 @@ pub fn render_editor_modal(
     }
 
     if state.song_editor.theme.is_none() {
-        state.song_editor.theme = Some(state.preview_theme().clone());
+        state.song_editor.theme = Some(crate::services::media::preview_theme(state, slide_deck));
         state.song_editor.theme_dirty = false;
         state.song_editor.selected_slide = None;
         state.song_editor.history.clear();
@@ -155,7 +155,7 @@ pub fn render_editor_modal(
             {
                 let mut gui = ui.new_child(egui::UiBuilder::new().max_rect(grid_rect));
                 gui.set_clip_rect(grid_rect.intersect(ui.clip_rect()));
-                render_grid(&mut gui, state, &work_theme, &tokens, &mut project_slide);
+                render_grid(&mut gui, state, &mut work_theme, &tokens, &mut project_slide);
             }
         });
 
@@ -549,7 +549,7 @@ fn render_sidebar(
 fn render_grid(
     ui: &mut egui::Ui,
     state: &mut ControlPanelState,
-    work: &PresentationTheme,
+    work: &mut PresentationTheme,
     tokens: &AppTheme,
     project_slide: &mut Option<usize>,
 ) {
@@ -685,6 +685,28 @@ fn render_grid(
                 state.song_editor.hide_syntax_markers = !hide_markers;
             }
 
+            ui.separator();
+            ui.label(
+                RichText::new(crate::ui::i18n::text(ui, "design-theme"))
+                    .size(12.0)
+                    .color(tokens.text_secondary),
+            );
+            let current_theme_name = crate::ui::i18n::text(ui, &work.name);
+            egui::ComboBox::from_id_salt("song_editor_theme_combo")
+                .selected_text(RichText::new(current_theme_name).size(12.0))
+                .show_ui(ui, |ui| {
+                    for (idx, theme) in state.themes.iter().enumerate() {
+                        let name = crate::ui::i18n::text(ui, &theme.name);
+                        let is_sel = theme.id == work.id;
+                        if ui.selectable_label(is_sel, name).clicked() {
+                            *work = theme.clone();
+                            state.selected_theme_index = idx;
+                            state.song_editor.theme = Some(theme.clone());
+                            state.song_editor.theme_dirty = true;
+                        }
+                    }
+                });
+
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 ui.add(
                     egui::Slider::new(&mut state.song_editor.zoom, 0.5..=1.6)
@@ -702,15 +724,9 @@ fn render_grid(
     }
 }
 
-fn paint_card_bg(ui: &egui::Ui, rect: egui::Rect, work: &PresentationTheme, tokens: &AppTheme) {
-    match work.bg_type.as_str() {
-        "video" | "shader" => {
-            ui.painter().rect_filled(rect, 10.0, tokens.bg_pill);
-        }
-        _ => {
-            paint_theme_bg(ui.painter(), rect, work, 10.0);
-        }
-    }
+fn paint_card_bg(ui: &egui::Ui, rect: egui::Rect, work: &PresentationTheme, _tokens: &AppTheme) {
+    ui.painter().rect_filled(rect, 10.0, Color32::from_rgb(18, 18, 20));
+    paint_theme_bg(ui.painter(), rect, work, 10.0);
 }
 
 fn field_label(ui: &mut egui::Ui, text: &str, tokens: &AppTheme) {

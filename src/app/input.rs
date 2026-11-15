@@ -274,6 +274,7 @@ impl PresentationApp {
             }
             Command::WebLyricsSearch => {
                 self.control_state.web_lyrics_search.open = true;
+                self.control_state.web_lyrics_search.focus = true;
             }
             Command::ImportMedia => crate::ui::containers::selection::import_media(
                 &mut self.control_state,

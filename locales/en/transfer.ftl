@@ -26,6 +26,7 @@ transfer-lyrics-formats = Text without extension, TXT, TEXT, MD, LRC, SRT, VTT, 
 transfer-lyrics-choose = Choose files…
 transfer-example = Example TXT and commands
 transfer-lyrics-preview = Select and review the songs before adding them. Existing songs are never replaced; importing again creates additional copies.
+transfer-lyrics-preview-more = Showing first { $limit } songs for preview. All { $count } selected songs will be added.
 transfer-lyrics-edit = Edit artist, folder, tags and lyrics
 transfer-artist = Artist
 transfer-folder = Folder

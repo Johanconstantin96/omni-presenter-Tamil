@@ -5,6 +5,7 @@ use std::time::Instant;
 #[derive(Clone, Default)]
 pub struct WebLyricsSearchState {
     pub open: bool,
+    pub focus: bool,
     pub query: String,
     pub artist_query: String,
     pub last_searched_query: String,

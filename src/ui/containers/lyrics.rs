@@ -110,6 +110,7 @@ pub fn render_lyrics_column(
                 .current_song()
                 .map(|s| s.tags.clone())
                 .unwrap_or_default();
+            state.song_editor.theme = None;
             state.song_editor.open = true;
         }
         if toolbar_icon_button(ui, TRASH, language.text("workspace-remove-from-playlist-label"), &theme).clicked() {
@@ -513,6 +514,7 @@ pub fn render_lyrics_column(
                                     state.song_editor.title = slide_deck.title().to_owned();
                                     state.song_editor.artist = slide_deck.artist().to_owned();
                                     state.song_editor.text = slide_deck.raw_text().to_owned();
+                                    state.song_editor.theme = None;
                                     state.song_editor.open = true;
                                     ui.close();
                                 }

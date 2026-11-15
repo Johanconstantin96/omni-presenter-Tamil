@@ -139,6 +139,11 @@ pub fn render_web_lyrics_modal(
 
                 let text_res = ui.put(text_rect, edit);
 
+                if state.web_lyrics_search.focus {
+                    text_res.request_focus();
+                    state.web_lyrics_search.focus = false;
+                }
+
                 if text_res.changed() {
                     state.web_lyrics_search.last_keystroke = Some(Instant::now());
                 }

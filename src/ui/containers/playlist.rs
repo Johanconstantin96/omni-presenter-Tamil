@@ -50,6 +50,7 @@ pub fn render_playlist_column(
                             state.song_editor.text = s.text.clone();
                             state.song_editor.folder = s.folder.clone();
                             state.song_editor.tags = s.tags.clone();
+                            state.song_editor.theme = None;
                             state.song_editor.open = true;
                         }
                     } else {
@@ -631,6 +632,7 @@ pub fn render_playlist_column(
                     state.song_editor.text = s.text.clone();
                     state.song_editor.folder = s.folder.clone();
                     state.song_editor.tags = s.tags.clone();
+                    state.song_editor.theme = None;
                     state.song_editor.open = true;
                 }
             if let Some(idx) = action_remove_idx {

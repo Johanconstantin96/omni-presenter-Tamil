@@ -117,7 +117,7 @@ pub fn start_lyrics(ctx: &egui::Context) {
         else {
             return Ok(None);
         };
-        if paths.len() > 500 {
+        if paths.len() > 10_000 {
             return Err("lyrics-too-large".into());
         }
         let mut songs = Vec::new();
@@ -126,7 +126,7 @@ pub fn start_lyrics(ctx: &egui::Context) {
             let song = crate::services::lyrics_import::read(&path)
                 .map_err(|e| format!("{}: {}", path.display(), language.text(&e)))?;
             total += song.text.len();
-            if total > 64 * 1024 * 1024 {
+            if total > 256 * 1024 * 1024 {
                 return Err("lyrics-too-large".into());
             }
             songs.push(song);
@@ -259,7 +259,50 @@ pub fn render(ui: &mut egui::Ui, draft: &AppSettings, db: Option<&AppDb>) {
         }
         if !data.songs.is_empty() {
             ui.label(language.text("transfer-lyrics-preview"));
-            for (i, (selected, song)) in data.songs.iter_mut().enumerate() {
+            let valid = data.songs.iter().any(|(selected, _)| *selected)
+                && data
+                    .songs
+                    .iter()
+                    .filter(|(selected, _)| *selected)
+                    .all(|(_, s)| !s.title.trim().is_empty() && !s.text.trim().is_empty());
+            let selected_count = data.songs.iter().filter(|(selected, _)| *selected).count();
+            let total_count = data.songs.len();
+
+            let mut add_clicked = false;
+            let mut cancel_clicked = false;
+
+            ui.horizontal(|ui| {
+                if ui
+                    .add_enabled(
+                        valid,
+                        egui::Button::new(format!(
+                            "{} ({} / {})",
+                            language.text("transfer-lyrics-add"),
+                            selected_count,
+                            total_count
+                        )),
+                    )
+                    .clicked()
+                {
+                    add_clicked = true;
+                }
+                if ui.button(language.text("common-cancel")).clicked() {
+                    cancel_clicked = true;
+                }
+                if ui.button(language.text("common-select-all")).clicked() {
+                    for (selected, _) in data.songs.iter_mut() {
+                        *selected = true;
+                    }
+                }
+                if ui.button(language.text("common-clear-selection")).clicked() {
+                    for (selected, _) in data.songs.iter_mut() {
+                        *selected = false;
+                    }
+                }
+            });
+
+            let preview_limit = 100.min(total_count);
+            for (i, (selected, song)) in data.songs[..preview_limit].iter_mut().enumerate() {
                 ui.push_id(i, |ui| {
                     ui.horizontal(|ui| {
                         ui.checkbox(selected, "");
@@ -283,19 +326,33 @@ pub fn render(ui: &mut egui::Ui, draft: &AppSettings, db: Option<&AppDb>) {
                     );
                 });
             }
-            let valid = data.songs.iter().any(|(selected, _)| *selected)
-                && data
-                    .songs
-                    .iter()
-                    .filter(|(selected, _)| *selected)
-                    .all(|(_, s)| !s.title.trim().is_empty() && !s.text.trim().is_empty());
-            if ui
-                .add_enabled(
-                    valid,
-                    egui::Button::new(language.text("transfer-lyrics-add")),
-                )
-                .clicked()
-            {
+            if total_count > preview_limit {
+                let limit_str = preview_limit.to_string();
+                let count_str = selected_count.to_string();
+                ui.label(language.format(
+                    "transfer-lyrics-preview-more",
+                    &[("limit", &limit_str), ("count", &count_str)],
+                ));
+            }
+
+            if total_count > 5 {
+                ui.horizontal(|ui| {
+                    if ui
+                        .add_enabled(
+                            valid,
+                            egui::Button::new(language.text("transfer-lyrics-add")),
+                        )
+                        .clicked()
+                    {
+                        add_clicked = true;
+                    }
+                    if ui.button(language.text("common-cancel")).clicked() {
+                        cancel_clicked = true;
+                    }
+                });
+            }
+
+            if add_clicked {
                 let db = db.clone();
                 let songs: Vec<_> = data
                     .songs
@@ -308,7 +365,7 @@ pub fn render(ui: &mut egui::Ui, draft: &AppSettings, db: Option<&AppDb>) {
                     Ok(Some(ResultData::Added))
                 }));
             }
-            if ui.button(language.text("common-cancel")).clicked() {
+            if cancel_clicked {
                 data.songs.clear();
             }
         }

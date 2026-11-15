@@ -39,6 +39,7 @@ pub(super) fn toolbar(
             .clicked()
         {
             state.show_search = !state.show_search;
+            state.search_focus = state.show_search;
         }
         let is_media = state.selected_tab == 1;
         let link_label = if is_media {
@@ -51,6 +52,7 @@ pub(super) fn toolbar(
                 state.web_media_modal.open = true;
             } else {
                 state.web_lyrics_search.open = true;
+                state.web_lyrics_search.focus = true;
             }
         }
         if toolbar_icon_button(ui, FOLDER_PLUS, language.text("common-new-folder"), &theme)
@@ -264,11 +266,15 @@ pub(super) fn toolbar(
     }
     if state.show_search || !state.search_query.is_empty() {
         ui.horizontal(|ui| {
-            ui.add(
+            let edit_res = ui.add(
                 egui::TextEdit::singleline(&mut state.search_query)
                     .hint_text(language.text("common-search"))
                     .desired_width((ui.available_width() - 32.0).max(40.0)),
             );
+            if state.search_focus {
+                edit_res.request_focus();
+                state.search_focus = false;
+            }
             if ui
                 .button(X)
                 .on_hover_text(language.text("common-close"))
@@ -276,6 +282,7 @@ pub(super) fn toolbar(
             {
                 state.search_query.clear();
                 state.show_search = false;
+                state.search_focus = false;
             }
         });
     }
