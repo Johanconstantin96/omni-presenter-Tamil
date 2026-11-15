@@ -163,6 +163,12 @@ impl PresentationApp {
             Some(&self.db),
         );
 
+        // Font Resolution Modal Dialog (when imported themes have missing fonts)
+        crate::ui::render_font_resolution_modal(ctx, &mut self.control_state, Some(&self.db));
+
+        // Playlist Media Export Modal Dialog
+        crate::ui::render_playlist_export_modal(ctx, &mut self.control_state, Some(&self.db));
+
         monitor_changed_to
     }
 }

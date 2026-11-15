@@ -17,6 +17,20 @@ impl PresentationApp {
         ui.style_mut().interaction.selectable_labels = false;
 
         let ctx = ui.ctx().clone();
+        let mut ipc_paths = Vec::new();
+        if let Some(rx) = &self.ipc_receiver {
+            while let Ok(path) = rx.try_recv() {
+                ipc_paths.push(path);
+            }
+        }
+        for path in ipc_paths {
+            self.process_incoming_import(&path);
+            ctx.send_viewport_cmd(egui::ViewportCommand::Focus);
+        }
+        let pending = std::mem::take(&mut self.control_state.pending_file_imports);
+        for path in pending {
+            self.process_incoming_import(&path);
+        }
         crate::ui::i18n::install(&ctx, self.control_state.settings.language);
         self.apply_appearance(&ctx);
         let dark = if self.control_state.settings_ui.open {

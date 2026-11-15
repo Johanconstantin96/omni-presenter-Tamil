@@ -307,7 +307,7 @@ pub(super) fn render(
     let scene_in_library = deck
         .designs
         .iter()
-        .any(|s| editor.scene.as_ref().map_or(false, |cur| cur.id == s.id));
+        .any(|s| editor.scene.as_ref().is_some_and(|cur| cur.id == s.id));
     if editor.confirm_delete && !scene_in_library {
         egui::Frame::new()
             .fill(theme.bg_card_hover.lerp_to_gamma(theme.status_danger, 0.08))

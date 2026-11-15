@@ -43,7 +43,7 @@ pub fn render_selection_column(
     }
     let kind = LibraryKind::from_tab(state.selected_tab);
     let entries = model::entries(kind, state, deck);
-    let folders = collect_folders(kind, state, &entries, db);
+    let folders = model::collect_folders(kind, state, &entries, db);
     let query_trimmed = state.search_query.trim();
     let query = fold(query_trimmed);
 
@@ -99,55 +99,35 @@ pub fn render_selection_column(
         )
     };
 
-    let filtered: Vec<&LibraryEntry> = entries
-        .iter()
-        .filter(|entry| {
-            if let Some(ids) = &matching_ids {
-                if !ids.contains(&entry.id) {
-                    return false;
-                }
-            }
-            match kind {
-                LibraryKind::Song => {
-                    if state.tag_filter.is_empty() {
-                        true
-                    } else if state.tag_filter == ":untagged:" {
-                        entry.tags.trim().is_empty()
-                    } else {
-                        entry
-                            .tags
-                            .split(',')
-                            .any(|tag| tag.trim().eq_ignore_ascii_case(&state.tag_filter))
-                    }
-                }
-                LibraryKind::Media => {
-                    if state.tag_filter.is_empty() {
-                        true
-                    } else {
-                        entry.subtitle.eq_ignore_ascii_case(&state.tag_filter)
-                    }
-                }
-                _ => true,
-            }
-        })
-        .collect();
-    let mut visible = Vec::new();
-    for folder in &folders {
-        if kind.folders(state).contains(folder) || !query.is_empty() {
-            visible.extend(
-                filtered
-                    .iter()
-                    .filter(|item| item.folder == folder.as_str())
-                    .map(|item| item.id),
-            );
-        }
-    }
-    visible.extend(
-        filtered
-            .iter()
-            .filter(|item| item.folder.is_empty())
-            .map(|item| item.id),
+    let filtered = model::filter_and_sort(
+        &entries,
+        kind,
+        &query,
+        &state.tag_filter,
+        matching_ids.as_ref(),
     );
+
+    let mut visible = Vec::new();
+    if query.is_empty() {
+        for folder in &folders {
+            if kind.folders(state).contains(folder) {
+                visible.extend(
+                    filtered
+                        .iter()
+                        .filter(|item| item.folder == folder.as_str())
+                        .map(|item| item.id),
+                );
+            }
+        }
+        visible.extend(
+            filtered
+                .iter()
+                .filter(|item| item.folder.is_empty())
+                .map(|item| item.id),
+        );
+    } else {
+        visible.extend(filtered.iter().map(|item| item.id));
+    }
     let mut action = None;
     if ui.is_enabled()
         && !ui.ctx().egui_wants_keyboard_input()
@@ -180,16 +160,14 @@ pub fn render_selection_column(
         .id_salt("selection_scroll_area")
         .auto_shrink([false, false])
         .show(ui, |ui| {
-            for folder in &folders {
-                let items: Vec<_> = filtered
-                    .iter()
-                    .filter(|item| item.folder == folder.as_str())
-                    .copied()
-                    .collect();
-                if !query.is_empty() && items.is_empty() {
-                    continue;
-                }
-                let open = kind.folders(state).contains(folder) || !query.is_empty();
+            if query.is_empty() {
+                for folder in &folders {
+                    let items: Vec<_> = filtered
+                        .iter()
+                        .filter(|item| item.folder == folder.as_str())
+                        .copied()
+                        .collect();
+                    let open = kind.folders(state).contains(folder);
                 let folder_id =
                     ui.make_persistent_id(("library_folder_btn", kind.category(), folder));
                 let (f_rect, response) = ui.allocate_exact_size(
@@ -219,25 +197,25 @@ pub fn render_selection_column(
                             || input.pointer.button_released(egui::PointerButton::Primary)
                             || (!input.pointer.is_decidedly_dragging() && input.pointer.primary_released())
                     });
-                    if pointer_released {
-                        if let Some(payload) = drag_payload.as_ref() {
-                            let ids: Vec<i64> = if !payload.library_ids.is_empty() {
-                                payload.library_ids.clone()
-                            } else {
-                                payload
-                                    .items
-                                    .iter()
-                                    .filter_map(|it| {
-                                        it.id.split('_').last().and_then(|s| s.parse().ok())
-                                    })
-                                    .collect()
-                            };
-                            if !ids.is_empty() {
-                                action = Some(LibraryAction::Move(ids, folder.clone()));
-                                kind.folders_mut(state).insert(folder.clone());
-                                egui::DragAndDrop::clear_payload(ui.ctx());
-                                ui.ctx().request_repaint();
-                            }
+                    if pointer_released
+                        && let Some(payload) = drag_payload.as_ref()
+                    {
+                        let ids: Vec<i64> = if !payload.library_ids.is_empty() {
+                            payload.library_ids.clone()
+                        } else {
+                            payload
+                                .items
+                                .iter()
+                                .filter_map(|it| {
+                                    it.id.rsplit('_').next().and_then(|s| s.parse().ok())
+                                })
+                                .collect()
+                        };
+                        if !ids.is_empty() {
+                            action = Some(LibraryAction::Move(ids, folder.clone()));
+                            kind.folders_mut(state).insert(folder.clone());
+                            egui::DragAndDrop::clear_payload(ui.ctx());
+                            ui.ctx().request_repaint();
                         }
                     }
                 }
@@ -462,19 +440,20 @@ pub fn render_selection_column(
                                     || input.pointer.button_released(egui::PointerButton::Primary)
                                     || (!input.pointer.is_decidedly_dragging() && input.pointer.primary_released())
                             });
-                            if is_slot_drop_active && pointer_released {
-                                if let Some(payload) = drag_payload.as_ref() {
-                                    let ids: Vec<i64> = if !payload.library_ids.is_empty() {
-                                        payload.library_ids.clone()
-                                    } else {
-                                        payload.items.iter().filter_map(|it| it.id.split('_').last().and_then(|s| s.parse().ok())).collect()
-                                    };
-                                    if !ids.is_empty() {
-                                        action = Some(LibraryAction::Move(ids, folder.clone()));
-                                        kind.folders_mut(state).insert(folder.clone());
-                                        egui::DragAndDrop::clear_payload(ui.ctx());
-                                        ui.ctx().request_repaint();
-                                    }
+                            if is_slot_drop_active
+                                && pointer_released
+                                && let Some(payload) = drag_payload.as_ref()
+                            {
+                                let ids: Vec<i64> = if !payload.library_ids.is_empty() {
+                                    payload.library_ids.clone()
+                                } else {
+                                    payload.items.iter().filter_map(|it| it.id.rsplit('_').next().and_then(|s| s.parse().ok())).collect()
+                                };
+                                if !ids.is_empty() {
+                                    action = Some(LibraryAction::Move(ids, folder.clone()));
+                                    kind.folders_mut(state).insert(folder.clone());
+                                    egui::DragAndDrop::clear_payload(ui.ctx());
+                                    ui.ctx().request_repaint();
                                 }
                             }
                         }
@@ -483,9 +462,14 @@ pub fn render_selection_column(
                         }
                     });
                 }
-            }
-            for item in filtered.iter().filter(|item| item.folder.is_empty()) {
-                row(ui, state, deck, kind, item, &visible, &folders, &mut action);
+                }
+                for item in filtered.iter().filter(|item| item.folder.is_empty()) {
+                    row(ui, state, deck, kind, item, &visible, &folders, &mut action);
+                }
+            } else {
+                for item in &filtered {
+                    row(ui, state, deck, kind, item, &visible, &folders, &mut action);
+                }
             }
             if filtered.is_empty() {
                 let searching = !query.is_empty();
@@ -557,24 +541,24 @@ pub fn render_selection_column(
                     input.pointer.any_released()
                         || input.pointer.button_released(egui::PointerButton::Primary)
                 });
-                if pointer_released {
-                    if let Some(payload) = drag_payload.as_ref() {
-                        let ids: Vec<i64> = if !payload.library_ids.is_empty() {
-                            payload.library_ids.clone()
-                        } else {
-                            payload
-                                .items
-                                .iter()
-                                .filter_map(|it| {
-                                    it.id.split('_').last().and_then(|s| s.parse().ok())
-                                })
-                                .collect()
-                        };
-                        if !ids.is_empty() {
-                            action = Some(LibraryAction::Move(ids, String::new()));
-                            egui::DragAndDrop::clear_payload(ui.ctx());
-                            ui.ctx().request_repaint();
-                        }
+                if pointer_released
+                    && let Some(payload) = drag_payload.as_ref()
+                {
+                    let ids: Vec<i64> = if !payload.library_ids.is_empty() {
+                        payload.library_ids.clone()
+                    } else {
+                        payload
+                            .items
+                            .iter()
+                            .filter_map(|it| {
+                                it.id.rsplit('_').next().and_then(|s| s.parse().ok())
+                            })
+                            .collect()
+                    };
+                    if !ids.is_empty() {
+                        action = Some(LibraryAction::Move(ids, String::new()));
+                        egui::DragAndDrop::clear_payload(ui.ctx());
+                        ui.ctx().request_repaint();
                     }
                 }
             }
@@ -622,36 +606,6 @@ pub fn render_selection_column(
     }
 }
 
-fn collect_folders(
-    kind: LibraryKind,
-    state: &ControlPanelState,
-    entries: &[LibraryEntry],
-    db: Option<&AppDb>,
-) -> Vec<String> {
-    let mut folders = db
-        .and_then(|db| {
-            if kind == LibraryKind::Song {
-                db.get_folders().ok()
-            } else {
-                db.get_folders_by_category(kind.category()).ok()
-            }
-        })
-        .unwrap_or_default();
-    let mut seen: std::collections::HashSet<String> = folders.iter().cloned().collect();
-    for item in entries {
-        if !item.folder.is_empty() && seen.insert(item.folder.to_string()) {
-            folders.push(item.folder.to_string());
-        }
-    }
-    for folder in kind.folders(state) {
-        if !folder.is_empty() && seen.insert(folder.clone()) {
-            folders.push(folder.clone());
-        }
-    }
-    folders.sort_by_key(|folder| fold(folder));
-    folders
-}
-
 fn selection_bar(
     ui: &mut egui::Ui,
     state: &mut ControlPanelState,
@@ -680,7 +634,7 @@ fn selection_bar(
             .button(FOLDER)
             .on_hover_text(language.text("common-move"));
         egui::Popup::menu(&response).show(|ui| {
-            move_menu(ui, state, folders, &ids, action);
+            actions::move_menu(ui, state, folders, &ids, action);
         });
         if ui
             .button(LIST_PLUS)
@@ -699,6 +653,7 @@ fn selection_bar(
     });
 }
 
+#[allow(clippy::too_many_arguments)]
 fn row(
     ui: &mut egui::Ui,
     state: &mut ControlPanelState,
@@ -790,8 +745,12 @@ fn row(
     let is_converting = state.is_item_converting(&item.content);
     let display_subtitle = if is_converting {
         format!("{} • {:.0}%", item.subtitle, state.media_conversion_percent() * 100.0)
-    } else {
+    } else if !item.subtitle.is_empty() && !item.folder.is_empty() && !item.subtitle.eq_ignore_ascii_case(&item.folder) {
+        format!("{} • {}", item.subtitle, item.folder)
+    } else if !item.subtitle.is_empty() {
         item.subtitle.clone()
+    } else {
+        item.folder.clone()
     };
     let avail_w = (draw_rect.max.x - 8.0 - title_x).max(10.0);
     crate::ui::components::interaction::render_item_title_and_subtitle(
@@ -931,44 +890,28 @@ fn row(
             ui.close();
         }
         context_menu_submenu(ui, FOLDER, language.text("common-move"), &theme, |ui| {
-            move_menu(ui, state, folders, &ids, action)
+            actions::move_menu(ui, state, folders, &ids, action)
         });
+        if matches!(kind, LibraryKind::Song | LibraryKind::Text)
+            && context_menu_item(
+                ui,
+                EXPORT,
+                language.text(if kind == LibraryKind::Song {
+                    "workspace-export-song"
+                } else {
+                    "workspace-export-text"
+                }),
+                &theme,
+            )
+            .clicked()
+        {
+            *action = Some(LibraryAction::Export(ids.clone()));
+            ui.close();
+        }
         context_menu_separator(ui);
         if context_menu_danger_item(ui, TRASH, language.text("common-delete"), &theme).clicked() {
             *action = Some(LibraryAction::RequestDelete(ids));
             ui.close();
         }
     });
-}
-
-fn move_menu(
-    ui: &mut egui::Ui,
-    state: &mut ControlPanelState,
-    folders: &[String],
-    ids: &[i64],
-    action: &mut Option<LibraryAction>,
-) {
-    let theme = state.theme.clone();
-    let language = state.settings.language;
-    context_menu_header(ui);
-    for folder in folders
-        .iter()
-        .map(String::as_str)
-        .chain(std::iter::once(""))
-    {
-        let label = if folder.is_empty() {
-            language.text("common-root")
-        } else {
-            folder
-        };
-        if context_menu_item(ui, FOLDER, label, &theme).clicked() {
-            *action = Some(LibraryAction::Move(ids.to_vec(), folder.into()));
-            ui.close();
-        }
-    }
-    context_menu_separator(ui);
-    if context_menu_item(ui, FOLDER_PLUS, language.text("common-new-folder"), &theme).clicked() {
-        state.show_create_folder_modal = true;
-        ui.close();
-    }
 }

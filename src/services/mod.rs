@@ -9,6 +9,7 @@ pub mod discovery;
 pub mod effects;
 pub mod images;
 pub(crate) mod i18n;
+pub mod ipc;
 pub mod media;
 pub mod media_conversion;
 pub mod media_info;

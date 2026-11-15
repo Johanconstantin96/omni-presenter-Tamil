@@ -25,6 +25,18 @@ fn main() -> eframe::Result {
         services::audio::silence_audio_backend_noise();
     }
 
+    let args: Vec<String> = std::env::args().skip(1).collect();
+    let file_args: Vec<std::path::PathBuf> = args
+        .into_iter()
+        .filter(|a| !a.starts_with("--"))
+        .map(std::path::PathBuf::from)
+        .filter(|p| p.is_file())
+        .collect();
+
+    if !file_args.is_empty() && services::ipc::send_paths_to_running_instance(&file_args) {
+        return Ok(());
+    }
+
     let native_options = native_options();
     let app = match PresentationApp::open_workspace("omni-presenter.db") {
         Ok(app) => app,
@@ -53,6 +65,8 @@ fn main() -> eframe::Result {
                 render::design::install(state, &cc.egui_ctx);
             }
             setup_fonts_and_style(&cc.egui_ctx);
+            let mut app = app;
+            app.enable_ipc(file_args, &cc.egui_ctx);
             Ok(Box::new(app))
         }),
     )

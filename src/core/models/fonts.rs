@@ -10,6 +10,104 @@ pub struct SystemFonts {
 }
 
 static SYSTEM_FONTS: OnceLock<SystemFonts> = OnceLock::new();
+static CUSTOM_FONTS: OnceLock<Mutex<fontdb::Database>> = OnceLock::new();
+static CUSTOM_FAMILIES: OnceLock<Mutex<Vec<String>>> = OnceLock::new();
+
+fn custom_fonts() -> &'static Mutex<fontdb::Database> {
+    CUSTOM_FONTS.get_or_init(|| Mutex::new(fontdb::Database::new()))
+}
+
+fn custom_families() -> &'static Mutex<Vec<String>> {
+    CUSTOM_FAMILIES.get_or_init(|| Mutex::new(Vec::new()))
+}
+
+/// Carrega bytes de fonte customizada na base de fontes em memória
+pub fn load_custom_font_data(bytes: &[u8]) -> Result<String, String> {
+    let mut cust = custom_fonts().lock().map_err(|e| e.to_string())?;
+    let prev_count = cust.faces().count();
+    cust.load_font_data(bytes.to_vec());
+    let mut loaded_family = None;
+    for face in cust.faces().skip(prev_count) {
+        for (family, _) in &face.families {
+            let trimmed = family.trim();
+            if !trimmed.is_empty() {
+                loaded_family = Some(trimmed.to_string());
+                if let Ok(mut families) = custom_families().lock()
+                    && !families.iter().any(|f| f.eq_ignore_ascii_case(trimmed))
+                {
+                    families.push(trimmed.to_string());
+                    families.sort_by_key(|a| a.to_lowercase());
+                }
+                break;
+            }
+        }
+    }
+    loaded_family.ok_or_else(|| "Nenhuma família de fonte válida encontrada no arquivo".into())
+}
+
+/// Carrega arquivo de fonte (.ttf, .otf) do disco
+pub fn load_custom_font_file(path: &std::path::Path) -> Result<String, String> {
+    let bytes = std::fs::read(path).map_err(|e| e.to_string())?;
+    load_custom_font_data(&bytes)
+}
+
+/// Verifica se a família de fontes especificada está disponível no sistema ou carregada customizadamente
+pub fn is_font_installed(font_name: &str) -> bool {
+    let clean = font_name.trim();
+    if clean.is_empty()
+        || clean.eq_ignore_ascii_case("Montserrat")
+        || clean.eq_ignore_ascii_case("Inter")
+        || clean.eq_ignore_ascii_case("Roboto")
+        || clean.eq_ignore_ascii_case(THEME_FONT)
+        || clean.eq_ignore_ascii_case("Proportional")
+        || clean.eq_ignore_ascii_case("Monospace")
+        || clean.eq_ignore_ascii_case("Serif")
+        || clean.eq_ignore_ascii_case("sans-serif")
+    {
+        return true;
+    }
+    let sys = get_system_fonts();
+    if sys.families.iter().any(|f| f.eq_ignore_ascii_case(clean)) {
+        return true;
+    }
+    for face in sys.db.faces() {
+        for (fam, _) in &face.families {
+            if fam.eq_ignore_ascii_case(clean) {
+                return true;
+            }
+        }
+    }
+    if let Ok(families) = custom_families().lock()
+        && families.iter().any(|f| f.eq_ignore_ascii_case(clean))
+    {
+        return true;
+    }
+    if let Ok(cust) = custom_fonts().lock() {
+        for face in cust.faces() {
+            for (fam, _) in &face.families {
+                if fam.eq_ignore_ascii_case(clean) {
+                    return true;
+                }
+            }
+        }
+    }
+    false
+}
+
+/// Retorna a lista unificada de famílias de fontes do sistema e customizadas carregadas
+pub fn get_all_font_names() -> Vec<String> {
+    let mut all = get_system_font_names().to_vec();
+    if let Ok(custom) = custom_families().lock() {
+        for c in custom.iter() {
+            if !all.iter().any(|f| f.eq_ignore_ascii_case(c)) {
+                all.push(c.clone());
+            }
+        }
+    }
+    all.sort_by_key(|a| a.to_lowercase());
+    all
+}
+
 fn loaded_fonts(ctx: &egui::Context) -> std::sync::Arc<Mutex<HashSet<String>>> {
     ctx.data_mut(|d| {
         d.get_temp_mut_or_insert_with(egui::Id::unique("loaded_system_fonts"), || {
@@ -113,29 +211,42 @@ pub fn ensure_font_loaded_with_style(
         style,
     };
 
-    if let Some(face_id) = sys_fonts.db.query(&query) {
+    let face_data = if let Some(face_id) = sys_fonts.db.query(&query) {
         let mut font_bytes = None;
         sys_fonts.db.with_face_data(face_id, |data, _| {
             font_bytes = Some(data.to_vec());
         });
-
-        if let Some(bytes) = font_bytes {
-            let font_insert = FontInsert::new(
-                &family_key,
-                FontData::from_owned(bytes),
-                vec![InsertFontFamily {
-                    family: FontFamily::Name(family_key.clone().into()),
-                    priority: FontPriority::Highest,
-                }],
-            );
-            ctx.add_font(font_insert);
-
-            if let Ok(mut set) = loaded_set.lock() {
-                set.insert(family_key.clone());
-            }
-
-            return FontFamily::Name(family_key.into());
+        font_bytes
+    } else if let Ok(cust) = custom_fonts().lock() {
+        if let Some(face_id) = cust.query(&query) {
+            let mut font_bytes = None;
+            cust.with_face_data(face_id, |data, _| {
+                font_bytes = Some(data.to_vec());
+            });
+            font_bytes
+        } else {
+            None
         }
+    } else {
+        None
+    };
+
+    if let Some(bytes) = face_data {
+        let font_insert = FontInsert::new(
+            &family_key,
+            FontData::from_owned(bytes),
+            vec![InsertFontFamily {
+                family: FontFamily::Name(family_key.clone().into()),
+                priority: FontPriority::Highest,
+            }],
+        );
+        ctx.add_font(font_insert);
+
+        if let Ok(mut set) = loaded_set.lock() {
+            set.insert(family_key.clone());
+        }
+
+        return FontFamily::Name(family_key.into());
     }
 
     // Se falhar carregar variante, tenta carregar nome base
@@ -224,6 +335,12 @@ pub fn presentation_font_bytes(font_name: &str, weight: u16, italic: bool) -> Ve
             && let Some(bytes) = system.db.with_face_data(id, |bytes, _| bytes.to_vec()) {
                 return bytes;
             }
+        if let Ok(cust) = custom_fonts().lock()
+            && let Some(id) = cust.query(&query)
+            && let Some(bytes) = cust.with_face_data(id, |bytes, _| bytes.to_vec())
+        {
+            return bytes;
+        }
     }
     let fonts = egui::FontDefinitions::default();
     let family = if font_name == "Monospace" {

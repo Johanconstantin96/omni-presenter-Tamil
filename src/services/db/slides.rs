@@ -25,5 +25,8 @@ impl SlideDeck {
         if let Ok(songs) = db.get_all_songs() {
             self.replace_library(songs);
         }
+        if let Ok(designs) = db.load_designs() {
+            self.designs = designs;
+        }
     }
 }

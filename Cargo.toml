@@ -1,6 +1,6 @@
 [package]
 name = "omni-presenter"
-version = "0.8.3-alpha"
+version = "0.8.4-alpha"
 edition = "2024"
 license = "MIT"
 

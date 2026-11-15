@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-omnipresenter-song">
+    <comment>Omni Presenter Song</comment>
+    <glob pattern="*.opsong"/>
+  </mime-type>
+  <mime-type type="application/x-omnipresenter-text">
+    <comment>Omni Presenter Text</comment>
+    <glob pattern="*.optext"/>
+  </mime-type>
+  <mime-type type="application/x-omnipresenter-design">
+    <comment>Omni Presenter Design</comment>
+    <glob pattern="*.opdesign"/>
+  </mime-type>
+  <mime-type type="application/x-omnipresenter-theme">
+    <comment>Omni Presenter Theme</comment>
+    <glob pattern="*.optheme"/>
+  </mime-type>
+  <mime-type type="application/x-omnipresenter-playlist">
+    <comment>Omni Presenter Playlist</comment>
+    <glob pattern="*.opplaylist"/>
+  </mime-type>
+</mime-info>

@@ -1,8 +1,10 @@
 use crate::core::{
+    bible::fold,
     models::{PlaylistItemKind, QuickItemKind},
     slides::SlideDeck,
     state::ControlPanelState,
 };
+use crate::services::db::AppDb;
 use std::collections::HashSet;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -224,4 +226,101 @@ pub(super) fn select_range(
         additive,
     );
     *kind.anchor(state) = anchor;
+}
+
+pub(super) fn collect_folders(
+    kind: LibraryKind,
+    state: &ControlPanelState,
+    entries: &[LibraryEntry],
+    db: Option<&AppDb>,
+) -> Vec<String> {
+    let mut folders = db
+        .and_then(|db| {
+            if kind == LibraryKind::Song {
+                db.get_folders().ok()
+            } else {
+                db.get_folders_by_category(kind.category()).ok()
+            }
+        })
+        .unwrap_or_default();
+    let mut seen: std::collections::HashSet<String> = folders.iter().cloned().collect();
+    for item in entries {
+        if !item.folder.is_empty() && seen.insert(item.folder.to_string()) {
+            folders.push(item.folder.to_string());
+        }
+    }
+    for folder in kind.folders(state) {
+        if !folder.is_empty() && seen.insert(folder.clone()) {
+            folders.push(folder.clone());
+        }
+    }
+    folders.sort_by_key(|folder| fold(folder));
+    folders
+}
+
+pub(super) fn filter_and_sort<'a>(
+    entries: &'a [LibraryEntry],
+    kind: LibraryKind,
+    query: &str,
+    tag_filter: &str,
+    matching_ids: Option<&HashSet<i64>>,
+) -> Vec<&'a LibraryEntry> {
+    let mut filtered: Vec<&LibraryEntry> = entries
+        .iter()
+        .filter(|entry| {
+            if let Some(ids) = matching_ids
+                && !ids.contains(&entry.id)
+            {
+                return false;
+            }
+            match kind {
+                LibraryKind::Song => {
+                    if tag_filter.is_empty() {
+                        true
+                    } else if tag_filter == ":untagged:" {
+                        entry.tags.trim().is_empty()
+                    } else {
+                        entry
+                            .tags
+                            .split(',')
+                            .any(|tag| tag.trim().eq_ignore_ascii_case(tag_filter))
+                    }
+                }
+                LibraryKind::Media => {
+                    if tag_filter.is_empty() {
+                        true
+                    } else {
+                        entry.subtitle.eq_ignore_ascii_case(tag_filter)
+                    }
+                }
+                _ => true,
+            }
+        })
+        .collect();
+
+    let query_folded = fold(query.trim());
+    if !query_folded.is_empty() {
+        filtered.sort_by(|a, b| {
+            let a_title = fold(&a.title);
+            let b_title = fold(&b.title);
+            let a_starts = a_title.starts_with(&query_folded);
+            let b_starts = b_title.starts_with(&query_folded);
+            if a_starts != b_starts {
+                return b_starts.cmp(&a_starts);
+            }
+            let a_contains = a_title.contains(&query_folded);
+            let b_contains = b_title.contains(&query_folded);
+            if a_contains != b_contains {
+                return b_contains.cmp(&a_contains);
+            }
+            let a_words = query_folded.split_whitespace().all(|w| a_title.contains(w));
+            let b_words = query_folded.split_whitespace().all(|w| b_title.contains(w));
+            if a_words != b_words {
+                return b_words.cmp(&a_words);
+            }
+            a_title.cmp(&b_title)
+        });
+    }
+
+    filtered
 }

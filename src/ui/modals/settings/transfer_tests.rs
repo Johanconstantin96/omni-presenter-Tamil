@@ -192,9 +192,9 @@ fn lyrics_preview_starts_collapsed_with_clean_top_actions_and_toggles() {
     // Initial render: list is collapsed by default
     let output = frame(&ctx, &settings, &db, vec![]);
     // Primary add button should be visible right at the top
-    assert!(output.shapes.iter().any(|s| matches!(&s.shape, egui::Shape::Text(t) if t.galley.job.text.contains(&settings.language.text("transfer-lyrics-add")))));
+    assert!(output.shapes.iter().any(|s| matches!(&s.shape, egui::Shape::Text(t) if t.galley.job.text.contains(settings.language.text("transfer-lyrics-add")))));
     // Review button should be visible with toggle label
-    assert!(output.shapes.iter().any(|s| matches!(&s.shape, egui::Shape::Text(t) if t.galley.job.text.contains(&settings.language.text("transfer-lyrics-show-list")))));
+    assert!(output.shapes.iter().any(|s| matches!(&s.shape, egui::Shape::Text(t) if t.galley.job.text.contains(settings.language.text("transfer-lyrics-show-list")))));
     // Song items should not be visible when collapsed
     assert!(!output.shapes.iter().any(|s| matches!(&s.shape, egui::Shape::Text(t) if t.galley.job.text.contains("HNC 001 - Doxologia"))));
 
@@ -207,8 +207,8 @@ fn lyrics_preview_starts_collapsed_with_clean_top_actions_and_toggles() {
     // Song title should now be visible
     assert!(output_expanded.shapes.iter().any(|s| matches!(&s.shape, egui::Shape::Text(t) if t.galley.job.text.contains("HNC 001 - Doxologia"))));
     // Toggle button should now show "Ocultar"
-    assert!(output_expanded.shapes.iter().any(|s| matches!(&s.shape, egui::Shape::Text(t) if t.galley.job.text.contains(&settings.language.text("transfer-lyrics-hide-list")))));
+    assert!(output_expanded.shapes.iter().any(|s| matches!(&s.shape, egui::Shape::Text(t) if t.galley.job.text.contains(settings.language.text("transfer-lyrics-hide-list")))));
     // Selection tools should be present
-    assert!(output_expanded.shapes.iter().any(|s| matches!(&s.shape, egui::Shape::Text(t) if t.galley.job.text.contains(&settings.language.text("common-select-all")))));
+    assert!(output_expanded.shapes.iter().any(|s| matches!(&s.shape, egui::Shape::Text(t) if t.galley.job.text.contains(settings.language.text("common-select-all")))));
 }
 

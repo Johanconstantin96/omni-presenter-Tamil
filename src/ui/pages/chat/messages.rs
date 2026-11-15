@@ -4,7 +4,7 @@ use crate::services::chat::{Message, SharedContent};
 use crate::ui::components::render_header_bar;
 use eframe::egui::{self, RichText, Vec2};
 use egui_phosphor::regular::{
-    BOOK_OPEN, DOWNLOAD_SIMPLE, FILE, IMAGE, MAGNIFYING_GLASS, MUSIC_NOTES, PAUSE,
+    ARROW_DOWN, BOOK_OPEN, DOWNLOAD_SIMPLE, FILE, IMAGE, MAGNIFYING_GLASS, MUSIC_NOTES, PAUSE,
     PLAY, PLUS, PUSH_PIN, SMILEY, TRASH, VIDEO,
 };
 
@@ -787,22 +787,36 @@ fn shared_actions(
             {
                 actions.action = Some((message.id, "project".into()));
             }
-        } else if let Some(file) = &message.file
-            && soft_button(
+        } else if let Some(file) = &message.file {
+            if soft_button(
                 ui,
-                RichText::new(format!("{DOWNLOAD_SIMPLE}  {}", language.text("chat-download")))
+                RichText::new(format!("{ARROW_DOWN}  {}", language.text("workspace-import-chat")))
                     .size(11.0)
                     .color(tokens.accent),
                 tokens,
                 true,
             )
             .clicked()
-        {
-            actions.download = Some(file.id.clone());
+            {
+                actions.action = Some((message.id, "import".into()));
+            }
+            if soft_button(
+                ui,
+                RichText::new(format!("{DOWNLOAD_SIMPLE}  {}", language.text("chat-download")))
+                    .size(11.0)
+                    .color(tokens.text_muted),
+                tokens,
+                false,
+            )
+            .clicked()
+            {
+                actions.download = Some(file.id.clone());
+            }
         }
         for (icon, tooltip, kind) in [
             (PUSH_PIN, language.text("chat-pin-to-quick-bar"), "shortcut"),
             (PLUS, language.text("workspace-add-to-playlist"), "playlist"),
+            (ARROW_DOWN, language.text("workspace-import-chat"), "import"),
         ] {
             if tokens
                 .icon_button(ui, icon, tooltip, false, Vec2::splat(24.0))

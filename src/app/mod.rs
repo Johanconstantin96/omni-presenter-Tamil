@@ -52,6 +52,8 @@ pub struct PresentationApp {
     pub(super) physical_transition: crate::ui::presentation_transition::PresentationTransition,
     pub(super) restore_task: Option<crate::services::tasks::BackgroundTask<std::path::PathBuf>>,
     pub(super) restored_workspace: bool,
+    pub(super) ipc_receiver: Option<std::sync::mpsc::Receiver<std::path::PathBuf>>,
+    pub(super) _ipc_server: Option<crate::services::ipc::IpcServer>,
 }
 
 impl PresentationApp {
@@ -160,9 +162,108 @@ impl PresentationApp {
             physical_transition: Default::default(),
             restore_task: None,
             restored_workspace: false,
+            ipc_receiver: None,
+            _ipc_server: None,
         };
         app.restart_browser_server();
         app
+    }
+
+    pub fn enable_ipc(
+        &mut self,
+        initial_paths: Vec<std::path::PathBuf>,
+        ctx: &egui::Context,
+    ) {
+        let (tx, rx) = std::sync::mpsc::channel();
+        for p in initial_paths {
+            let _ = tx.send(p);
+        }
+        let server = crate::services::ipc::IpcServer::start(tx, Some(ctx.clone()));
+        self.ipc_receiver = Some(rx);
+        self._ipc_server = server;
+    }
+
+    pub fn process_incoming_import(&mut self, path: &std::path::Path) {
+        match crate::services::transfer::items::import_file_from_path(path, &self.db, &mut self.control_state) {
+            Ok(outcome) => {
+                let language = self.control_state.settings.language;
+                match outcome {
+                    crate::services::transfer::items::ImportOutcome::Song(title) => {
+                        self.slide_deck.reload_from_db(&self.db);
+                        self.control_state.reload_all_selection_items(&self.db);
+                        self.control_state.selected_tab = 0;
+                        self.control_state.notify(language.format(
+                            "workspace-song-imported",
+                            &[("title", &title)],
+                        ));
+                    }
+                    crate::services::transfer::items::ImportOutcome::Text(title) => {
+                        self.control_state.reload_all_selection_items(&self.db);
+                        self.control_state.selected_tab = 2;
+                        self.control_state.notify(language.format(
+                            "workspace-text-imported",
+                            &[("title", &title)],
+                        ));
+                    }
+                    crate::services::transfer::items::ImportOutcome::Design(name) => {
+                        self.slide_deck.reload_from_db(&self.db);
+                        self.control_state.reload_all_selection_items(&self.db);
+                        self.control_state.notify(language.format(
+                            "workspace-design-imported",
+                            &[("name", &name)],
+                        ));
+                    }
+                    crate::services::transfer::items::ImportOutcome::Theme { theme, font_missing } => {
+                        if font_missing {
+                            self.control_state.pending_font_theme = Some(crate::core::state::PendingFontTheme {
+                                missing_font: theme.font_family.clone(),
+                                selected_replacement: "Montserrat".into(),
+                                theme: *theme,
+                                search_query: String::new(),
+                                font_file_status: None,
+                            });
+                        } else {
+                            self.control_state.notify(language.format(
+                                "workspace-theme-saved",
+                                &[("name", &theme.name)],
+                            ));
+                        }
+                    }
+                    crate::services::transfer::items::ImportOutcome::Playlist { name, items_count, missing_fonts } => {
+                        self.slide_deck.reload_from_db(&self.db);
+                        if let Ok(db_themes) = self.db.get_all_themes() {
+                            self.control_state.themes = db_themes;
+                        }
+                        self.control_state.reload_all_selection_items(&self.db);
+                        self.control_state.notify(language.format(
+                            "workspace-playlist-imported",
+                            &[("name", &name), ("count", &items_count.to_string())],
+                        ));
+                        if let Some(missing) = missing_fonts.first() {
+                            if let Ok(themes) = self.db.get_all_themes() {
+                                if let Some(theme) = themes.into_iter().find(|t| &t.font_family == missing) {
+                                    self.control_state.pending_font_theme = Some(crate::core::state::PendingFontTheme {
+                                        missing_font: missing.clone(),
+                                        selected_replacement: "Montserrat".into(),
+                                        theme,
+                                        search_query: String::new(),
+                                        font_file_status: None,
+                                    });
+                                }
+                            }
+                        }
+                    }
+                    crate::services::transfer::items::ImportOutcome::Media(title) => {
+                        self.control_state.reload_all_selection_items(&self.db);
+                        self.control_state.selected_tab = 1;
+                        self.control_state.notify(format!("{title} importado."));
+                    }
+                }
+            }
+            Err(err) => {
+                self.control_state.notify(format!("Erro ao importar: {err}"));
+            }
+        }
     }
 }
 

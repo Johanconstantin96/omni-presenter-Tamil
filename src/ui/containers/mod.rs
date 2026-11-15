@@ -4,6 +4,7 @@ pub mod player_widgets;
 pub mod playlist;
 pub mod playlist_footer;
 pub mod playlist_separator;
+pub mod playlist_transfer;
 pub mod selection;
 pub mod stage;
 pub mod themes;

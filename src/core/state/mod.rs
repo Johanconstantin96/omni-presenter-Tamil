@@ -24,6 +24,8 @@ pub use setup_wizard::SetupWizardState;
 pub use web_media::WebMediaModalState;
 mod confirm;
 pub use confirm::*;
+pub mod transfer;
+pub use transfer::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SidebarPage {
@@ -307,6 +309,11 @@ pub struct ControlPanelState {
     // Player (Áudios e Vídeos)
     pub audio_player: crate::services::audio::AudioPlayer,
     pub active_player_media: Option<ActivePlayerMedia>,
+
+    // Import & Export Modals
+    pub pending_font_theme: Option<PendingFontTheme>,
+    pub playlist_export_media_modal: Option<PlaylistExportModalState>,
+    pub pending_file_imports: Vec<std::path::PathBuf>,
 }
 
 impl Default for ControlPanelState {
@@ -433,6 +440,9 @@ impl Default for ControlPanelState {
             audio_player: crate::services::audio::AudioPlayer::default(),
             active_player_media: None,
             confirm_dialog: None,
+            pending_font_theme: None,
+            playlist_export_media_modal: None,
+            pending_file_imports: Vec::new(),
         }
     }
 }

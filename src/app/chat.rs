@@ -265,6 +265,30 @@ impl PresentationApp {
                     ),
                 );
             }
+            "import" => {
+                match &command.content {
+                    SharedContent::Media { file } => {
+                        let path_str = service.materialize(file)?;
+                        self.process_incoming_import(std::path::Path::new(&path_str));
+                    }
+                    SharedContent::Song { title, artist, content, .. } => {
+                        let text = crate::core::markup::strip(content);
+                        let _ = self.db.add_song(title, artist, &text);
+                        self.slide_deck.reload_from_db(&self.db);
+                        self.control_state.reload_all_selection_items(&self.db);
+                        self.control_state.selected_tab = 0;
+                        self.control_state.notify(self.control_state.settings.language.format(
+                            "workspace-song-imported",
+                            &[("title", title)],
+                        ));
+                    }
+                    SharedContent::Bible { reference, version, content } => {
+                        let _ = self.db.add_saved_verse(reference, version, content, "");
+                        self.control_state.reload_all_selection_items(&self.db);
+                        self.control_state.notify(format!("{reference} importado."));
+                    }
+                }
+            }
             "project" => {
                 if kind == PlaylistItemKind::Media {
                     if crate::services::media::activate(

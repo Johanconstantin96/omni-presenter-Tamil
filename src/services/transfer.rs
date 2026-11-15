@@ -1,4 +1,6 @@
 //! Portable, versioned workspace archives. Files are streamed, never extracted by archive paths.
+pub mod items;
+
 use super::db::{
     AppDb,
     transfer::{Cell, Table},

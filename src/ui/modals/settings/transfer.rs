@@ -423,7 +423,7 @@ pub fn render(ui: &mut egui::Ui, draft: &AppSettings, db: Option<&AppDb>) {
                         if total_count > 4 {
                             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                                 let query = &mut data.filter_query;
-                                let search_width = (ui.available_width() - 8.0).min(320.0).max(200.0);
+                                let search_width = (ui.available_width() - 8.0).clamp(200.0, 320.0);
                                 ui.add(
                                     egui::TextEdit::singleline(query)
                                         .hint_text(format!(

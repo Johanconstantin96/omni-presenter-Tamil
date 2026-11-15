@@ -56,6 +56,7 @@ struct DesignSelectionActions {
     project: Option<String>,
     edit: Option<String>,
     pin: Option<String>,
+    export: Option<String>,
     playlist: Vec<String>,
     delete_ids: Vec<String>,
     move_ids: Option<(Vec<String>, String)>,
@@ -110,6 +111,10 @@ fn design_context_menu(
             ui.close();
         }
     });
+    if context_menu_item(ui, EXPORT, "workspace-export-design", theme).clicked() {
+        actions.export = Some(scene.id.clone());
+        ui.close();
+    }
     context_menu_separator(ui);
     if context_menu_danger_item(ui, TRASH, "design-delete-design", theme).clicked() {
         actions.delete_ids = vec![scene.id.clone()];
@@ -782,6 +787,28 @@ pub fn render_selection(
             "design-design-s-deleted",
             &[("count", &count.to_string())],
         ));
+    }
+    if let Some(id) = actions.export {
+        let found_scene = deck.designs.iter().find(|s| s.id == id);
+        if let Some(scene) = found_scene {
+            match crate::services::transfer::items::export_design(scene) {
+                Ok(bytes) => {
+                    let filename = format!("{}.opdesign", scene.name);
+                    let picked = rfd::FileDialog::new()
+                        .set_file_name(&filename)
+                        .add_filter("Design OmniPresenter (*.opdesign)", &["opdesign"])
+                        .save_file();
+                    if let Some(path) = picked {
+                        if let Err(err) = std::fs::write(&path, bytes) {
+                            eprintln!("Erro ao salvar: {err}");
+                        } else {
+                            state.notify(state.settings.language.format("workspace-design-exported", &[("name", &scene.name)]));
+                        }
+                    }
+                }
+                Err(e) => state.notify(format!("Erro ao exportar: {e}")),
+            }
+        }
     }
 }
 

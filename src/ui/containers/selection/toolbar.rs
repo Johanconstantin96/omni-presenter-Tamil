@@ -40,6 +40,9 @@ pub(super) fn toolbar(
         {
             state.show_search = !state.show_search;
             state.search_focus = state.show_search;
+            if !state.show_search {
+                state.search_query.clear();
+            }
         }
         let is_media = state.selected_tab == 1;
         let link_label = if is_media {
@@ -276,19 +279,59 @@ pub(super) fn toolbar(
         state.selected_tab = tab;
     }
     if state.show_search || !state.search_query.is_empty() {
+        ui.add_space(5.0);
+        let btn_size = egui::vec2(26.0, 26.0);
+        let spacing = 6.0;
+        let avail_w = ui.available_width();
+        let edit_w = (avail_w - btn_size.x - spacing).max(40.0);
+
         ui.horizontal(|ui| {
-            let edit_res = ui.add(
+            ui.spacing_mut().item_spacing.x = spacing;
+
+            let input_id = ui.make_persistent_id("library_search_input");
+            let is_focused = ui.ctx().memory(|m| m.has_focus(input_id));
+
+            let frame = egui::Frame::new()
+                .fill(theme.bg_pill)
+                .stroke(egui::Stroke::new(
+                    1.0,
+                    if is_focused {
+                        theme.accent
+                    } else {
+                        theme.border_default
+                    },
+                ))
+                .corner_radius(6.0)
+                .inner_margin(egui::Margin::symmetric(8, 5));
+
+            let edit_res = ui.add_sized(
+                egui::vec2(edit_w, 26.0),
                 egui::TextEdit::singleline(&mut state.search_query)
-                    .hint_text(language.text("common-search"))
-                    .desired_width((ui.available_width() - 32.0).max(40.0)),
+                    .id(input_id)
+                    .frame(frame)
+                    .hint_text(
+                        egui::RichText::new(format!(
+                            "{}  {}",
+                            MAGNIFYING_GLASS,
+                            language.text("common-search")
+                        ))
+                        .color(theme.text_muted)
+                        .size(12.0),
+                    )
+                    .font(egui::FontId::proportional(12.0)),
             );
+
             if state.search_focus {
                 edit_res.request_focus();
                 state.search_focus = false;
             }
-            if ui
-                .button(X)
-                .on_hover_text(language.text("common-close"))
+            if edit_res.has_focus() && ui.input(|i| i.key_pressed(egui::Key::Escape)) {
+                state.search_query.clear();
+                state.show_search = false;
+            }
+
+            if theme
+                .icon_button(ui, X, language.text("common-close"), false, btn_size)
                 .clicked()
             {
                 state.search_query.clear();
@@ -296,5 +339,6 @@ pub(super) fn toolbar(
                 state.search_focus = false;
             }
         });
+        ui.add_space(6.0);
     }
 }

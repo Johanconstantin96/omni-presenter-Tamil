@@ -563,3 +563,96 @@ fn test_fast_search_with_3000_songs() {
         elapsed2.as_millis()
     );
 }
+
+#[test]
+fn test_search_is_independent_of_folders_and_ranks_titles_first() {
+    use crate::core::models::Song;
+    let mut state = ControlPanelState::default();
+    let mut deck = SlideDeck::default();
+    let ctx = egui::Context::default();
+
+    let songs = vec![
+        Song {
+            id: Some(1),
+            title: "007 - Maravilhas Divinas".to_string(),
+            artist: "Cantor Cristão".to_string(),
+            text: "Deus amou o mundo para que todo aquele que nele crer tenha a vida".to_string(),
+            tags: String::new(),
+            folder: "Cantor Cristão".to_string(),
+        },
+        Song {
+            id: Some(2),
+            title: "Para que todos sejam um".to_string(),
+            artist: "Comunidade".to_string(),
+            text: "Pai faz-nos um só corpo e um só coração".to_string(),
+            tags: String::new(),
+            folder: String::new(), // Outside any folder
+        },
+    ];
+    deck.replace_library(songs);
+
+    state.selected_tab = 0;
+    state.search_query = "Para que todo".to_string();
+
+    let raw = egui::RawInput {
+        screen_rect: Some(egui::Rect::from_min_size(
+            egui::pos2(0.0, 0.0),
+            egui::vec2(320.0, 700.0),
+        )),
+        ..Default::default()
+    };
+
+    let mut presenting = false;
+    let mut output = ctx.run_ui(raw, |ui| {
+        super::render_selection_column(ui, &mut state, &mut deck, &mut presenting, None);
+    });
+    output.textures_delta.clear();
+
+    // Verify that the title match outside any folder ranks ahead of the lyrics match inside a folder
+    let entries = model::entries(LibraryKind::Song, &state, &deck);
+    let filtered = model::filter_and_sort(
+        &entries,
+        LibraryKind::Song,
+        &state.search_query,
+        "",
+        None,
+    );
+    assert_eq!(filtered.len(), 2);
+    assert_eq!(filtered[0].id, 2); // Exact title match
+    assert_eq!(filtered[1].id, 1); // Lyrics-only match
+}
+
+#[test]
+fn test_search_bar_does_not_overflow_container_width() {
+    let mut state = ControlPanelState::default();
+    let mut deck = SlideDeck::default();
+    let ctx = egui::Context::default();
+
+    state.show_search = true;
+    state.search_query = "busca teste".to_string();
+
+    let container_width = 250.0;
+    let raw = egui::RawInput {
+        screen_rect: Some(egui::Rect::from_min_size(
+            egui::pos2(0.0, 0.0),
+            egui::vec2(container_width, 600.0),
+        )),
+        ..Default::default()
+    };
+
+    let mut presenting = false;
+    let mut output = ctx.run_ui(raw, |ui| {
+        super::render_selection_column(ui, &mut state, &mut deck, &mut presenting, None);
+    });
+    output.textures_delta.clear();
+
+    for shape in &output.shapes {
+        let rect = shape.shape.visual_bounding_rect();
+        assert!(
+            rect.max.x <= container_width + 1.0,
+            "Shape overflowed container width: max.x = {}, container_width = {}",
+            rect.max.x,
+            container_width
+        );
+    }
+}

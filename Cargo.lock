@@ -3263,7 +3263,7 @@ dependencies = [
 
 [[package]]
 name = "omni-presenter"
-version = "0.8.3-alpha"
+version = "0.8.4-alpha"
 dependencies = [
  "argon2",
  "bytemuck",

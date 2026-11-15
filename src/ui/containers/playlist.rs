@@ -14,7 +14,7 @@ use crate::ui::AppTheme;
 use eframe::egui::{self, RichText, Vec2};
 use egui_phosphor::regular::{
     ARROW_DOWN, ARROW_UP, ARROWS_DOWN_UP, BOOK_OPEN, CHECK_CIRCLE, CIRCLE, CLOCK, COPY_SIMPLE,
-    DOTS_THREE_CIRCLE, EYE, FILE_TEXT, MUSIC_NOTE, PENCIL_SIMPLE, PLAY, PLUS, PUSH_PIN, TRASH,
+    DOTS_THREE_CIRCLE, EXPORT, EYE, FILE_TEXT, MUSIC_NOTE, PENCIL_SIMPLE, PLAY, PLUS, PUSH_PIN, TRASH,
     VIDEO,
 };
 
@@ -23,7 +23,7 @@ pub fn render_playlist_column(
     state: &mut ControlPanelState,
     slide_deck: &mut SlideDeck,
     is_presentation_open: &mut bool,
-    _db: Option<&AppDb>,
+    db: Option<&AppDb>,
 ) {
     let theme = state.theme.clone();
     let language = crate::ui::i18n::language(ui.ctx());
@@ -172,6 +172,7 @@ pub fn render_playlist_column(
             let mut action_mark_all_played = false;
             let mut action_mark_all_unplayed = false;
             let mut action_clear_playlist = false;
+            let mut action_export_playlist = false;
             let mut action_add_separator_after = None;
             let mut action_rename_separator = None;
             let mut action_save_separator_title = None;
@@ -446,6 +447,13 @@ pub fn render_playlist_column(
 
                     context_menu_separator(ui);
 
+                    if context_menu_item(ui, EXPORT, "workspace-export-playlist", &theme).clicked() {
+                        action_export_playlist = true;
+                        ui.close();
+                    }
+
+                    context_menu_separator(ui);
+
                     if context_menu_danger_item(ui, TRASH, "workspace-remove-from-playlist", &theme).clicked() {
                         action_remove_idx = Some(idx);
                         ui.close();
@@ -480,6 +488,11 @@ pub fn render_playlist_column(
                             .clicked()
                         {
                             action_mark_all_unplayed = true;
+                            ui.close();
+                        }
+                        context_menu_separator(ui);
+                        if context_menu_item(ui, EXPORT, "workspace-export-playlist", &theme).clicked() {
+                            action_export_playlist = true;
                             ui.close();
                         }
                         context_menu_separator(ui);
@@ -703,6 +716,10 @@ pub fn render_playlist_column(
                     message,
                     crate::core::state::ConfirmAction::ClearPlaylist,
                 ));
+            }
+
+            if action_export_playlist {
+                super::playlist_transfer::handle_playlist_export_action(state, db, ui.ctx());
             }
 
             let is_playlist_focused = state.focused_container == Some(ContainerKind::Playlist);

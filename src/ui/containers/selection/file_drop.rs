@@ -3,6 +3,28 @@ use eframe::egui;
 #[cfg(test)]
 mod tests;
 
+fn is_importable_package(ext: &str) -> bool {
+    matches!(
+        ext,
+        "opsong"
+            | "optext"
+            | "opdesign"
+            | "optheme"
+            | "opplaylist"
+            | "hinos"
+            | "hino"
+            | "letras"
+            | "lrc"
+            | "txt"
+            | "omnipresenter-lyrics"
+            | "omnipresenter-text"
+            | "omnipresenter-design"
+            | "omnipresenter-theme"
+            | "omnipresenter-playlist"
+            | "omnipresenter-backup"
+    )
+}
+
 pub(crate) fn handle(ui: &egui::Ui, state: &mut ControlPanelState, rect: egui::Rect) {
     if !ui.is_enabled() || !ui.rect_contains_pointer(rect) {
         return;
@@ -19,7 +41,18 @@ pub(crate) fn handle(ui: &egui::Ui, state: &mut ControlPanelState, rect: egui::R
             .collect::<Vec<_>>()
     });
     if !paths.is_empty() {
-        super::actions::import_media_paths(state, paths);
+        let mut media_paths = Vec::new();
+        for p in paths {
+            let ext = p.extension().and_then(|s| s.to_str()).unwrap_or("").to_lowercase();
+            if is_importable_package(ext.as_str()) {
+                state.pending_file_imports.push(p);
+            } else {
+                media_paths.push(p);
+            }
+        }
+        if !media_paths.is_empty() {
+            super::actions::import_media_paths(state, media_paths);
+        }
     }
     if hovering {
         paint(ui, rect, &state.theme);
@@ -32,7 +65,20 @@ pub(crate) fn handle_remaining(ctx: &egui::Context, state: &mut ControlPanelStat
     let paths = ctx.input_mut(|input| std::mem::take(&mut input.raw.dropped_files)
         .into_iter().map(|file| file.path().to_path_buf())
         .filter(|path| !path.as_os_str().is_empty()).collect::<Vec<_>>());
-    if !paths.is_empty() { super::actions::import_media_paths(state, paths); }
+    if !paths.is_empty() {
+        let mut media_paths = Vec::new();
+        for p in paths {
+            let ext = p.extension().and_then(|s| s.to_str()).unwrap_or("").to_lowercase();
+            if is_importable_package(ext.as_str()) {
+                state.pending_file_imports.push(p);
+            } else {
+                media_paths.push(p);
+            }
+        }
+        if !media_paths.is_empty() {
+            super::actions::import_media_paths(state, media_paths);
+        }
+    }
 }
 
 fn paint(ui: &egui::Ui, rect: egui::Rect, theme: &AppTheme) {

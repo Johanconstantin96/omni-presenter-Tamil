@@ -7,7 +7,7 @@ use crate::ui::components::{
     render_header_bar,
 };
 use eframe::egui::{self, Color32, Stroke, StrokeKind, Vec2};
-use egui_phosphor::regular::{ARROW_COUNTER_CLOCKWISE, CHECK, PENCIL_SIMPLE, PLUS, STAR, TRASH};
+use egui_phosphor::regular::{ARROW_COUNTER_CLOCKWISE, CHECK, EXPORT, PENCIL_SIMPLE, PLUS, STAR, TRASH};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ThemeDragPayload {
@@ -66,6 +66,7 @@ pub fn render_themes_column(
             let mut action_apply_live = None;
             let mut action_toggle_fav = None;
             let mut action_edit = None;
+            let mut action_export = None;
             let mut action_delete = None;
             let mut action_restore_defaults = false;
             let mut hovered_drop_index = None;
@@ -306,6 +307,18 @@ pub fn render_themes_column(
                                     ui.close();
                                 }
 
+                                if context_menu_item(
+                                    ui,
+                                    EXPORT,
+                                    "workspace-export-theme",
+                                    &theme_tokens,
+                                )
+                                .clicked()
+                                {
+                                    action_export = Some(theme_idx);
+                                    ui.close();
+                                }
+
                                 if state.themes.len() > 1
                                     && context_menu_danger_item(
                                         ui,
@@ -432,6 +445,28 @@ pub fn render_themes_column(
 
             if let Some(idx) = action_edit {
                 state.open_edit_theme(idx);
+            }
+
+            if let Some(idx) = action_export {
+                if let Some(theme) = state.themes.get(idx) {
+                    match crate::services::transfer::items::export_theme(theme) {
+                        Ok(bytes) => {
+                            let filename = format!("{}.optheme", theme.name);
+                            if let Some(path) = rfd::FileDialog::new()
+                                .set_file_name(&filename)
+                                .add_filter("Tema OmniPresenter (*.optheme)", &["optheme"])
+                                .save_file()
+                            {
+                                if let Err(err) = std::fs::write(&path, bytes) {
+                                    eprintln!("Erro ao salvar: {err}");
+                                } else {
+                                    state.notify(state.settings.language.format("workspace-theme-exported", &[("name", &theme.name)]));
+                                }
+                            }
+                        }
+                        Err(e) => state.notify(format!("Erro ao exportar: {e}")),
+                    }
+                }
             }
 
             if let Some(idx) = action_delete

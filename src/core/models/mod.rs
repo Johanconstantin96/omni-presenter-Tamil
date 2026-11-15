@@ -8,8 +8,9 @@ pub mod theme;
 pub mod theme_options;
 
 pub use fonts::{
-    ensure_font_loaded_in_egui, ensure_font_loaded_with_style, get_system_font_names,
-    get_system_fonts,
+    ensure_font_loaded_in_egui, ensure_font_loaded_with_style, get_all_font_names,
+    get_system_font_names, get_system_fonts, is_font_installed, load_custom_font_data,
+    load_custom_font_file,
 };
 pub use media::{CustomTextItem, MediaItem, SavedVerseItem};
 pub use playlist::{PlaylistItem, PlaylistItemKind};
@@ -19,4 +20,4 @@ pub use projection::{
 };
 pub use quick_item::{QuickItem, QuickItemKind};
 pub use song::Song;
-pub use theme::{PresentationTheme, color_to_hex, hex_to_color};
+pub use theme::{PresentationTheme, ThemeRecord, color_to_hex, hex_to_color};

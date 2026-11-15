@@ -6,12 +6,16 @@ use crate::{
         state::ControlPanelState,
     },
     services::db::AppDb,
+    ui::components::{context_menu_header, context_menu_item, context_menu_separator},
 };
+use eframe::egui;
+use egui_phosphor::regular::{FOLDER, FOLDER_PLUS};
 
 pub(super) enum LibraryAction {
     Preview(i64),
     Present(i64),
     Edit(i64),
+    Export(Vec<i64>),
     #[allow(dead_code)]
     Delete(Vec<i64>),
     RequestDelete(Vec<i64>),
@@ -329,6 +333,59 @@ fn execute_inner(
                 }
             }
         }
+        LibraryAction::Export(ids) => {
+            if let Some(id) = ids.first() {
+                match kind {
+                    LibraryKind::Song => {
+                        let found_song = db.and_then(|d| d.get_all_songs().ok()).and_then(|songs| songs.into_iter().find(|s| s.id == Some(*id)));
+                        if let Some(song) = found_song {
+                            match crate::services::transfer::items::export_song(&song) {
+                                Ok(bytes) => {
+                                    let filename = format!("{}.opsong", song.title);
+                                    let picked = rfd::FileDialog::new()
+                                        .set_file_name(&filename)
+                                        .add_filter("Música OmniPresenter (*.opsong)", &["opsong"])
+                                        .save_file();
+                                    if let Some(path) = picked {
+                                        let write_res = std::fs::write(&path, bytes);
+                                        if let Err(err) = write_res {
+                                            eprintln!("Erro ao salvar: {err}");
+                                        } else {
+                                            state.notify(state.settings.language.format("workspace-song-exported", &[("title", &song.title)]));
+                                        }
+                                    }
+                                }
+                                Err(e) => state.notify(format!("Erro ao exportar: {e}")),
+                            }
+                        }
+                    }
+                    LibraryKind::Text => {
+                        let found_text = state.custom_texts.iter().find(|t| t.id == Some(*id)).cloned();
+                        if let Some(text) = found_text {
+                            match crate::services::transfer::items::export_text(&text) {
+                                Ok(bytes) => {
+                                    let filename = format!("{}.optext", text.title);
+                                    let picked = rfd::FileDialog::new()
+                                        .set_file_name(&filename)
+                                        .add_filter("Texto OmniPresenter (*.optext)", &["optext"])
+                                        .save_file();
+                                    if let Some(path) = picked {
+                                        let write_res = std::fs::write(&path, bytes);
+                                        if let Err(err) = write_res {
+                                            eprintln!("Erro ao salvar: {err}");
+                                        } else {
+                                            state.notify(state.settings.language.format("workspace-text-exported", &[("title", &text.title)]));
+                                        }
+                                    }
+                                }
+                                Err(e) => state.notify(format!("Erro ao exportar: {e}")),
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
         LibraryAction::Playlist(ids) => append_items(kind, entries, &ids, state, deck, false),
         LibraryAction::Pin(ids) => append_items(kind, entries, &ids, state, deck, true),
         LibraryAction::Convert(id) => {
@@ -596,5 +653,37 @@ fn move_in_memory(
                 }
             }
         }
+    }
+}
+
+pub(super) fn move_menu(
+    ui: &mut egui::Ui,
+    state: &mut ControlPanelState,
+    folders: &[String],
+    ids: &[i64],
+    action: &mut Option<LibraryAction>,
+) {
+    let theme = state.theme.clone();
+    let language = state.settings.language;
+    context_menu_header(ui);
+    for folder in folders
+        .iter()
+        .map(String::as_str)
+        .chain(std::iter::once(""))
+    {
+        let label = if folder.is_empty() {
+            language.text("common-root")
+        } else {
+            folder
+        };
+        if context_menu_item(ui, FOLDER, label, &theme).clicked() {
+            *action = Some(LibraryAction::Move(ids.to_vec(), folder.into()));
+            ui.close();
+        }
+    }
+    context_menu_separator(ui);
+    if context_menu_item(ui, FOLDER_PLUS, language.text("common-new-folder"), &theme).clicked() {
+        state.show_create_folder_modal = true;
+        ui.close();
     }
 }

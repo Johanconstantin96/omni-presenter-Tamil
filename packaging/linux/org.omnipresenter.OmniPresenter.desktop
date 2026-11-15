@@ -2,7 +2,8 @@
 Type=Application
 Name=Omni Presenter
 Comment=Prepare and present lyrics, Scripture and media
-Exec=omni-presenter
+Exec=omni-presenter %F
 Icon=org.omnipresenter.OmniPresenter
 Categories=AudioVideo;Presentation;
 Terminal=false
+MimeType=application/x-omnipresenter-song;application/x-omnipresenter-text;application/x-omnipresenter-design;application/x-omnipresenter-theme;application/x-omnipresenter-playlist;

@@ -338,3 +338,33 @@ fn tab_and_shift_tab_cycle_workspace_containers() {
     app.handle_global_input(&ctx, false, false);
     assert_eq!(app.control_state.focused_container, Some(ContainerKind::Player));
 }
+
+#[test]
+fn test_incoming_import_updates_slide_deck_and_shows_song_immediately() {
+    let db = AppDb::open_in_memory().unwrap();
+    let mut app = PresentationApp::with_db(db);
+    assert_eq!(app.slide_deck.library().len(), 0);
+
+    let temp_dir = std::env::temp_dir().join(format!("omni_test_{}", std::process::id()));
+    let _ = std::fs::create_dir_all(&temp_dir);
+    let song_path = temp_dir.join("Ajuntamento.opsong");
+    let song_pkg = crate::services::transfer::items::SongPackage {
+        format: "omni-presenter-song".into(),
+        version: 1,
+        title: "Ajuntamento".into(),
+        artist: "Ipalpha".into(),
+        text: "O nosso encontro é de celebração".into(),
+        tags: String::new(),
+        folder: String::new(),
+    };
+    std::fs::write(&song_path, serde_json::to_vec(&song_pkg).unwrap()).unwrap();
+
+    app.process_incoming_import(&song_path);
+
+    let _ = std::fs::remove_dir_all(&temp_dir);
+
+    assert_eq!(app.slide_deck.library().len(), 1);
+    assert_eq!(app.slide_deck.library()[0].title, "Ajuntamento");
+    assert_eq!(app.control_state.selected_tab, 0);
+    assert!(app.control_state.toast.is_some());
+}

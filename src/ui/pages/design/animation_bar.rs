@@ -750,9 +750,7 @@ fn render_slides_filmstrip(
                     label_ui.centered_and_justified(|ui| {
                         ui.add(
                             egui::Label::new(
-                                RichText::new(name).size(9.5).color(if is_active {
-                                    theme.text_primary
-                                } else if card_hov > 0.0 {
+                                RichText::new(name).size(9.5).color(if is_active || card_hov > 0.0 {
                                     theme.text_primary
                                 } else {
                                     theme.text_secondary
