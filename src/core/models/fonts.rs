@@ -283,7 +283,14 @@ pub fn available_font_weights(font_name: &str) -> Vec<u16> {
     }
 
     if weights.is_empty() {
-        vec![400, 700]
+        if target.eq_ignore_ascii_case("Montserrat")
+            || target.eq_ignore_ascii_case("Inter")
+            || target.eq_ignore_ascii_case("Roboto")
+        {
+            vec![100, 200, 300, 400, 500, 600, 700, 800, 900]
+        } else {
+            vec![400, 700]
+        }
     } else {
         weights.into_iter().collect()
     }
@@ -308,6 +315,7 @@ mod tests {
         assert_eq!(dejavu_mono, vec![400, 700]);
 
         let montserrat = available_font_weights("Montserrat");
+        assert!(montserrat.contains(&300));
         assert!(montserrat.contains(&400));
         assert!(montserrat.contains(&700));
 

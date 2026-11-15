@@ -313,11 +313,13 @@ fn execute_inner(
                 match kind {
                     LibraryKind::Song => {
                         state.song_editor = Default::default();
-                        state.song_editor.title = item.title.clone();
-                        state.song_editor.artist = item.subtitle.clone();
-                        state.song_editor.text = item.content.clone();
-                        state.song_editor.tags = item.tags.clone();
-                        state.song_editor.folder = item.folder.clone();
+                        if let Some(song) = deck.library().get(item.index) {
+                            state.song_editor.title = song.title.clone();
+                            state.song_editor.artist = song.artist.clone();
+                            state.song_editor.text = song.text.clone();
+                            state.song_editor.tags = song.tags.clone();
+                            state.song_editor.folder = song.folder.clone();
+                        }
                         state.song_editor.open = true;
                     }
                     LibraryKind::Text => {
@@ -327,8 +329,8 @@ fn execute_inner(
                 }
             }
         }
-        LibraryAction::Playlist(ids) => append_items(kind, entries, &ids, state, false),
-        LibraryAction::Pin(ids) => append_items(kind, entries, &ids, state, true),
+        LibraryAction::Playlist(ids) => append_items(kind, entries, &ids, state, deck, false),
+        LibraryAction::Pin(ids) => append_items(kind, entries, &ids, state, deck, true),
         LibraryAction::Convert(id) => {
             if state.media_import_task.is_some() || state.media_conversion_prompt.is_some() {
                 state.notify(state.settings.language.text("workspace-wait-for-the-current-media-import-to-finish"));
@@ -481,22 +483,28 @@ pub(super) fn append_items(
     entries: &[LibraryEntry],
     ids: &[i64],
     state: &mut ControlPanelState,
+    deck: &SlideDeck,
     pin: bool,
 ) {
     for item in entries.iter().filter(|item| ids.contains(&item.id)) {
+        let content = if kind == LibraryKind::Song {
+            deck.library().get(item.index).map(|s| s.text.clone()).unwrap_or_default()
+        } else {
+            item.content.clone()
+        };
         if pin {
             state.add_quick_item(
                 item.title.clone(),
                 item.subtitle.clone(),
                 kind.quick_kind(),
-                item.content.clone(),
+                content,
             );
         } else {
             state.playlist.push(PlaylistItem {
                 id: crate::core::preferences::new_id(kind.category()),
                 title: item.title.clone(),
                 subtitle: item.subtitle.clone(),
-                content: item.content.clone(),
+                content,
                 kind: kind.playlist_kind(),
                 played: false,
             });

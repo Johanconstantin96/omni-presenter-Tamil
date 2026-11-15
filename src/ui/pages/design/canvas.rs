@@ -63,35 +63,38 @@ pub(super) fn render(
         });
         return;
     };
-    ui.add_space(26.0);
     let available = ui.available_size();
+    let has_layers = !scene.layers.is_empty();
+    let reserve = if editor.show_filmstrip {
+        match editor.timeline_mode {
+            super::TimelineMode::Layers => {
+                if has_layers {
+                    (84.0 + editor.timeline_height).min(available.y - 120.0).max(84.0)
+                } else {
+                    76.0
+                }
+            }
+            super::TimelineMode::Slides => (135.0f32).min(available.y - 120.0).max(100.0),
+        }
+    } else {
+        44.0
+    };
+    let gap = 8.0f32;
+    let max_h = (available.y - reserve - gap).max(90.0);
     let aspect = editor
         .preview_aspect_ratio
         .unwrap_or(state.presentation_aspect_ratio)
         .clamp(0.4, 4.0);
-    let reserve = if available.y > 340.0 {
-        if editor.show_filmstrip {
-            match editor.timeline_mode {
-                super::TimelineMode::Layers => {
-                    (80.0 + editor.timeline_height).min(available.y - 120.0)
-                }
-                super::TimelineMode::Slides => 155.0,
-            }
-        } else {
-            75.0
-        }
-    } else if available.y > 240.0 {
-        if editor.show_filmstrip {
-            (60.0 + editor.timeline_height * 0.5).min(available.y - 100.0)
-        } else {
-            60.0
-        }
-    } else {
-        10.0
-    };
-    let max_h = (available.y - reserve).max(90.0);
     let w = available.x.min(max_h * aspect).max(90.0);
     let size = Vec2::new(w, w / aspect);
+
+    let leftover_y = (available.y - size.y - reserve - gap).max(0.0);
+    let top_pad = (leftover_y * 0.5).round();
+    let bottom_pad = leftover_y - top_pad;
+
+    if top_pad > 0.0 {
+        ui.add_space(top_pad);
+    }
     let (slot, _) = ui.allocate_exact_size(egui::vec2(available.x, size.y), egui::Sense::hover());
     let canvas = Rect::from_center_size(slot.center(), size);
     let response = ui.interact(
@@ -100,10 +103,17 @@ pub(super) fn render(
         egui::Sense::click_and_drag(),
     );
     // Checkerboard makes transparency visible without changing the exported scene.
-    let checker_base = if theme.bg_app.r() > 128 {
-        egui::Color32::from_rgb(25, 29, 38)
+    let is_light = theme.bg_app.r() > 128;
+    let (checker_base, checker_alt) = if is_light {
+        (
+            egui::Color32::from_rgb(246, 247, 250),
+            egui::Color32::from_rgb(228, 231, 238),
+        )
     } else {
-        theme.bg_app
+        (
+            theme.bg_app,
+            theme.bg_app.lerp_to_gamma(egui::Color32::from_rgb(50, 56, 70), 0.35),
+        )
     };
     ui.painter().rect_filled(canvas, 0.0, checker_base);
     let painter = ui.painter().with_clip_rect(canvas);
@@ -116,7 +126,7 @@ pub(super) fn render(
                         Vec2::splat(16.0),
                     ),
                     0.0,
-                    checker_base.lerp_to_gamma(egui::Color32::from_rgb(50, 56, 70), 0.35),
+                    checker_alt,
                 );
             }
         }
@@ -289,6 +299,8 @@ pub(super) fn render(
     if let Some((index, action)) = menu_action {
         super::menus::apply_layer(editor, index, action);
     }
-    ui.add_space(8.0);
+    if bottom_pad + gap > 0.0 {
+        ui.add_space(bottom_pad + gap);
+    }
     super::animation_bar::render(ui, editor, theme, &state.themes);
 }

@@ -156,7 +156,7 @@ pub(super) fn entries(
                 index,
                 title: song.title.clone(),
                 subtitle: song.artist.clone(),
-                content: song.text.clone(),
+                content: String::new(), // Song lyrics accessed directly from deck when needed
                 folder: song.folder.clone(),
                 tags: song.tags.clone(),
             })

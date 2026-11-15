@@ -210,12 +210,18 @@ pub fn render_floating_screen_preview(
         );
 
         // Outer bezel / background
-        ui.painter().rect_filled(canvas_rect, 6.0, Color32::from_rgb(12, 12, 14));
+        let is_light = state.theme.bg_app.r() > 128;
+        let bezel_color = if is_light {
+            Color32::from_rgb(220, 224, 230)
+        } else {
+            Color32::from_rgb(12, 12, 14)
+        };
+        ui.painter().rect_filled(canvas_rect, 6.0, bezel_color);
 
         // Screen background
         if is_virtual && lyrics_only {
             // Transparency checkerboard grid (for OBS / stream overlays)
-            paint_transparency_checkerboard(ui.painter(), screen_rect);
+            paint_transparency_checkerboard(ui.painter(), screen_rect, is_light);
         } else if let Some(ref bg) = custom_bg {
             crate::ui::presentation::paint_wallpaper(
                 ui.painter(),
@@ -362,11 +368,15 @@ pub fn render_floating_screen_preview(
     }
 }
 
-/// Paints a subtle dark checkerboard grid showing transparency (OBS style).
-fn paint_transparency_checkerboard(painter: &egui::Painter, rect: egui::Rect) {
-    painter.rect_filled(rect, 0.0, Color32::from_rgb(24, 24, 27));
+/// Paints a subtle checkerboard grid showing transparency (OBS / preview style).
+fn paint_transparency_checkerboard(painter: &egui::Painter, rect: egui::Rect, is_light: bool) {
+    let (base, color_alt) = if is_light {
+        (Color32::from_rgb(246, 247, 250), Color32::from_rgb(228, 231, 238))
+    } else {
+        (Color32::from_rgb(24, 24, 27), Color32::from_rgb(39, 39, 42))
+    };
+    painter.rect_filled(rect, 0.0, base);
     let cell_size = 14.0_f32;
-    let color_alt = Color32::from_rgb(39, 39, 42);
 
     let start_x = rect.min.x;
     let start_y = rect.min.y;

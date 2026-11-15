@@ -16,13 +16,13 @@ pub(super) fn render_layers_timeline(
     let Some(scene) = editor.scene.as_ref() else { return; };
     if scene.layers.is_empty() {
         ui.vertical_centered(|ui| {
-            ui.add_space(10.0);
+            ui.add_space(4.0);
             ui.label(
                 RichText::new(crate::ui::i18n::text(ui, "design-no-layers-on-slide"))
                     .size(11.0)
                     .color(theme.text_muted),
             );
-            ui.add_space(10.0);
+            ui.add_space(4.0);
         });
         return;
     }

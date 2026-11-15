@@ -613,14 +613,14 @@ impl DesignEditor {
             .inner_margin(12)
             .show(&mut center_ui, |ui| {
                 toolbar::canvas_toolbar(self, ui, &theme, state);
-                ui.add_space(12.0);
-                canvas::render(ui, self, &theme, state, deck, *presenting);
                 if let Some(scene) = &self.scene
                     && let Some(live) = &deck.live_design && live.id == scene.id && *presenting {
-                        ui.add_space(10.0);
+                        ui.add_space(4.0);
                         ui.label(RichText::new(crate::ui::i18n::text(ui, "design-live-design-click-update-live-to-publish-visual-changes"))
                             .size(11.0).color(theme.accent));
                     }
+                ui.add_space(6.0);
+                canvas::render(ui, self, &theme, state, deck, *presenting);
             });
         let mut left_drag = 0.0;
         let mut right_drag = 0.0;

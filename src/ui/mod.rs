@@ -36,17 +36,46 @@ pub fn render_layout(
     } else {
         state.layout.root.clone()
     };
-    render_node(
-        ui,
-        &mut root,
-        avail_rect,
-        "root",
-        state,
-        slide_deck,
-        is_presentation_open,
-        rendered_leaf_rects,
-        db,
-    );
+
+    let min_layout_w = root.min_width();
+    let min_layout_h = root.min_height();
+
+    // Prevent containers from being squished or visually cut off when window/screen is small
+    if avail_rect.width() < min_layout_w || avail_rect.height() < min_layout_h {
+        let render_w = avail_rect.width().max(min_layout_w);
+        let render_h = avail_rect.height().max(min_layout_h);
+        egui::ScrollArea::both()
+            .auto_shrink([false, false])
+            .show(ui, |ui| {
+                let (layout_rect, _) = ui.allocate_exact_size(
+                    egui::vec2(render_w, render_h),
+                    egui::Sense::hover(),
+                );
+                render_node(
+                    ui,
+                    &mut root,
+                    layout_rect,
+                    "root",
+                    state,
+                    slide_deck,
+                    is_presentation_open,
+                    rendered_leaf_rects,
+                    db,
+                );
+            });
+    } else {
+        render_node(
+            ui,
+            &mut root,
+            avail_rect,
+            "root",
+            state,
+            slide_deck,
+            is_presentation_open,
+            rendered_leaf_rects,
+            db,
+        );
+    }
 
     if bible {
         state.bible_layout.root = root;
@@ -135,10 +164,16 @@ pub fn render_node(
                         (ratio, ratio)
                     };
 
+                    let min_frac = min_frac.min(max_frac);
+                    let max_frac = min_frac.max(max_frac);
+
                     *fraction = (*fraction).clamp(min_frac, max_frac);
-                    let w1 = (*fraction * total_w)
-                        .round()
-                        .clamp(total_w * min_frac, total_w * max_frac);
+                    let mut w1 = (*fraction * total_w).round();
+                    if total_w >= needed {
+                        w1 = w1.clamp(min_w1, total_w - min_w2 - splitter_size);
+                    } else {
+                        w1 = (min_frac * total_w).round();
+                    }
                     let splitter_line_x = (rect.min.x + w1).round();
 
                     let rect1 =
@@ -218,10 +253,16 @@ pub fn render_node(
                         (ratio, ratio)
                     };
 
+                    let min_frac = min_frac.min(max_frac);
+                    let max_frac = min_frac.max(max_frac);
+
                     *fraction = (*fraction).clamp(min_frac, max_frac);
-                    let h1 = (*fraction * total_h)
-                        .round()
-                        .clamp(total_h * min_frac, total_h * max_frac);
+                    let mut h1 = (*fraction * total_h).round();
+                    if total_h >= needed {
+                        h1 = h1.clamp(min_h1, total_h - min_h2 - splitter_size);
+                    } else {
+                        h1 = (min_frac * total_h).round();
+                    }
                     let splitter_line_y = (rect.min.y + h1).round();
 
                     let rect1 =

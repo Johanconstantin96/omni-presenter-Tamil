@@ -489,3 +489,77 @@ fn test_search_focus_in_toolbar() {
     output.textures_delta.clear();
     assert!(!state.search_focus);
 }
+
+#[test]
+fn test_fast_search_with_3000_songs() {
+    use crate::core::models::Song;
+    let mut state = ControlPanelState::default();
+    let mut deck = SlideDeck::default();
+    let ctx = egui::Context::default();
+
+    // Populate 3,000 songs
+    let mut songs = Vec::with_capacity(3000);
+    for i in 0..3000 {
+        let (title, artist, text) = if i % 100 == 0 {
+            (
+                format!("Louvor {}", i),
+                "Cantor Cristão".to_string(),
+                "Este louvor fala sobre o Filho amado de Deus e Sua graça".to_string(),
+            )
+        } else {
+            (
+                format!("Hino {}", i),
+                "Harpa Cristã".to_string(),
+                "Grande é o Senhor e mui digno de ser louvado na cidade do nosso Deus".to_string(),
+            )
+        };
+        songs.push(Song {
+            id: Some(i as i64 + 1),
+            title,
+            artist,
+            text,
+            tags: String::new(),
+            folder: if i % 2 == 0 { "Cantor Cristão".to_string() } else { "Harpa".to_string() },
+        });
+    }
+    deck.replace_library(songs);
+
+    state.selected_tab = 0;
+    state.search_query = "filho".to_string();
+
+    let raw = egui::RawInput {
+        screen_rect: Some(egui::Rect::from_min_size(
+            egui::pos2(0.0, 0.0),
+            egui::vec2(320.0, 700.0),
+        )),
+        ..Default::default()
+    };
+
+    let start = std::time::Instant::now();
+    let mut presenting = false;
+    let mut output = ctx.run_ui(raw.clone(), |ui| {
+        super::render_selection_column(ui, &mut state, &mut deck, &mut presenting, None);
+    });
+    output.textures_delta.clear();
+    let elapsed = start.elapsed();
+
+    // Cold cache build across 3,000 songs in unoptimized debug test profile
+    assert!(
+        elapsed.as_millis() < 120,
+        "Cold search took too long: {}ms",
+        elapsed.as_millis()
+    );
+
+    // Second frame (simulating typing/hovering with cache warmed)
+    let start2 = std::time::Instant::now();
+    let mut output2 = ctx.run_ui(raw, |ui| {
+        super::render_selection_column(ui, &mut state, &mut deck, &mut presenting, None);
+    });
+    output2.textures_delta.clear();
+    let elapsed2 = start2.elapsed();
+    assert!(
+        elapsed2.as_millis() < 20,
+        "Cached search took too long: {}ms",
+        elapsed2.as_millis()
+    );
+}

@@ -125,9 +125,10 @@ pub(super) fn render(
     let mut start_drag: Option<TimelineDrag> = None;
 
     let curr_sec = (curr_time_ms as f32 / 1000.0).min(max_sec);
+    let has_layers = editor.scene.as_ref().is_some_and(|s| !s.layers.is_empty());
 
-    // --- 0. Vertical Resize Splitter Handle ---
-    if show_filmstrip && timeline_mode == TimelineMode::Layers {
+    // --- 0. Vertical Resize Splitter Handle (only when layers exist to resize) ---
+    if show_filmstrip && timeline_mode == TimelineMode::Layers && has_layers {
         let (split_rect, split_resp) = ui.allocate_exact_size(
             Vec2::new(ui.available_width(), 10.0),
             egui::Sense::click_and_drag(),
@@ -452,8 +453,8 @@ pub(super) fn render(
                         toggle_filmstrip = true;
                     }
 
-                    // Optional timeline height cycle button in Layers mode
-                    if show_filmstrip && timeline_mode == TimelineMode::Layers {
+                    // Optional timeline height cycle button in Layers mode (only when layers exist)
+                    if show_filmstrip && timeline_mode == TimelineMode::Layers && has_layers {
                         let (h_rect, h_resp) = ui.allocate_exact_size(Vec2::new(28.0, 28.0), egui::Sense::click());
                         if h_resp.hovered() {
                             ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
@@ -510,13 +511,13 @@ pub(super) fn render(
 
             // --- 2. Body Area (Layers Timeline or Slides Filmstrip) ---
             if show_filmstrip {
-                ui.add_space(4.0);
+                ui.add_space(3.0);
                 let sep_rect = Rect::from_min_size(
                     Pos2::new(ui.cursor().min.x, ui.cursor().min.y),
                     Vec2::new(ui.available_width(), 1.0),
                 );
                 ui.painter().rect_filled(sep_rect, 0.0, theme.border_default);
-                ui.add_space(5.0);
+                ui.add_space(4.0);
 
                 match timeline_mode {
                     TimelineMode::Layers => {

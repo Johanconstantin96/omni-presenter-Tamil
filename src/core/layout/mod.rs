@@ -27,6 +27,26 @@ impl ContainerKind {
             Self::ChatMessages => "chat-messages",
         }
     }
+
+    /// Minimum width required visually so contents do not squash or clip.
+    pub fn min_width(&self) -> f32 {
+        match self {
+            Self::Selection => 220.0,
+            Self::Lyrics => 220.0,
+            Self::Playlist => 200.0,
+            Self::ChatMessages => 220.0,
+            _ => 180.0,
+        }
+    }
+
+    /// Minimum height required visually so controls remain legible.
+    pub fn min_height(&self) -> f32 {
+        match self {
+            Self::Player => 110.0,
+            Self::Stage | Self::Preview => 110.0,
+            _ => 90.0,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -78,7 +98,7 @@ impl LayoutNode {
     /// Calculates the minimum width required by this subtree so no container is squashed.
     pub fn min_width(&self) -> f32 {
         match self {
-            LayoutNode::Leaf(_) => Self::MIN_LEAF_WIDTH,
+            LayoutNode::Leaf(kind) => kind.min_width(),
             LayoutNode::Split {
                 direction,
                 first,
@@ -96,7 +116,7 @@ impl LayoutNode {
     /// Calculates the minimum height required by this subtree so no container is squashed.
     pub fn min_height(&self) -> f32 {
         match self {
-            LayoutNode::Leaf(_) => Self::MIN_LEAF_HEIGHT,
+            LayoutNode::Leaf(kind) => kind.min_height(),
             LayoutNode::Split {
                 direction,
                 first,
@@ -363,31 +383,36 @@ pub fn calculate_drop_zone(
 
     let min_dist = d_left.min(d_right).min(d_top).min(d_bottom);
 
+    let can_split_h = w >= LayoutNode::MIN_LEAF_WIDTH * 2.0;
+    let can_split_v = h >= LayoutNode::MIN_LEAF_HEIGHT * 2.0;
+
     if min_dist < 0.28 {
-        if min_dist == d_left {
+        if min_dist == d_left && can_split_h {
             let indicator = egui::Rect::from_min_max(
                 rect.left_top(),
                 egui::pos2(rect.left() + w * 0.45, rect.bottom()),
             );
             Some((DropZone::Left, indicator, "drag-insert-left"))
-        } else if min_dist == d_right {
+        } else if min_dist == d_right && can_split_h {
             let indicator = egui::Rect::from_min_max(
                 egui::pos2(rect.right() - w * 0.45, rect.top()),
                 rect.right_bottom(),
             );
             Some((DropZone::Right, indicator, "drag-insert-right"))
-        } else if min_dist == d_top {
+        } else if min_dist == d_top && can_split_v {
             let indicator = egui::Rect::from_min_max(
                 rect.left_top(),
                 egui::pos2(rect.right(), rect.top() + h * 0.45),
             );
             Some((DropZone::Top, indicator, "drag-insert-above"))
-        } else {
+        } else if min_dist == d_bottom && can_split_v {
             let indicator = egui::Rect::from_min_max(
                 egui::pos2(rect.left(), rect.bottom() - h * 0.45),
                 rect.right_bottom(),
             );
             Some((DropZone::Bottom, indicator, "drag-insert-below"))
+        } else {
+            Some((DropZone::Center, rect, "drag-swap-position"))
         }
     } else {
         Some((DropZone::Center, rect, "drag-swap-position"))
@@ -465,11 +490,11 @@ mod tests {
     #[test]
     fn test_layout_min_dimensions() {
         let leaf = LayoutNode::Leaf(ContainerKind::Lyrics);
-        assert_eq!(leaf.min_width(), LayoutNode::MIN_LEAF_WIDTH);
-        assert_eq!(leaf.min_height(), LayoutNode::MIN_LEAF_HEIGHT);
+        assert_eq!(leaf.min_width(), ContainerKind::Lyrics.min_width());
+        assert_eq!(leaf.min_height(), ContainerKind::Lyrics.min_height());
 
         let default_tree = LayoutTree::default();
-        // 4 major columns horizontally must require at least 4 * 180 + 3 * 6 = 738 px
+        // 4 major columns horizontally must require at least 738 px
         assert!(default_tree.root.min_width() >= 738.0);
         // Vertically stacked items must require adequate height
         assert!(default_tree.root.min_height() >= 186.0);

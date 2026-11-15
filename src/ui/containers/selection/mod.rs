@@ -19,6 +19,15 @@ use eframe::egui;
 use egui_phosphor::regular::*;
 use model::{LibraryEntry, LibraryKind};
 
+#[derive(Clone, Default)]
+struct LibrarySearchCache {
+    tab: usize,
+    count: usize,
+    first_id: Option<i64>,
+    last_id: Option<i64>,
+    entries: Vec<(i64, String)>,
+}
+
 pub fn render_selection_column(
     ui: &mut egui::Ui,
     state: &mut ControlPanelState,
@@ -35,11 +44,70 @@ pub fn render_selection_column(
     let kind = LibraryKind::from_tab(state.selected_tab);
     let entries = model::entries(kind, state, deck);
     let folders = collect_folders(kind, state, &entries, db);
-    let query = fold(state.search_query.trim());
-    let filtered: Vec<_> = entries
+    let query_trimmed = state.search_query.trim();
+    let query = fold(query_trimmed);
+
+    let matching_ids: Option<std::collections::HashSet<i64>> = if query.is_empty() {
+        None
+    } else {
+        let cache_id = ui.make_persistent_id("library_search_folded_cache");
+        let mut cache = ui
+            .ctx()
+            .data_mut(|d| d.get_temp::<LibrarySearchCache>(cache_id))
+            .unwrap_or_default();
+        let current_fingerprint = (
+            state.selected_tab,
+            entries.len(),
+            entries.first().map(|e| e.id),
+            entries.last().map(|e| e.id),
+        );
+        if (cache.tab, cache.count, cache.first_id, cache.last_id) != current_fingerprint {
+            cache.tab = current_fingerprint.0;
+            cache.count = current_fingerprint.1;
+            cache.first_id = current_fingerprint.2;
+            cache.last_id = current_fingerprint.3;
+            cache.entries = match kind {
+                LibraryKind::Song => deck
+                    .library()
+                    .iter()
+                    .enumerate()
+                    .map(|(index, song)| {
+                        let id = song.id.unwrap_or(-(index as i64 + 1));
+                        let text = format!("{} {} {} {} {}", song.title, song.artist, song.folder, song.tags, song.text);
+                        (id, fold(&text))
+                    })
+                    .collect(),
+                _ => entries
+                    .iter()
+                    .map(|e| {
+                        let text = format!("{} {} {} {} {}", e.title, e.subtitle, e.folder, e.tags, e.content);
+                        (e.id, fold(&text))
+                    })
+                    .collect(),
+            };
+            ui.ctx().data_mut(|d| d.insert_temp(cache_id, cache.clone()));
+        }
+
+        let tokens: Vec<&str> = query.split_whitespace().collect();
+        Some(
+            cache
+                .entries
+                .iter()
+                .filter(|(_, text)| tokens.iter().all(|token| text.contains(token)))
+                .map(|(id, _)| *id)
+                .collect(),
+        )
+    };
+
+    let filtered: Vec<&LibraryEntry> = entries
         .iter()
         .filter(|entry| {
-            let matches_filter = match kind {
+            if let Some(ids) = &matching_ids {
+                if !ids.contains(&entry.id) {
+                    return false;
+                }
+            }
+            match kind {
                 LibraryKind::Song => {
                     if state.tag_filter.is_empty() {
                         true
@@ -60,15 +128,7 @@ pub fn render_selection_column(
                     }
                 }
                 _ => true,
-            };
-            matches_filter
-                && query.split_whitespace().all(|token| {
-                    fold(&format!(
-                        "{} {} {}",
-                        entry.title, entry.subtitle, entry.content
-                    ))
-                    .contains(token)
-                })
+            }
         })
         .collect();
     let mut visible = Vec::new();
@@ -77,7 +137,7 @@ pub fn render_selection_column(
             visible.extend(
                 filtered
                     .iter()
-                    .filter(|item| &item.folder == folder)
+                    .filter(|item| item.folder == folder.as_str())
                     .map(|item| item.id),
             );
         }
@@ -123,7 +183,7 @@ pub fn render_selection_column(
             for folder in &folders {
                 let items: Vec<_> = filtered
                     .iter()
-                    .filter(|item| &item.folder == folder)
+                    .filter(|item| item.folder == folder.as_str())
                     .copied()
                     .collect();
                 if !query.is_empty() && items.is_empty() {
@@ -253,47 +313,55 @@ pub fn render_selection_column(
                     folder_color,
                 );
 
-                let f_name_g = ui.painter().layout_no_wrap(
-                    folder.clone(),
-                    egui::FontId::proportional(12.5),
-                    theme.text_primary,
-                );
-                ui.painter().galley(
-                    egui::pos2(f_draw_rect.min.x + 42.0, f_text_y - f_name_g.size().y / 2.0),
-                    f_name_g,
-                    theme.text_primary,
-                );
-
-                if is_drop_target_active {
+                let right_reserved_w = if is_drop_target_active {
                     let move_txt = language.text("common-move");
                     let move_g = ui.painter().layout_no_wrap(
                         move_txt.to_owned(),
                         egui::FontId::proportional(11.0),
                         theme.accent,
                     );
+                    let w = move_g.size().x;
                     ui.painter().galley(
                         egui::pos2(
-                            f_draw_rect.max.x - move_g.size().x - 8.0,
+                            f_draw_rect.max.x - w - 8.0,
                             f_text_y - move_g.size().y / 2.0,
                         ),
                         move_g,
                         theme.accent,
                     );
-                } else {
+                    w + 16.0
+                } else if f_draw_rect.width() >= 90.0 {
                     let f_count_g = ui.painter().layout_no_wrap(
                         items.len().to_string(),
                         egui::FontId::proportional(11.0),
                         theme.text_muted,
                     );
+                    let w = f_count_g.size().x;
                     ui.painter().galley(
                         egui::pos2(
-                            f_draw_rect.max.x - f_count_g.size().x - 8.0,
+                            f_draw_rect.max.x - w - 8.0,
                             f_text_y - f_count_g.size().y / 2.0,
                         ),
                         f_count_g,
                         theme.text_muted,
                     );
-                }
+                    w + 16.0
+                } else {
+                    8.0
+                };
+
+                let max_name_w = (f_draw_rect.width() - 42.0 - right_reserved_w).max(10.0);
+                let f_name_g = ui.painter().layout(
+                    folder.clone(),
+                    egui::FontId::proportional(12.5),
+                    theme.text_primary,
+                    max_name_w,
+                );
+                ui.painter().galley(
+                    egui::pos2(f_draw_rect.min.x + 42.0, f_text_y - f_name_g.size().y / 2.0),
+                    f_name_g,
+                    theme.text_primary,
+                );
 
                 if response.clicked()
                     && !kind.folders_mut(state).remove(folder) {
@@ -569,11 +637,18 @@ fn collect_folders(
             }
         })
         .unwrap_or_default();
-    folders.extend(entries.iter().map(|item| item.folder.clone()));
-    folders.extend(kind.folders(state).iter().cloned());
-    folders.retain(|folder| !folder.is_empty());
+    let mut seen: std::collections::HashSet<String> = folders.iter().cloned().collect();
+    for item in entries {
+        if !item.folder.is_empty() && seen.insert(item.folder.to_string()) {
+            folders.push(item.folder.to_string());
+        }
+    }
+    for folder in kind.folders(state) {
+        if !folder.is_empty() && seen.insert(folder.clone()) {
+            folders.push(folder.clone());
+        }
+    }
     folders.sort_by_key(|folder| fold(folder));
-    folders.dedup();
     folders
 }
 
@@ -634,6 +709,13 @@ fn row(
     folders: &[String],
     action: &mut Option<LibraryAction>,
 ) {
+    let id = ui.make_persistent_id((kind.category(), item.id));
+    let (rect, _) =
+        ui.allocate_exact_size(egui::vec2(ui.available_width(), 28.0), egui::Sense::hover());
+    if !ui.is_rect_visible(rect) {
+        return;
+    }
+
     let theme = state.theme.clone();
     let language = state.settings.language;
     let is_selected = kind.selected(state).contains(&item.id);
@@ -642,9 +724,6 @@ fn row(
         && deck.selected_song_index() == item.index;
     let is_active = is_selected || is_current;
 
-    let id = ui.make_persistent_id((kind.category(), item.id));
-    let (rect, _) =
-        ui.allocate_exact_size(egui::vec2(ui.available_width(), 28.0), egui::Sense::hover());
     let response = ui.interact(rect, id, egui::Sense::click_and_drag());
     let visual = crate::ui::components::interaction::row_emphasis(ui, &response, is_active, &theme);
     let _hover = visual.hover;
@@ -777,7 +856,11 @@ fn row(
                 id: format!("{}_{}", kind.category(), entry.id),
                 title: entry.title,
                 subtitle: entry.subtitle,
-                content: entry.content,
+                content: if kind == LibraryKind::Song {
+                    deck.library().get(entry.index).map(|s| s.text.clone()).unwrap_or_default()
+                } else {
+                    entry.content
+                },
                 kind: kind.quick_kind(),
             })
             .collect();
