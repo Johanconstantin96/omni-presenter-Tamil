@@ -122,6 +122,14 @@ impl PresentationApp {
             Some(&self.db),
         );
 
+        // Library Projection Settings Modal Dialog
+        crate::ui::modals::render_library_projection_modal(
+            ctx,
+            &mut self.control_state,
+            &mut self.slide_deck,
+            Some(&self.db),
+        );
+
         // Strophe Tag Manager Modal Dialog
         crate::ui::render_tag_manager_modal(ctx, &mut self.control_state, Some(&self.db));
 

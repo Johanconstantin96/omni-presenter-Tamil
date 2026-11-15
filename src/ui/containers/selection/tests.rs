@@ -364,7 +364,7 @@ fn batch_actions_keep_pins_and_playlist_separate_and_persist_moves() {
 #[test]
 fn test_web_lyrics_button_in_toolbar() {
     let mut state = ControlPanelState::default();
-    let deck = SlideDeck::default();
+    let mut deck = SlideDeck::default();
     let ctx = egui::Context::default();
     assert!(!state.web_lyrics_search.open);
 
@@ -377,7 +377,7 @@ fn test_web_lyrics_button_in_toolbar() {
     };
 
     let mut output = ctx.run_ui(raw, |ui| {
-        toolbar::toolbar(ui, &mut state, &deck, None);
+        toolbar::toolbar(ui, &mut state, &mut deck, None);
     });
     output.textures_delta.clear();
     assert!(!output.shapes.is_empty());
@@ -387,7 +387,7 @@ fn test_web_lyrics_button_in_toolbar() {
 fn test_web_media_button_in_toolbar() {
     let mut state = ControlPanelState::default();
     state.selected_tab = 1; // Media tab
-    let deck = SlideDeck::default();
+    let mut deck = SlideDeck::default();
     let ctx = egui::Context::default();
     assert!(!state.web_media_modal.open);
 
@@ -400,7 +400,7 @@ fn test_web_media_button_in_toolbar() {
     };
 
     let mut output = ctx.run_ui(raw, |ui| {
-        toolbar::toolbar(ui, &mut state, &deck, None);
+        toolbar::toolbar(ui, &mut state, &mut deck, None);
     });
     output.textures_delta.clear();
     assert!(!output.shapes.is_empty());
@@ -467,7 +467,7 @@ fn test_request_delete_opens_confirmation_dialog() {
 #[test]
 fn test_search_focus_in_toolbar() {
     let mut state = ControlPanelState::default();
-    let deck = SlideDeck::default();
+    let mut deck = SlideDeck::default();
     let ctx = egui::Context::default();
     assert!(!state.show_search);
     assert!(!state.search_focus);
@@ -484,7 +484,7 @@ fn test_search_focus_in_toolbar() {
     };
 
     let mut output = ctx.run_ui(raw, |ui| {
-        toolbar::toolbar(ui, &mut state, &deck, None);
+        toolbar::toolbar(ui, &mut state, &mut deck, None);
     });
     output.textures_delta.clear();
     assert!(!state.search_focus);

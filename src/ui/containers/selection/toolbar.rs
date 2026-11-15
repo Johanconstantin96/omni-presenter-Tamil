@@ -13,7 +13,7 @@ use egui_phosphor::regular::*;
 pub(super) fn toolbar(
     ui: &mut egui::Ui,
     state: &mut ControlPanelState,
-    deck: &SlideDeck,
+    deck: &mut SlideDeck,
     db: Option<&AppDb>,
 ) {
     let theme = state.theme.clone();
@@ -24,7 +24,7 @@ pub(super) fn toolbar(
         language.text("library-title"),
         &theme,
     );
-    centered_horizontal(ui, "selection_toolbar", 160.0, |ui| {
+    centered_horizontal(ui, "selection_toolbar", 196.0, |ui| {
         let kind = LibraryKind::from_tab(state.selected_tab);
         if toolbar_icon_button(ui, PLUS_CIRCLE, language.text(kind.create_label()), &theme)
             .clicked()
@@ -249,6 +249,17 @@ pub(super) fn toolbar(
                 }
             }
         });
+        if toolbar_icon_button(
+            ui,
+            SLIDERS_HORIZONTAL,
+            language.text("library-projection-options"),
+            &theme,
+        )
+        .clicked()
+        {
+            state.library_projection_modal_tab = state.selected_tab;
+            state.show_library_projection_modal = true;
+        }
     });
     let tabs = [
         (MUSIC_NOTES, language.text("library-songs")),

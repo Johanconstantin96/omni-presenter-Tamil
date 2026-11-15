@@ -642,6 +642,8 @@ pub struct AppSettings {
     pub first_run_completed: bool,
     #[serde(default = "default_true")]
     pub show_profile_picker_on_startup: bool,
+    #[serde(default)]
+    pub projection: crate::core::models::projection::ProjectionSettings,
 }
 
 fn default_true() -> bool {
@@ -685,6 +687,7 @@ impl Default for AppSettings {
             bible_settings: Default::default(),
             first_run_completed: false,
             show_profile_picker_on_startup: true,
+            projection: Default::default(),
         }
     }
 }

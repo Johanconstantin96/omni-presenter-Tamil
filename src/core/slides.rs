@@ -17,6 +17,7 @@ pub struct SlideDeck {
     pub live_media: Option<MediaOutput>,
     pub slide_media: Vec<Option<MediaOutput>>,
     pub live_slide_media: Vec<Option<MediaOutput>>,
+    pub lyrics_settings: crate::core::models::projection::LyricsProjectionSettings,
     // Preview state (what is shown in lyrics container & preview monitor)
     title: String,
     artist: String,
@@ -46,6 +47,7 @@ impl Default for SlideDeck {
             let slides = build_song_slides(&first_song.title, &first_song.artist, &first_song.text);
             let media_len = slides.len();
             Self {
+                lyrics_settings: Default::default(),
                 designs: Vec::new(),
                 preview_design: None,
                 live_design: None,
@@ -73,6 +75,7 @@ impl Default for SlideDeck {
             }
         } else {
             Self {
+                lyrics_settings: Default::default(),
                 designs: Vec::new(),
                 preview_design: None,
                 live_design: None,
@@ -107,6 +110,7 @@ impl SlideDeck {
         let slides = parse_slides_from_text(raw_text);
         let media_len = slides.len();
         Self {
+            lyrics_settings: Default::default(),
             designs: Vec::new(),
             preview_design: None,
             live_design: None,
@@ -157,6 +161,7 @@ impl SlideDeck {
         let media_len = slides.len();
 
         Self {
+            lyrics_settings: Default::default(),
             designs,
             preview_design: None,
             live_design: None,
@@ -248,7 +253,7 @@ impl SlideDeck {
             self.title = self.library[index].title.clone();
             self.artist = self.library[index].artist.clone();
             self.raw_text = self.library[index].text.clone();
-            self.slides = build_song_slides(&self.title, &self.artist, &self.raw_text);
+            self.slides = build_song_slides_with_settings(&self.title, &self.artist, &self.raw_text, &self.lyrics_settings);
             self.slide_media = vec![None; self.slides.len()];
             self.preview_slide_index = 0;
             self.is_song = true;
@@ -258,6 +263,39 @@ impl SlideDeck {
 
     pub fn preview_song(&mut self, index: usize) {
         self.select_song(index);
+    }
+
+    pub fn reload_song_slides(&mut self) {
+        if self.is_song {
+            let old_index = self.preview_slide_index;
+            self.slides = build_song_slides_with_settings(
+                &self.title,
+                &self.artist,
+                &self.raw_text,
+                &self.lyrics_settings,
+            );
+            self.slide_media = vec![None; self.slides.len()];
+            self.preview_slide_index = old_index.min(self.slides.len().saturating_sub(1));
+        }
+    }
+
+    pub fn reload_custom_content_slides(&mut self, show_title_slide: bool, blank_end: bool) {
+        if !self.is_song && !self.is_bible {
+            let mut parsed = parse_slides_from_text(&self.raw_text);
+            if show_title_slide && !self.title.trim().is_empty() {
+                parsed.insert(0, self.title.trim().to_string());
+            }
+            if blank_end && parsed.last().map(|s| !s.trim().is_empty()).unwrap_or(false) {
+                parsed.push(String::new());
+            }
+            if parsed.is_empty() {
+                parsed.push(String::new());
+            }
+            let old_index = self.preview_slide_index;
+            self.slides = parsed;
+            self.slide_media = vec![None; self.slides.len()];
+            self.preview_slide_index = old_index.min(self.slides.len().saturating_sub(1));
+        }
     }
 
     /// Projeta a música selecionada diretamente no ao vivo
@@ -499,7 +537,7 @@ impl SlideDeck {
 
     pub fn sync_slides(&mut self) {
         if self.is_song && !self.title.trim().is_empty() {
-            self.slides = build_song_slides(&self.title, &self.artist, &self.raw_text);
+            self.slides = build_song_slides_with_settings(&self.title, &self.artist, &self.raw_text, &self.lyrics_settings);
         } else {
             self.slides = parse_slides_from_text(&self.raw_text);
         }
@@ -833,25 +871,62 @@ impl SlideDeck {
 }
 
 pub fn song_title_slide(title: &str, artist: &str) -> String {
-    let t = title.trim();
-    let a = artist.trim();
-    if !a.is_empty() {
-        format!("{t}\n{a}")
-    } else {
-        t.to_string()
+    song_title_slide_with_options(title, artist, true, true)
+}
+
+pub fn song_title_slide_with_options(
+    title: &str,
+    artist: &str,
+    show_title: bool,
+    show_artist: bool,
+) -> String {
+    let t = if show_title { title.trim() } else { "" };
+    let a = if show_artist { artist.trim() } else { "" };
+    match (!t.is_empty(), !a.is_empty()) {
+        (true, true) => format!("{t}\n{a}"),
+        (true, false) => t.to_string(),
+        (false, true) => a.to_string(),
+        (false, false) => String::new(),
     }
 }
 
 pub fn build_song_slides(title: &str, artist: &str, raw_text: &str) -> Vec<String> {
+    build_song_slides_with_settings(
+        title,
+        artist,
+        raw_text,
+        &crate::core::models::projection::LyricsProjectionSettings::default(),
+    )
+}
+
+pub fn build_song_slides_with_settings(
+    title: &str,
+    artist: &str,
+    raw_text: &str,
+    settings: &crate::core::models::projection::LyricsProjectionSettings,
+) -> Vec<String> {
     let mut slides = Vec::new();
-    let title_slide = song_title_slide(title, artist);
-    if !title_slide.is_empty() {
-        slides.push(title_slide);
+    if settings.blank_slide_at_start {
+        slides.push(String::new());
+    }
+    if settings.show_title_slide {
+        let mut title_slide = song_title_slide_with_options(
+            title,
+            artist,
+            settings.show_title,
+            settings.show_artist,
+        );
+        if settings.title_slide_uppercase {
+            title_slide = title_slide.to_uppercase();
+        }
+        if !title_slide.is_empty() {
+            slides.push(title_slide);
+        }
     }
     slides.extend(parse_slides_from_text(raw_text));
     if slides.is_empty() {
         slides.push(String::new());
-    } else if slides.last().map(|s| !s.trim().is_empty()).unwrap_or(false) {
+    } else if settings.blank_slide_at_end && slides.last().map(|s| !s.trim().is_empty()).unwrap_or(false) {
         slides.push(String::new());
     }
     slides
@@ -879,74 +954,10 @@ pub fn parse_slides_from_text(raw_text: &str) -> Vec<String> {
     slides
 }
 
-pub fn strip_comments(text: &str) -> String {
-    text.lines()
-        .filter_map(|line| {
-            let trimmed_start = line.trim_start();
-            if crate::core::markup::is_directive_command(trimmed_start) {
-                Some(line.to_string())
-            } else if trimmed_start.starts_with("//") || trimmed_start.starts_with("#*") {
-                None
-            } else if let Some(idx) = line.find("//") {
-                let before = line[..idx].trim_end();
-                if before.is_empty() {
-                    None
-                } else {
-                    Some(before.to_string())
-                }
-            } else {
-                Some(line.to_string())
-            }
-        })
-        .collect::<Vec<_>>()
-        .join("\n")
-}
-
-pub fn strip_directive_commands(text: &str) -> String {
-    text.lines()
-        .filter(|line| !crate::core::markup::is_directive_command(line.trim_start()))
-        .collect::<Vec<_>>()
-        .join("\n")
-}
-
-/// Extrai a etiqueta de cabeçalho da estrofe (#*refrão, #*ponte, etc.) se houver.
-pub fn extract_strophe_tag(strophe: &str) -> Option<String> {
-    for line in strophe.lines() {
-        let trimmed = line.trim();
-        if let Some(tag) = trimmed.strip_prefix("#*") {
-            let tag = tag.trim();
-            if !tag.is_empty() {
-                return Some(tag.to_string());
-            }
-        }
-    }
-    None
-}
-
-/// Extrai o texto da estrofe sem a etiqueta de cabeçalho (#*refrão, etc.).
-pub fn strip_strophe_tag(strophe: &str) -> String {
-    strophe
-        .lines()
-        .filter(|line| !line.trim_start().starts_with("#*"))
-        .collect::<Vec<_>>()
-        .join("\n")
-}
-
-/// Adiciona ou substitui a etiqueta de tipo de estrofe (#*refrão, etc.).
-pub fn set_strophe_tag(strophe: &str, tag: Option<&str>) -> String {
-    let clean = strip_strophe_tag(strophe);
-    let clean = clean.trim();
-    if let Some(tag) = tag {
-        let tag = tag.trim().trim_start_matches("#*");
-        if clean.is_empty() {
-            format!("#*{tag}")
-        } else {
-            format!("#*{tag}\n{clean}")
-        }
-    } else {
-        clean.to_string()
-    }
-}
+pub use crate::core::markup::{
+    extract_strophe_tag, set_strophe_tag, strip_comments, strip_directive_commands,
+    strip_strophe_tag,
+};
 
 
 

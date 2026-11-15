@@ -76,6 +76,7 @@ impl PresentationApp {
             || self.control_state.strophe_editor.open
             || self.control_state.show_create_folder_modal
             || self.control_state.show_presentation_settings_modal
+            || self.control_state.show_library_projection_modal
             || self.is_preview_modal_open
             || self.control_state.bible.show_import
             || self.control_state.bible.show_settings

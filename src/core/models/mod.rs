@@ -1,6 +1,7 @@
 pub mod fonts;
 pub mod media;
 pub mod playlist;
+pub mod projection;
 pub mod quick_item;
 pub mod song;
 pub mod theme;
@@ -12,6 +13,10 @@ pub use fonts::{
 };
 pub use media::{CustomTextItem, MediaItem, SavedVerseItem};
 pub use playlist::{PlaylistItem, PlaylistItemKind};
+pub use projection::{
+    DesignsProjectionSettings, LyricsProjectionSettings, MediaProjectionSettings,
+    ProjectionSettings, TextsProjectionSettings, VersesProjectionSettings,
+};
 pub use quick_item::{QuickItem, QuickItemKind};
 pub use song::Song;
 pub use theme::{PresentationTheme, color_to_hex, hex_to_color};

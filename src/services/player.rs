@@ -37,7 +37,7 @@ impl ControlPanelState {
             is_projecting: project,
             video_start_time: std::time::Instant::now(),
             video_paused_at: if playing { None } else { Some(0.0) },
-            video_fit: "contain".into(),
+            video_fit: self.settings.projection.media.video_fit.clone(),
             video_seek_offset: 0.0,
         });
         self.notify(message);

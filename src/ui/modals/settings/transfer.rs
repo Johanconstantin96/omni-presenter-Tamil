@@ -1,8 +1,12 @@
+use super::components::{self, ButtonTone};
 use crate::{
     core::{models::Song, preferences::AppSettings, state::ControlPanelState},
     services::{db::AppDb, tasks::BackgroundTask, transfer::Package},
 };
-use eframe::egui;
+use eframe::egui::{self, RichText};
+use egui_phosphor::regular::{
+    CARET_DOWN, CARET_UP, CHECK, CHECK_SQUARE, MAGNIFYING_GLASS, MUSIC_NOTES, SQUARE, X,
+};
 use std::path::PathBuf;
 
 #[path = "transfer_cards.rs"]
@@ -21,6 +25,8 @@ struct TransferUi {
     task: Option<BackgroundTask<Option<ResultData>>>,
     package: Option<(PathBuf, Package)>,
     songs: Vec<(bool, Song)>,
+    show_preview_list: bool,
+    filter_query: String,
     confirmed: bool,
     status: String,
     error: bool,
@@ -72,11 +78,15 @@ pub fn poll(
                 }
                 Ok(Some(ResultData::Lyrics(songs))) => {
                     data.songs = songs.into_iter().map(|s| (true, s)).collect();
+                    data.show_preview_list = false;
+                    data.filter_query.clear();
                 }
                 Ok(Some(ResultData::Added)) => {
                     deck.reload_from_db(db);
                     state.reload_all_selection_items(db);
                     data.songs.clear();
+                    data.show_preview_list = false;
+                    data.filter_query.clear();
                     data.status = state.settings.language.text("transfer-lyrics-added").into();
                 }
                 Ok(Some(ResultData::Example)) => {
@@ -258,116 +268,284 @@ pub fn render(ui: &mut egui::Ui, draft: &AppSettings, db: Option<&AppDb>) {
             }));
         }
         if !data.songs.is_empty() {
-            ui.label(language.text("transfer-lyrics-preview"));
-            let valid = data.songs.iter().any(|(selected, _)| *selected)
-                && data
-                    .songs
-                    .iter()
-                    .filter(|(selected, _)| *selected)
-                    .all(|(_, s)| !s.title.trim().is_empty() && !s.text.trim().is_empty());
-            let selected_count = data.songs.iter().filter(|(selected, _)| *selected).count();
-            let total_count = data.songs.len();
+            ui.add_space(4.0);
+            components::card(ui, &theme, |ui| {
+                let valid = data.songs.iter().any(|(selected, _)| *selected)
+                    && data
+                        .songs
+                        .iter()
+                        .filter(|(selected, _)| *selected)
+                        .all(|(_, s)| !s.title.trim().is_empty() && !s.text.trim().is_empty());
+                let selected_count = data.songs.iter().filter(|(selected, _)| *selected).count();
+                let total_count = data.songs.len();
 
-            let mut add_clicked = false;
-            let mut cancel_clicked = false;
-
-            ui.horizontal(|ui| {
-                if ui
-                    .add_enabled(
-                        valid,
-                        egui::Button::new(format!(
-                            "{} ({} / {})",
-                            language.text("transfer-lyrics-add"),
-                            selected_count,
-                            total_count
-                        )),
-                    )
-                    .clicked()
-                {
-                    add_clicked = true;
-                }
-                if ui.button(language.text("common-cancel")).clicked() {
-                    cancel_clicked = true;
-                }
-                if ui.button(language.text("common-select-all")).clicked() {
-                    for (selected, _) in data.songs.iter_mut() {
-                        *selected = true;
-                    }
-                }
-                if ui.button(language.text("common-clear-selection")).clicked() {
-                    for (selected, _) in data.songs.iter_mut() {
-                        *selected = false;
-                    }
-                }
-            });
-
-            let preview_limit = 100.min(total_count);
-            for (i, (selected, song)) in data.songs[..preview_limit].iter_mut().enumerate() {
-                ui.push_id(i, |ui| {
-                    ui.horizontal(|ui| {
-                        ui.checkbox(selected, "");
-                        ui.text_edit_singleline(&mut song.title);
-                    });
-                    egui::CollapsingHeader::new(language.text("transfer-lyrics-edit")).show(
-                        ui,
-                        |ui| {
-                            ui.label(language.text("transfer-artist"));
-                            ui.text_edit_singleline(&mut song.artist);
-                            ui.label(language.text("transfer-folder"));
-                            ui.text_edit_singleline(&mut song.folder);
-                            ui.label(language.text("transfer-tags"));
-                            ui.text_edit_singleline(&mut song.tags);
-                            ui.add(
-                                egui::TextEdit::multiline(&mut song.text)
-                                    .desired_rows(8)
-                                    .desired_width(f32::INFINITY),
-                            );
-                        },
-                    );
-                });
-            }
-            if total_count > preview_limit {
-                let limit_str = preview_limit.to_string();
-                let count_str = selected_count.to_string();
-                ui.label(language.format(
-                    "transfer-lyrics-preview-more",
-                    &[("limit", &limit_str), ("count", &count_str)],
-                ));
-            }
-
-            if total_count > 5 {
+                // 1. Header with Icon, Title and Selected Count Badge
                 ui.horizontal(|ui| {
-                    if ui
-                        .add_enabled(
-                            valid,
-                            egui::Button::new(language.text("transfer-lyrics-add")),
-                        )
-                        .clicked()
-                    {
+                    let (rect, _) = ui.allocate_exact_size(egui::vec2(32.0, 32.0), egui::Sense::hover());
+                    ui.painter().rect_filled(rect, 8.0, theme.accent_soft);
+                    ui.painter().text(
+                        rect.center(),
+                        egui::Align2::CENTER_CENTER,
+                        MUSIC_NOTES,
+                        egui::FontId::proportional(18.0),
+                        theme.accent,
+                    );
+                    ui.add_space(4.0);
+                    ui.vertical(|ui| {
+                        ui.horizontal(|ui| {
+                            ui.label(
+                                RichText::new(language.text("transfer-lyrics-preview-title"))
+                                    .size(14.0)
+                                    .strong()
+                                    .color(theme.text_primary),
+                            );
+                            let badge_text = format!("{selected_count} / {total_count}");
+                            egui::Frame::new()
+                                .fill(theme.accent_soft)
+                                .corner_radius(10.0)
+                                .inner_margin(egui::Margin::symmetric(8, 2))
+                                .show(ui, |ui| {
+                                    ui.label(
+                                        RichText::new(&badge_text)
+                                            .size(11.0)
+                                            .strong()
+                                            .color(theme.accent),
+                                    );
+                                });
+                        });
+                        ui.label(
+                            RichText::new(language.text("transfer-lyrics-preview"))
+                                .size(11.5)
+                                .color(theme.text_secondary),
+                        );
+                    });
+                });
+
+                ui.add_space(8.0);
+
+                // 2. Action Buttons (Primary Add, Cancel, and Review List Toggle)
+                let mut add_clicked = false;
+                let mut cancel_clicked = false;
+
+                ui.horizontal_wrapped(|ui| {
+                    let add_label = format!(
+                        "{} ({}/{})",
+                        language.text("transfer-lyrics-add"),
+                        selected_count,
+                        total_count
+                    );
+                    let add_resp = ui
+                        .add_enabled_ui(valid && selected_count > 0, |ui| {
+                            components::styled_button(
+                                ui,
+                                Some(CHECK),
+                                &add_label,
+                                ButtonTone::Primary,
+                                &theme,
+                            )
+                        })
+                        .inner;
+                    if add_resp.clicked() {
                         add_clicked = true;
                     }
-                    if ui.button(language.text("common-cancel")).clicked() {
+
+                    if components::styled_button(
+                        ui,
+                        Some(X),
+                        language.text("common-cancel"),
+                        ButtonTone::Ghost,
+                        &theme,
+                    )
+                    .clicked()
+                    {
                         cancel_clicked = true;
                     }
-                });
-            }
 
-            if add_clicked {
-                let db = db.clone();
-                let songs: Vec<_> = data
-                    .songs
-                    .iter()
-                    .filter(|(selected, _)| *selected)
-                    .map(|(_, s)| s.clone())
-                    .collect();
-                data.task = Some(BackgroundTask::spawn_with_repaint(ui.ctx(), move || {
-                    db.import_lyrics(&songs)?;
-                    Ok(Some(ResultData::Added))
-                }));
-            }
-            if cancel_clicked {
-                data.songs.clear();
-            }
+                    let review_label = if data.show_preview_list {
+                        language.text("transfer-lyrics-hide-list")
+                    } else {
+                        language.text("transfer-lyrics-show-list")
+                    };
+                    let review_icon = if data.show_preview_list {
+                        CARET_UP
+                    } else {
+                        CARET_DOWN
+                    };
+                    if components::styled_button(
+                        ui,
+                        Some(review_icon),
+                        review_label,
+                        ButtonTone::Secondary,
+                        &theme,
+                    )
+                    .clicked()
+                    {
+                        data.show_preview_list = !data.show_preview_list;
+                    }
+                });
+
+                // 3. Collapsible / Expandable Preview List
+                if data.show_preview_list {
+                    ui.add_space(8.0);
+                    ui.separator();
+                    ui.add_space(6.0);
+
+                    // Selection tools & search bar
+                    ui.horizontal_wrapped(|ui| {
+                        if components::styled_button(
+                            ui,
+                            Some(CHECK_SQUARE),
+                            language.text("common-select-all"),
+                            ButtonTone::Secondary,
+                            &theme,
+                        )
+                        .clicked()
+                        {
+                            for (selected, _) in data.songs.iter_mut() {
+                                *selected = true;
+                            }
+                        }
+
+                        if components::styled_button(
+                            ui,
+                            Some(SQUARE),
+                            language.text("common-clear-selection"),
+                            ButtonTone::Secondary,
+                            &theme,
+                        )
+                        .clicked()
+                        {
+                            for (selected, _) in data.songs.iter_mut() {
+                                *selected = false;
+                            }
+                        }
+
+                        if total_count > 4 {
+                            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                                let query = &mut data.filter_query;
+                                let search_width = (ui.available_width() - 8.0).min(320.0).max(200.0);
+                                ui.add(
+                                    egui::TextEdit::singleline(query)
+                                        .hint_text(format!(
+                                            "{} {}",
+                                            MAGNIFYING_GLASS,
+                                            language.text("transfer-lyrics-search-placeholder")
+                                        ))
+                                        .desired_width(search_width),
+                                );
+                            });
+                        }
+                    });
+
+                    ui.add_space(6.0);
+
+                    // Filtered indices
+                    let query = data.filter_query.trim().to_lowercase();
+                    let matching_indices: Vec<usize> = data
+                        .songs
+                        .iter()
+                        .enumerate()
+                        .filter(|(_, (_, song))| {
+                            if query.is_empty() {
+                                true
+                            } else {
+                                song.title.to_lowercase().contains(&query)
+                                    || song.artist.to_lowercase().contains(&query)
+                            }
+                        })
+                        .map(|(i, _)| i)
+                        .collect();
+
+                    let preview_limit = 100.min(matching_indices.len());
+
+                    egui::ScrollArea::vertical()
+                        .id_salt("transfer_lyrics_preview_scroll")
+                        .max_height(480.0)
+                        .auto_shrink([false, true])
+                        .show(ui, |ui| {
+                            ui.spacing_mut().item_spacing.y = 6.0;
+                            for &idx in &matching_indices[..preview_limit] {
+                                let (selected, song) = &mut data.songs[idx];
+                                ui.push_id(idx, |ui| {
+                                    egui::Frame::new()
+                                        .fill(theme.bg_pill)
+                                        .stroke(egui::Stroke::new(1.0, theme.border_default))
+                                        .corner_radius(8.0)
+                                        .inner_margin(egui::Margin::symmetric(10, 6))
+                                        .show(ui, |ui| {
+                                            ui.horizontal(|ui| {
+                                                ui.checkbox(selected, "");
+                                                ui.add(
+                                                    egui::TextEdit::singleline(&mut song.title)
+                                                        .desired_width(ui.available_width() - 30.0),
+                                                );
+                                            });
+                                            egui::CollapsingHeader::new(
+                                                RichText::new(language.text("transfer-lyrics-edit"))
+                                                    .size(11.0)
+                                                    .color(theme.text_secondary),
+                                            )
+                                            .id_salt(("transfer_song_edit", idx))
+                                            .show(ui, |ui| {
+                                                ui.spacing_mut().item_spacing.y = 4.0;
+                                                ui.label(
+                                                    RichText::new(language.text("transfer-artist"))
+                                                        .size(11.0)
+                                                        .color(theme.text_secondary),
+                                                );
+                                                ui.text_edit_singleline(&mut song.artist);
+                                                ui.label(
+                                                    RichText::new(language.text("transfer-folder"))
+                                                        .size(11.0)
+                                                        .color(theme.text_secondary),
+                                                );
+                                                ui.text_edit_singleline(&mut song.folder);
+                                                ui.label(
+                                                    RichText::new(language.text("transfer-tags"))
+                                                        .size(11.0)
+                                                        .color(theme.text_secondary),
+                                                );
+                                                ui.text_edit_singleline(&mut song.tags);
+                                                ui.add(
+                                                    egui::TextEdit::multiline(&mut song.text)
+                                                        .desired_rows(6)
+                                                        .desired_width(f32::INFINITY),
+                                                );
+                                            });
+                                        });
+                                });
+                            }
+
+                            if matching_indices.len() > preview_limit {
+                                let limit_str = preview_limit.to_string();
+                                let count_str = selected_count.to_string();
+                                ui.label(language.format(
+                                    "transfer-lyrics-preview-more",
+                                    &[("limit", &limit_str), ("count", &count_str)],
+                                ));
+                            }
+                        });
+                }
+
+                if add_clicked {
+                    let db = db.clone();
+                    let songs: Vec<_> = data
+                        .songs
+                        .iter()
+                        .filter(|(selected, _)| *selected)
+                        .map(|(_, s)| s.clone())
+                        .collect();
+                    data.task = Some(BackgroundTask::spawn_with_repaint(ui.ctx(), move || {
+                        db.import_lyrics(&songs)?;
+                        Ok(Some(ResultData::Added))
+                    }));
+                }
+                if cancel_clicked {
+                    data.songs.clear();
+                    data.show_preview_list = false;
+                    data.filter_query.clear();
+                }
+            });
         }
     });
     cards::details(ui, language, &theme);

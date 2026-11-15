@@ -241,6 +241,7 @@ fn execute_inner(
             };
             match kind {
                 LibraryKind::Song => {
+                    deck.lyrics_settings = state.settings.projection.lyrics.clone();
                     if project {
                         deck.project_song(item.index);
                     } else {
@@ -265,6 +266,22 @@ fn execute_inner(
                         Err(error) => state.notify(error),
                     }
                     return Ok(());
+                }
+                LibraryKind::Text => {
+                    let text_settings = &state.settings.projection.texts;
+                    let mut slides = crate::core::slides::parse_slides_from_text(&item.content);
+                    if text_settings.show_title_slide && !item.title.trim().is_empty() {
+                        slides.insert(0, item.title.trim().to_string());
+                    }
+                    if text_settings.blank_slide_at_end && slides.last().map(|s| !s.trim().is_empty()).unwrap_or(false) {
+                        slides.push(String::new());
+                    }
+                    if project {
+                        deck.load_custom_slides(item.title.clone(), item.subtitle.clone(), slides);
+                        deck.project_preview();
+                    } else {
+                        deck.load_custom_slides(item.title.clone(), item.subtitle.clone(), slides);
+                    }
                 }
                 _ => {
                     if project {

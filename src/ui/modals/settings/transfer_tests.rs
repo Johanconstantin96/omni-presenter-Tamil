@@ -155,3 +155,60 @@ fn restoration_cannot_be_requested_until_replacement_is_explicitly_confirmed() {
         assert_eq!(take_restore(&ctx).is_some(), confirmed);
     }
 }
+
+#[test]
+fn lyrics_preview_starts_collapsed_with_clean_top_actions_and_toggles() {
+    let db = AppDb::open_in_memory().unwrap();
+    let settings = AppSettings::default();
+    let ctx = egui::Context::default();
+    crate::ui::i18n::install(&ctx, settings.language);
+
+    let song1 = Song {
+        id: Some(1),
+        title: "HNC 001 - Doxologia".into(),
+        artist: "Cantor".into(),
+        folder: "".into(),
+        tags: "".into(),
+        text: "Glória a Deus".into(),
+    };
+    let song2 = Song {
+        id: Some(2),
+        title: "HNC 002 - Reverência".into(),
+        artist: "Cantor".into(),
+        folder: "".into(),
+        tags: "".into(),
+        text: "Santo, Santo".into(),
+    };
+
+    put(
+        &ctx,
+        TransferUi {
+            songs: vec![(true, song1), (true, song2)],
+            show_preview_list: false,
+            ..Default::default()
+        },
+    );
+
+    // Initial render: list is collapsed by default
+    let output = frame(&ctx, &settings, &db, vec![]);
+    // Primary add button should be visible right at the top
+    assert!(output.shapes.iter().any(|s| matches!(&s.shape, egui::Shape::Text(t) if t.galley.job.text.contains(&settings.language.text("transfer-lyrics-add")))));
+    // Review button should be visible with toggle label
+    assert!(output.shapes.iter().any(|s| matches!(&s.shape, egui::Shape::Text(t) if t.galley.job.text.contains(&settings.language.text("transfer-lyrics-show-list")))));
+    // Song items should not be visible when collapsed
+    assert!(!output.shapes.iter().any(|s| matches!(&s.shape, egui::Shape::Text(t) if t.galley.job.text.contains("HNC 001 - Doxologia"))));
+
+    // Now toggle list open
+    let mut data = get(&ctx);
+    data.show_preview_list = true;
+    put(&ctx, data);
+
+    let output_expanded = frame(&ctx, &settings, &db, vec![]);
+    // Song title should now be visible
+    assert!(output_expanded.shapes.iter().any(|s| matches!(&s.shape, egui::Shape::Text(t) if t.galley.job.text.contains("HNC 001 - Doxologia"))));
+    // Toggle button should now show "Ocultar"
+    assert!(output_expanded.shapes.iter().any(|s| matches!(&s.shape, egui::Shape::Text(t) if t.galley.job.text.contains(&settings.language.text("transfer-lyrics-hide-list")))));
+    // Selection tools should be present
+    assert!(output_expanded.shapes.iter().any(|s| matches!(&s.shape, egui::Shape::Text(t) if t.galley.job.text.contains(&settings.language.text("common-select-all")))));
+}
+

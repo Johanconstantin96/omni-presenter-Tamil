@@ -219,3 +219,67 @@ fn test_custom_slides_with_media_sequential_navigation() {
     assert_eq!(deck.live_index(), 0);
     assert_eq!(deck.live_media, None);
 }
+
+#[test]
+fn test_lyrics_projection_settings_combinations() {
+    let title = "Filho do Deus Vivo";
+    let artist = "Nívea Soares";
+    let text = "Estrofe 1\nLinha 2\n\nEstrofe 2";
+
+    // 1. Both title and artist enabled
+    let s_both = crate::core::models::projection::LyricsProjectionSettings {
+        show_title_slide: true,
+        show_title: true,
+        show_artist: true,
+        blank_slide_at_end: true,
+        hide_syntax_markers: true,
+        ..Default::default()
+    };
+    let slides = build_song_slides_with_settings(title, artist, text, &s_both);
+    assert_eq!(slides[0], "Filho do Deus Vivo\nNívea Soares");
+    assert_eq!(slides[1], "Estrofe 1\nLinha 2");
+    assert_eq!(slides[2], "Estrofe 2");
+    assert_eq!(slides[3], ""); // blank end
+
+    // 2. Hide artist, keep only title
+    let s_title_only = crate::core::models::projection::LyricsProjectionSettings {
+        show_title_slide: true,
+        show_title: true,
+        show_artist: false,
+        blank_slide_at_end: false,
+        hide_syntax_markers: true,
+        ..Default::default()
+    };
+    let slides = build_song_slides_with_settings(title, artist, text, &s_title_only);
+    assert_eq!(slides[0], "Filho do Deus Vivo");
+    assert_eq!(slides[1], "Estrofe 1\nLinha 2");
+    assert_eq!(slides[2], "Estrofe 2");
+    assert_eq!(slides.len(), 3); // no blank end
+
+    // 3. Hide title, keep only artist
+    let s_artist_only = crate::core::models::projection::LyricsProjectionSettings {
+        show_title_slide: true,
+        show_title: false,
+        show_artist: true,
+        blank_slide_at_end: false,
+        hide_syntax_markers: true,
+        ..Default::default()
+    };
+    let slides = build_song_slides_with_settings(title, artist, text, &s_artist_only);
+    assert_eq!(slides[0], "Nívea Soares");
+    assert_eq!(slides[1], "Estrofe 1\nLinha 2");
+
+    // 4. Do not project title slide at all
+    let s_no_title_slide = crate::core::models::projection::LyricsProjectionSettings {
+        show_title_slide: false,
+        show_title: true,
+        show_artist: true,
+        blank_slide_at_end: false,
+        hide_syntax_markers: true,
+        ..Default::default()
+    };
+    let slides = build_song_slides_with_settings(title, artist, text, &s_no_title_slide);
+    assert_eq!(slides[0], "Estrofe 1\nLinha 2");
+    assert_eq!(slides[1], "Estrofe 2");
+    assert_eq!(slides.len(), 2);
+}

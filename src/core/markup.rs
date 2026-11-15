@@ -748,6 +748,75 @@ pub fn toggle_emphasis(text: &str, start: usize, end: usize) -> Option<(String, 
     Some((updated, start + 2, end + 2))
 }
 
+pub fn strip_comments(text: &str) -> String {
+    text.lines()
+        .filter_map(|line| {
+            let trimmed_start = line.trim_start();
+            if is_directive_command(trimmed_start) {
+                Some(line.to_string())
+            } else if trimmed_start.starts_with("//") || trimmed_start.starts_with("#*") {
+                None
+            } else if let Some(idx) = line.find("//") {
+                let before = line[..idx].trim_end();
+                if before.is_empty() {
+                    None
+                } else {
+                    Some(before.to_string())
+                }
+            } else {
+                Some(line.to_string())
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+pub fn strip_directive_commands(text: &str) -> String {
+    text.lines()
+        .filter(|line| !is_directive_command(line.trim_start()))
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+/// Extrai a etiqueta de cabeçalho da estrofe (#*refrão, #*ponte, etc.) se houver.
+pub fn extract_strophe_tag(strophe: &str) -> Option<String> {
+    for line in strophe.lines() {
+        let trimmed = line.trim();
+        if let Some(tag) = trimmed.strip_prefix("#*") {
+            let tag = tag.trim();
+            if !tag.is_empty() {
+                return Some(tag.to_string());
+            }
+        }
+    }
+    None
+}
+
+/// Extrai o texto da estrofe sem a etiqueta de cabeçalho (#*refrão, etc.).
+pub fn strip_strophe_tag(strophe: &str) -> String {
+    strophe
+        .lines()
+        .filter(|line| !line.trim_start().starts_with("#*"))
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+/// Adiciona ou substitui a etiqueta de tipo de estrofe (#*refrão, etc.).
+pub fn set_strophe_tag(strophe: &str, tag: Option<&str>) -> String {
+    let clean = strip_strophe_tag(strophe);
+    let clean = clean.trim();
+    if let Some(tag) = tag {
+        let tag = tag.trim().trim_start_matches("#*");
+        if clean.is_empty() {
+            format!("#*{tag}")
+        } else {
+            format!("#*{tag}\n{clean}")
+        }
+    } else {
+        clean.to_string()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
