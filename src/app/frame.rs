@@ -224,6 +224,22 @@ impl PresentationApp {
                     {
                         self.control_state.settings.monitor_name = selected.name.clone();
                     }
+
+                    // On first run, ensure the operator's workspace monitor is not hijacked
+                    // as a projection screen, preventing it from covering the configuration UI.
+                    if !self.control_state.settings.first_run_completed
+                        && self.control_state.settings.disabled_physical_monitors.is_empty()
+                    {
+                        if self.monitors.len() <= 1 {
+                            if !current_name.is_empty() {
+                                self.control_state.settings.disabled_physical_monitors.push(current_name.clone());
+                            } else if let Some(first) = self.monitors.first() {
+                                self.control_state.settings.disabled_physical_monitors.push(first.name.clone());
+                            }
+                        } else if !current_name.is_empty() {
+                            self.control_state.settings.disabled_physical_monitors.push(current_name.clone());
+                        }
+                    }
                 }
             }
             self.update_presentation_aspect_ratio();

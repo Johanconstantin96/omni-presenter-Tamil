@@ -171,7 +171,7 @@ pub fn render_settings_modal(
                             .color(theme.text_primary),
                     );
                     ui.label(
-                        RichText::new("Omni Presenter v0.7 alpha")
+                        RichText::new(concat!("Omni Presenter v", env!("CARGO_PKG_VERSION")))
                             .size(10.0)
                             .color(theme.text_muted),
                     );
@@ -410,21 +410,6 @@ pub fn render_settings_modal(
             );
 
             footer_ui.horizontal(|ui| {
-                ui.horizontal(|ui| {
-                    ui.label(
-                        RichText::new(crate::ui::i18n::format(
-                            ui,
-                            "settings-active-profiles",
-                            &[
-                                ("operator", &draft.operator().name),
-                                ("service", &draft.service().display_name(draft.language)),
-                            ],
-                        ))
-                        .size(11.5)
-                        .color(theme.text_secondary),
-                    );
-                });
-
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     if crate::ui::components::dialog::action(
                         ui,

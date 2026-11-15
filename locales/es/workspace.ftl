@@ -665,25 +665,25 @@ workspace-themes = Temas
 
 theme-obsidian-pro = Obsidiana Minimalista
 
-theme-golden-champagne = Dorado & Champaña
+theme-golden-champagne = Champagne
 
-theme-midnight-sapphire = Océano & Cian
+theme-midnight-sapphire = Océano
 
-theme-warm-ember = Brasas y Terracota
+theme-warm-ember = Terracota
 
-theme-deep-emerald = Esmeralda & Bosque
+theme-deep-emerald = Esmeralda
 
-theme-nordic-sage = Salvia & Lino
+theme-nordic-sage = Salvia
 
-theme-scripture-serif = Escrituras y Liturgia
+theme-scripture-serif = Escrituras
 
-theme-celestial-violet = Amatista Celestial
+theme-celestial-violet = Amatista
 
-theme-bold-anthem = Alabanza Stadium
+theme-bold-anthem = Stadium
 
-theme-clean-alabaster = Alabastro Editorial
+theme-clean-alabaster = Alabastro
 
-theme-broadcast-lower-third = Cintillo de Transmisión
+theme-broadcast-lower-third = Cintillo Simple
 
 theme-frosted-glass-card = Vidrio Esmerilado
 

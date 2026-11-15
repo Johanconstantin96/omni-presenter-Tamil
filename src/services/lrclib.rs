@@ -237,8 +237,8 @@ pub fn search_lyrics(track: &str, artist: Option<&str>) -> Result<Vec<LrcLibTrac
 
         let perform_request = |url: &str| -> Result<Vec<LrcLibTrack>, (u16, String)> {
             let response = ureq::get(url)
-                .header("User-Agent", "OmniPresenter/0.7-alpha")
-                .header("Lrclib-Client", "Omni Presenter v0.7 alpha")
+                .header("User-Agent", concat!("OmniPresenter/", env!("CARGO_PKG_VERSION")))
+                .header("Lrclib-Client", concat!("Omni Presenter v", env!("CARGO_PKG_VERSION")))
                 .call();
 
             match response {

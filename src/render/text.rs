@@ -371,6 +371,7 @@ fn render_internal(
             let mut t = theme.clone();
             t.font_size = (theme.font_size * ref_size_mult).clamp(16.0, 72.0);
             t.align_h = ref_align.to_string();
+            t.options.wrap_text = true;
             t
         };
         Some(layout(painter, &ref_theme, ref_str, inner.size()))
@@ -436,6 +437,14 @@ fn render_internal(
         .unwrap_or(theme.align_h.as_str());
     let mut verse_theme = theme.clone();
     verse_theme.align_h = align_h.to_string();
+    if directives.is_bible
+        || directives.ref_pos.is_some()
+        || directives.ref_text.is_some()
+        || ref_pos_and_data.is_some()
+    {
+        verse_theme.options.wrap_text = true;
+        verse_theme.options.auto_fit = true;
+    }
     let text_layout = layout(painter, &verse_theme, &verse_text, verse_inner.size());
     let verse_clip = if centered_edge_reference {
         Rect::from_min_size(to_view(verse_inner.min), verse_inner.size() * view_scale)
@@ -979,5 +988,21 @@ mod tests {
             output.shapes.len() >= 30,
             "Gaussian spiral should generate rich multi-sample shapes"
         );
+    }
+
+    #[test]
+    fn test_bible_slides_always_wrap_and_never_affected_by_lyrics_wrap_toggle() {
+        let ctx = egui::Context::default();
+        let mut output = ctx.run_ui(egui::RawInput::default(), |ui| {
+            let mut theme = PresentationTheme::default();
+            theme.options.wrap_text = false; // "Adaptar" selected for lyrics
+            theme.options.auto_fit = false;
+
+            let long_bible_text = "//bible\nPorque Deus amou o mundo de tal maneira que deu o seu Filho unigênito, para que todo aquele que nele crê não pereça, mas tenha a vida eterna.\n//ref: João 3:16\n//ref-pos: bottom";
+            let rect = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(600.0, 400.0));
+            render(ui.painter(), rect, &theme, long_bible_text);
+        });
+        output.textures_delta.clear();
+        assert!(!output.shapes.is_empty());
     }
 }

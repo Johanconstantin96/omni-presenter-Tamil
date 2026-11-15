@@ -109,6 +109,16 @@ library-projection-modal-title = Library Projection Settings
 library-projection-modal-subtitle = Customize display elements, opening titles, transitions and behaviors for each content type
 
 library-projection-lyrics-title = Lyrics Projection
+library-projection-lyrics-typography-title = Line Wrapping & Fitting
+library-projection-lyrics-typography-desc = Choose how long lyrics behave during projection:
+library-projection-lyrics-mode-wrap = Wrap
+library-projection-lyrics-mode-wrap-desc = Keeps font size and breaks text into multiple lines.
+library-projection-lyrics-mode-fit = Adapt
+library-projection-lyrics-mode-fit-desc = Keeps single line and shrinks font to fit the slide.
+library-projection-lyrics-wrap-text = Automatic line wrapping
+library-projection-lyrics-wrap-text-desc = Wraps long lines onto new lines to maintain comfortable and legible font size.
+library-projection-lyrics-auto-fit = Automatic size adjustment (Auto-fit)
+library-projection-lyrics-auto-fit-desc = Smoothly reduces font size to ensure text fits inside slide boundaries without overflowing.
 library-projection-lyrics-title-slide = Opening Slide (Title and Artist)
 library-projection-lyrics-enable-title-slide = Project opening title slide
 library-projection-lyrics-enable-title-slide-desc = Creates an opening slide with the song title and artist before lyrics

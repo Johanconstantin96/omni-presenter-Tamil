@@ -20,11 +20,12 @@ pub fn apply_settings_style(ui: &mut egui::Ui, theme: &AppTheme) {
     visuals.widgets.inactive.fg_stroke = Stroke::new(1.0, theme.text_primary);
 
     // Hovered widgets
-    visuals.widgets.hovered.weak_bg_fill = theme.bg_card_hover;
-    visuals.widgets.hovered.bg_fill = theme.bg_card_hover;
-    visuals.widgets.hovered.bg_stroke = Stroke::new(1.0, theme.border_active);
+    let hover_fill = theme.bg_card_hover.lerp_to_gamma(theme.accent_soft, 0.35);
+    visuals.widgets.hovered.weak_bg_fill = hover_fill;
+    visuals.widgets.hovered.bg_fill = hover_fill;
+    visuals.widgets.hovered.bg_stroke = Stroke::new(1.25, theme.accent);
     visuals.widgets.hovered.corner_radius = egui::CornerRadius::same(7);
-    visuals.widgets.hovered.fg_stroke = Stroke::new(1.0, theme.text_primary);
+    visuals.widgets.hovered.fg_stroke = Stroke::new(1.0, theme.accent);
 
     // Active (pressed/clicking) widgets
     visuals.widgets.active.weak_bg_fill = theme.bg_card_hover;
@@ -47,13 +48,8 @@ pub fn apply_settings_style(ui: &mut egui::Ui, theme: &AppTheme) {
     visuals.widgets.noninteractive.fg_stroke = Stroke::new(1.0, theme.text_secondary);
 
     // Selection & Popup windows (dropdown menus)
-    if theme == &AppTheme::light() || theme == &AppTheme::dark() {
-        visuals.selection.bg_fill = theme.accent;
-        visuals.selection.stroke = Stroke::NONE;
-    } else {
-        visuals.selection.bg_fill = theme.accent_soft;
-        visuals.selection.stroke = Stroke::new(1.0, theme.text_primary);
-    }
+    visuals.selection.bg_fill = theme.accent_soft;
+    visuals.selection.stroke = Stroke::new(1.0, theme.accent);
     visuals.window_fill = theme.bg_panel;
     visuals.window_stroke = Stroke::new(1.0, theme.border_default);
     visuals.panel_fill = theme.bg_panel;
@@ -72,41 +68,104 @@ pub fn styled_button(
     theme: &AppTheme,
 ) -> egui::Response {
     let text = crate::ui::i18n::text(ui, text);
-    let (fill, color, stroke) = match tone {
-        ButtonTone::Primary => (theme.accent, theme.text_on_accent, Stroke::NONE),
-        ButtonTone::Secondary => (
-            theme.bg_pill,
-            theme.text_primary,
-            Stroke::new(1.0, theme.border_default),
-        ),
-        ButtonTone::Danger => (
-            theme.status_danger.linear_multiply(0.12),
-            theme.status_danger,
-            Stroke::new(1.0, theme.status_danger.linear_multiply(0.3)),
-        ),
-        ButtonTone::Ghost => (Color32::TRANSPARENT, theme.text_secondary, Stroke::NONE),
-    };
-
     let label = if let Some(ic) = icon {
         if text.trim().is_empty() {
-            RichText::new(ic).size(13.5).color(color)
+            ic.to_string()
         } else {
-            RichText::new(format!("{ic}  {text}")).size(12.5).color(color)
+            format!("{ic}  {text}")
         }
     } else {
-        RichText::new(text).size(12.5).color(color)
+        text.to_string()
     };
 
-    let btn = egui::Button::new(label)
-        .fill(fill)
-        .stroke(stroke)
-        .corner_radius(7.0)
-        .min_size(egui::vec2(
-            if text.trim().is_empty() { 32.0 } else { 0.0 },
-            32.0,
-        ));
+    let font_size = if icon.is_some() && text.trim().is_empty() { 13.5 } else { 12.5 };
+    let font_id = egui::FontId::proportional(font_size);
+    let is_empty_text = text.trim().is_empty();
+    let min_w = if is_empty_text { 32.0 } else { 0.0 };
+    let min_h = 32.0;
 
-    ui.add(btn).on_hover_cursor(egui::CursorIcon::PointingHand)
+    let dummy_galley = ui.painter().layout_no_wrap(label.clone(), font_id.clone(), Color32::WHITE);
+    let pad_x = if is_empty_text { 0.0 } else { 12.0 };
+    let desired_size = egui::vec2((dummy_galley.size().x + pad_x * 2.0).max(min_w), min_h);
+
+    let (rect, response) = ui.allocate_exact_size(desired_size, egui::Sense::click());
+
+    let hover = ui.ctx().animate_bool(response.id.with("hov"), response.hovered());
+    let press = ui.ctx().animate_bool(response.id.with("prs"), response.is_pointer_button_down_on());
+
+    let (bg, stroke, fg) = match tone {
+        ButtonTone::Primary => {
+            let base_bg = theme.accent;
+            let bg = if press > 0.05 {
+                base_bg.linear_multiply(0.88)
+            } else {
+                base_bg.lerp_to_gamma(Color32::WHITE, hover * 0.15)
+            };
+            let stroke = if hover > 0.05 {
+                Stroke::new(1.0, theme.text_on_accent.linear_multiply(0.45 * hover))
+            } else {
+                Stroke::NONE
+            };
+            (bg, stroke, theme.text_on_accent)
+        }
+        ButtonTone::Secondary => {
+            let bg = if press > 0.05 {
+                theme.accent_soft
+            } else {
+                theme.bg_pill.lerp_to_gamma(theme.bg_card_hover, hover)
+            };
+            let border_color = if press > 0.05 {
+                theme.accent
+            } else {
+                theme.border_default.lerp_to_gamma(theme.accent, hover)
+            };
+            let text_color = if press > 0.05 {
+                theme.accent
+            } else {
+                theme.text_primary.lerp_to_gamma(theme.accent, hover * 0.75)
+            };
+            (bg, Stroke::new(1.0 + hover * 0.25, border_color), text_color)
+        }
+        ButtonTone::Danger => {
+            let base_bg = theme.status_danger.linear_multiply(0.12);
+            let bg = if press > 0.05 {
+                theme.status_danger.linear_multiply(0.35)
+            } else {
+                base_bg.lerp_to_gamma(theme.status_danger.linear_multiply(0.25), hover)
+            };
+            let stroke = Stroke::new(
+                1.0 + hover * 0.25,
+                theme.status_danger.linear_multiply(0.3 + hover * 0.7),
+            );
+            (bg, stroke, theme.status_danger)
+        }
+        ButtonTone::Ghost => {
+            let bg = if press > 0.05 {
+                theme.accent_soft
+            } else {
+                Color32::TRANSPARENT.lerp_to_gamma(theme.accent_soft.linear_multiply(0.7), hover)
+            };
+            let stroke = if hover > 0.05 {
+                Stroke::new(1.0, theme.accent.linear_multiply(0.35 * hover))
+            } else {
+                Stroke::NONE
+            };
+            let text_color = theme.text_secondary.lerp_to_gamma(theme.accent, hover);
+            (bg, stroke, text_color)
+        }
+    };
+
+    let draw_rect = rect.shrink(press * 0.5);
+    ui.painter().rect(draw_rect, 7.0, bg, stroke, egui::StrokeKind::Inside);
+
+    let real_galley = ui.painter().layout_no_wrap(label, font_id, fg);
+    let text_pos = egui::pos2(
+        draw_rect.center().x - real_galley.size().x * 0.5,
+        draw_rect.center().y - real_galley.size().y * 0.5,
+    );
+    ui.painter().galley(text_pos, real_galley, fg);
+
+    response.on_hover_cursor(egui::CursorIcon::PointingHand)
 }
 
 pub fn segmented_picker<T: PartialEq + Copy>(

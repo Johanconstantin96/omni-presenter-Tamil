@@ -622,6 +622,8 @@ pub struct AppSettings {
     pub monitor_name: String,
     pub physical_output_enabled: bool,
     pub persistent_physical_output: bool,
+    #[serde(default = "default_true")]
+    pub suspend_projection_while_configuring: bool,
     pub physical_transition_ms: u32,
     pub disabled_physical_monitors: Vec<String>,
     pub physical_background: PhysicalBackground,
@@ -669,6 +671,7 @@ impl Default for AppSettings {
             monitor_name: String::new(),
             physical_output_enabled: true,
             persistent_physical_output: true,
+            suspend_projection_while_configuring: true,
             physical_transition_ms: 350,
             disabled_physical_monitors: Vec::new(),
             physical_background: PhysicalBackground::default(),

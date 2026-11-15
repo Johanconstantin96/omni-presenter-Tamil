@@ -82,7 +82,7 @@ settings-black = Negro
 
 settings-blue = Azul
 
-settings-bokeh = Bokeh
+settings-bokeh = Luces Bokeh
 
 settings-bottom = Abajo
 
@@ -226,7 +226,7 @@ settings-flip-horizontally = Voltear horizontalmente
 
 settings-floating-points-of-light = Puntos de luz flotantes
 
-settings-fluid = Fluido
+settings-fluid = Flujo
 
 settings-for-god-so-loved-the-world-that-he-gave-his = Porque de tal manera amó Dios al mundo,
     que ha dado a su Hijo unigénito,
@@ -294,7 +294,7 @@ settings-language-hint = Elige el idioma de la interfaz de la aplicación.
 
 settings-large = Ampliada
 
-settings-light-grid = Cuadrícula de luz
+settings-light-grid = Cuadrícula Luminosa
 
 settings-lighting-adjustments = Ajustes de iluminación
 
@@ -324,7 +324,7 @@ settings-names-required = Introduce un nombre para cada perfil y pantalla.
 
 settings-navy = Azul marino
 
-settings-nebula = Nebulosa
+settings-nebula = Nebulosa Estelar
 
 settings-new-password = Nueva contraseña
 
@@ -380,7 +380,7 @@ settings-palette = Paleta:
 
 settings-paragraphs = Párrafos
 
-settings-particles = Partículas
+settings-particles = Partículas de Luz
 
 settings-pause = Pausar
 
@@ -398,7 +398,7 @@ settings-preview-virtual = Vista previa - { $name } (Virtual)
 
 settings-preview-window = Ventana de vista previa
 
-settings-prism = Prisma
+settings-prism = Gradiente Fluido
 
 settings-profiles = Perfiles
 
@@ -510,7 +510,7 @@ settings-show-the-theme-background-colors-and-fonts-in-stanza-cards = Muestra el
 
 settings-shown-only-when-no-presentation-is-open = Se muestra solo cuando no hay una presentación abierta.
 
-settings-silk = Seda
+settings-silk = Seda Fluida
 
 settings-slide = Deslizar
 
@@ -548,7 +548,7 @@ settings-stretch = Estirar
 
 settings-strikethrough = Tachado
 
-settings-system-diagnostics-version-and-runtime-information = Diagnóstico del sistema, versión e información de funcionamiento.
+settings-system-diagnostics-version-and-runtime-information = Información de la aplicación, novedades y soporte.
 
 settings-tcp-port-used-by-browsers-and-obs-studio = Puerto TCP usado por los navegadores y OBS Studio.
 
@@ -659,7 +659,7 @@ settings-copy-to-monitor = Copiar a...
 
 settings-custom-for-monitors-count = Personalizado para { $count } monitores
 
-settings-waves = Ondas
+settings-waves = Olas Suaves
 
 settings-web-access-password = Contraseña de acceso web
 
@@ -719,5 +719,34 @@ settings-wizard-reopen = Ejecutar Asistente de Configuración Inicial
 
 settings-hardware-acceleration = Aceleración de hardware en decodificación de video
 settings-hardware-acceleration-hint = Usa la GPU (VA-API, NVDEC, D3D11, VideoToolbox) para reproducir videos de forma fluida y reducir el uso de CPU.
+
+settings-about-description = Un ecosistema moderno, completo e intuitivo para preparar y presentar letras, pasajes bíblicos y medios en cultos con excelencia y velocidad.
+settings-about-license = Código Abierto (Licencia MIT)
+settings-about-community = Comunidad y Soporte
+settings-about-community-desc = Encuentra ayuda, participa en la comunidad o sugiere nuevas mejoras.
+settings-about-report-issue = Sugerir función o reportar un problema
+settings-about-documentation = Guía de Uso y Ayuda
+settings-about-made-with = Diseñado con dedicación para iglesias, ministerios de alabanza y equipos de transmisión.
+settings-about-quick-links = Accesos Rápidos para Operadores
+settings-about-quick-links-desc = Accede rápidamente a ajustes frecuentes de proyección y controles.
+
+settings-suspend-projection-while-configuring = Suspender proyección durante configuración
+settings-suspend-projection-while-configuring-desc = Oculta las pantallas de proyección mientras ajustas el Asistente o Preferencias, mostrándolas solo después de guardar.
+
+settings-rays = Rayos Celestiales
+settings-constellation = Cielo Estrellado
+settings-pulse = Pulso Cósmico
+settings-mesh = Gradiente Fluido
+settings-stars = Cielo Estrellado
+settings-volumetric-celestial-sunbeams = Rayos volumétricos de luz celestial
+settings-smooth-flowing-chromatic-mesh = Ondulaciones suaves de gradiente cromático líquido
+settings-twinkling-deep-space-starfield = Estrellas centelleantes orgánicas en espacio profundo
+settings-twinkling-starfield-mesh = Red estelar centelleante con niebla sutil
+settings-radiant-energy-waves = Ondas radiantes y pulso expansivo de energía
+settings-drifting-cosmic-clouds = Nubes cósmicas flotantes y estrellas centelleantes
+settings-cybernetic-perspective-grid = Cuadrícula cibernética con pulso luminoso
+settings-geometric-crystal-facets = Facetas de cristal con refracción geométrica
+
+
 
 

@@ -109,12 +109,26 @@ impl PresentationView {
                 .with_fullscreen(!overlay_window && !transparent_standby)
         };
 
+        let is_same_monitor_as_root = target_monitor.is_some_and(|target_mon| {
+            if let Some(root_rect) = ctx.input(|i| i.viewport().inner_rect) {
+                target_mon.viewport_rect(ctx.zoom_factor()).contains(root_rect.center())
+            } else {
+                false
+            }
+        });
+
+        let window_level = if is_same_monitor_as_root {
+            egui::WindowLevel::Normal
+        } else {
+            egui::WindowLevel::AlwaysOnTop
+        };
+
         #[allow(unused_mut)]
         let mut builder = builder
             .with_active(false)
             .with_visible(overlay_window || !transparent_standby)
             .with_mouse_passthrough(!active)
-            .with_window_level(egui::WindowLevel::AlwaysOnTop);
+            .with_window_level(window_level);
         #[cfg(target_os = "linux")]
         if overlay_window {
             // An unmanaged overlay has no maximize/map animation and the WM

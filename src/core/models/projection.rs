@@ -14,6 +14,8 @@ pub struct LyricsProjectionSettings {
     pub auto_advance: bool,
     pub auto_advance_seconds: u32,
     pub loop_song: bool,
+    pub wrap_text: bool,
+    pub auto_fit: bool,
 }
 
 impl Default for LyricsProjectionSettings {
@@ -30,6 +32,8 @@ impl Default for LyricsProjectionSettings {
             auto_advance: false,
             auto_advance_seconds: 8,
             loop_song: false,
+            wrap_text: true,
+            auto_fit: false,
         }
     }
 }

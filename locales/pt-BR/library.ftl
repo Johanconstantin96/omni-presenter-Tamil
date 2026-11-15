@@ -109,6 +109,16 @@ library-projection-modal-title = Configurações de Projeção da Biblioteca
 library-projection-modal-subtitle = Ajuste elementos visuais, títulos, transições e comportamentos de cada tipo de conteúdo
 
 library-projection-lyrics-title = Projeção de Letras
+library-projection-lyrics-typography-title = Quebra e Ajuste de Linhas
+library-projection-lyrics-typography-desc = Escolha como o texto de frases longas deve se comportar na projeção:
+library-projection-lyrics-mode-wrap = Quebrar
+library-projection-lyrics-mode-wrap-desc = Mantém o tamanho da fonte e quebra o texto em novas linhas.
+library-projection-lyrics-mode-fit = Adaptar
+library-projection-lyrics-mode-fit-desc = Mantém em linha única e reduz a fonte para caber no slide.
+library-projection-lyrics-wrap-text = Quebra automática de linhas
+library-projection-lyrics-wrap-text-desc = Quebra frases longas em novas linhas para manter o tamanho grande e legível da fonte.
+library-projection-lyrics-auto-fit = Ajuste automático de tamanho (Auto-fit)
+library-projection-lyrics-auto-fit-desc = Reduz suavemente o tamanho da fonte para que o texto caiba perfeitamente no slide sem transbordar.
 library-projection-lyrics-title-slide = Slide de Abertura (Título e Artista)
 library-projection-lyrics-enable-title-slide = Projetar slide de abertura
 library-projection-lyrics-enable-title-slide-desc = Cria um primeiro slide com o nome da música e artista antes das estrofes

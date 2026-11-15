@@ -82,7 +82,7 @@ settings-black = Black
 
 settings-blue = Blue
 
-settings-bokeh = Bokeh
+settings-bokeh = Bokeh Lights
 
 settings-bottom = Bottom
 
@@ -226,7 +226,7 @@ settings-flip-horizontally = Flip horizontally
 
 settings-floating-points-of-light = Floating points of light
 
-settings-fluid = Fluid
+settings-fluid = Flow
 
 settings-for-god-so-loved-the-world-that-he-gave-his = For God so loved the world,
     that he gave his only begotten Son,
@@ -294,7 +294,7 @@ settings-language-hint = Choose the language used by the application interface.
 
 settings-large = Large
 
-settings-light-grid = Light grid
+settings-light-grid = Luminous Grid
 
 settings-lighting-adjustments = Lighting adjustments
 
@@ -324,7 +324,7 @@ settings-names-required = Enter a name for every profile and screen.
 
 settings-navy = Navy
 
-settings-nebula = Nebula
+settings-nebula = Stellar Nebula
 
 settings-new-password = New password
 
@@ -380,7 +380,7 @@ settings-palette = Palette:
 
 settings-paragraphs = Paragraphs
 
-settings-particles = Particles
+settings-particles = Luminous Particles
 
 settings-pause = Pause
 
@@ -398,7 +398,7 @@ settings-preview-virtual = Preview - { $name } (Virtual)
 
 settings-preview-window = Preview window
 
-settings-prism = Prism
+settings-prism = Fluid Gradient
 
 settings-profiles = Profiles
 
@@ -510,7 +510,7 @@ settings-show-the-theme-background-colors-and-fonts-in-stanza-cards = Show the t
 
 settings-shown-only-when-no-presentation-is-open = Shown only when no presentation is open.
 
-settings-silk = Silk
+settings-silk = Flowing Silk
 
 settings-slide = Slide
 
@@ -548,7 +548,7 @@ settings-stretch = Stretch
 
 settings-strikethrough = Strikethrough
 
-settings-system-diagnostics-version-and-runtime-information = System diagnostics, version and runtime information.
+settings-system-diagnostics-version-and-runtime-information = Application information, updates, and support.
 
 settings-tcp-port-used-by-browsers-and-obs-studio = TCP port used by browsers and OBS Studio.
 
@@ -659,7 +659,7 @@ settings-copy-to-monitor = Copy to...
 
 settings-custom-for-monitors-count = Customized for { $count } monitors
 
-settings-waves = Waves
+settings-waves = Smooth Waves
 
 settings-web-access-password = Web access password
 
@@ -719,5 +719,35 @@ settings-wizard-reopen = Run Initial Setup Wizard
 
 settings-hardware-acceleration = Hardware acceleration for video decoding
 settings-hardware-acceleration-hint = Uses GPU (VA-API, NVDEC, D3D11, VideoToolbox) for smoother video playback and lower CPU usage.
+
+settings-about-description = A modern, complete, and intuitive ecosystem to prepare and present lyrics, scripture, and media in services with excellence and speed.
+settings-about-license = Open Source (MIT License)
+settings-about-community = Community & Support
+settings-about-community-desc = Access helpful guides, join the community, or suggest improvements.
+settings-about-report-issue = Suggest a feature or report an issue
+settings-about-documentation = User Guide & Help
+settings-about-made-with = Crafted with dedication for churches, worship teams, and media operators.
+settings-about-quick-links = Helpful Shortcuts for Operators
+settings-about-quick-links-desc = Quickly jump to common projection settings and operator controls.
+
+settings-suspend-projection-while-configuring = Suspend projection while configuring
+settings-suspend-projection-while-configuring-desc = Hides projection screens while adjusting the Setup Wizard or Preferences, showing them only after saving.
+
+settings-rays = Celestial Rays
+settings-constellation = Starfield
+settings-pulse = Cosmic Pulse
+settings-mesh = Fluid Gradient
+settings-stars = Starfield
+settings-volumetric-celestial-sunbeams = Volumetric celestial light beams
+settings-smooth-flowing-chromatic-mesh = Smooth flowing liquid chromatic mesh gradient
+settings-twinkling-deep-space-starfield = Organic twinkling stars in deep space
+settings-twinkling-starfield-mesh = Twinkling starfield mesh with subtle nebula haze
+settings-radiant-energy-waves = Radiant energy waves and expanding pulse
+settings-drifting-cosmic-clouds = Drifting cosmic clouds and twinkling stars
+settings-cybernetic-perspective-grid = Cybernetic perspective grid with light pulse
+settings-geometric-crystal-facets = Crystal facets with geometric refraction
+
+
+
 
 

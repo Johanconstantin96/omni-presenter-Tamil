@@ -125,6 +125,13 @@ pub(super) fn outputs(
             "settings-keep-the-output-ready-show-the-standby-wallpaper-when-no",
             theme,
         );
+        setting_toggle(
+            ui,
+            &mut draft.suspend_projection_while_configuring,
+            "settings-suspend-projection-while-configuring",
+            "settings-suspend-projection-while-configuring-desc",
+            theme,
+        );
         ui.horizontal(|ui| {
             ui.label(RichText::new(crate::ui::i18n::text(ui, "settings-entrance-and-exit")).size(12.0).color(theme.text_secondary));
             let selected = match draft.physical_transition_ms {
@@ -180,12 +187,7 @@ pub(super) fn outputs(
                 );
 
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    if ui
-                        .add(
-                            egui::Button::new(RichText::new(X).size(13.0).color(theme.text_secondary))
-                                .fill(theme.bg_pill)
-                                .corner_radius(6.0),
-                        )
+                    if styled_button(ui, Some(X), "", ButtonTone::Ghost, theme)
                         .on_hover_text(language.text("workspace-close-settings-panel"))
                         .clicked()
                     {
@@ -193,19 +195,15 @@ pub(super) fn outputs(
                     }
 
                     // Floating preview button in header
-                    let prev_btn = egui::Button::new(
-                        RichText::new(format!("{EYE} {}", language.text("workspace-view-screen")))
-                            .size(11.5)
-                            .color(theme.accent),
+                    if styled_button(
+                        ui,
+                        Some(EYE),
+                        language.text("workspace-view-screen"),
+                        ButtonTone::Secondary,
+                        theme,
                     )
-                    .fill(theme.accent_soft)
-                    .stroke(Stroke::new(1.0, theme.accent))
-                    .corner_radius(6.0);
-
-                    if ui
-                        .add(prev_btn)
-                        .on_hover_text(language.text("workspace-open-viewer-in-a-new-window"))
-                        .clicked()
+                    .on_hover_text(language.text("workspace-open-viewer-in-a-new-window"))
+                    .clicked()
                     {
                         let idx = monitors
                             .iter()

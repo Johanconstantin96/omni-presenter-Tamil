@@ -130,15 +130,15 @@ fn main() {
     let index_file = folder.join("index.json");
     if index_file.is_file() {
         println!("cargo:rerun-if-changed={}", index_file.display());
-        if let Ok(content) = fs::read(&index_file) {
-            if let Ok(languages) = serde_json::from_slice::<Vec<IndexLanguage>>(&content) {
-                for lang in languages {
-                    for v in lang.versions {
-                        meta_map.insert(
-                            v.abbreviation.to_lowercase(),
-                            (v.name, localize_language(&lang.language).to_string()),
-                        );
-                    }
+        if let Ok(content) = fs::read(&index_file)
+            && let Ok(languages) = serde_json::from_slice::<Vec<IndexLanguage>>(&content)
+        {
+            for lang in languages {
+                for v in lang.versions {
+                    meta_map.insert(
+                        v.abbreviation.to_lowercase(),
+                        (v.name, localize_language(&lang.language).to_string()),
+                    );
                 }
             }
         }

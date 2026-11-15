@@ -65,6 +65,9 @@ impl PresentationApp {
         if let Err(error) = db.prioritize_dynamic_themes() {
             eprintln!("Não foi possível priorizar os temas dinâmicos: {error}");
         }
+        if let Err(error) = db.remove_silk_theme() {
+            eprintln!("Não foi possível remover o tema seda: {error}");
+        }
         let mut slide_deck = SlideDeck::from_db(&db);
         let mut control_state = ControlPanelState::default();
         match db.get_bible_translations() {

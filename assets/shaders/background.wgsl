@@ -87,14 +87,60 @@ fn palette(a: f32, b: f32) -> vec3f { return mix(mix(u.color0.rgb, u.color1.rgb,
         let lines = 1.0 - smoothstep(0.01, 0.02 + soft * 0.12, min(cell.x, cell.y));
         let pulse = 0.55 + 0.45 * sin(length(p) * 5.0 - t);
         c = palette(lines * pulse, lines * (0.5 + 0.5 * sin(p.x + p.y + t * 0.3)) * 0.7);
+    } else if kind == 9 {
+        let q = p * (1.2 + u.detail.x * 0.3);
+        let v1 = sin(q.x * 1.5 + t * 0.25) + cos(q.y * 1.8 - t * 0.2);
+        let v2 = sin(q.y * 1.8 + t * 0.18 + v1 * 0.7) + cos(q.x * 1.6 - t * 0.15);
+        let warp = vec2f(
+            sin(q.x * 1.2 + v2 * 0.7 + t * 0.12),
+            cos(q.y * 1.2 + v1 * 0.7 - t * 0.14)
+        );
+        let flow1 = 0.5 + 0.5 * sin(length(q + warp) * 2.2 - t * 0.3);
+        let flow2 = 0.5 + 0.5 * cos(warp.x * 2.4 + warp.y * 1.8 + t * 0.22);
+        let blend_a = smoothstep(0.08, 0.92, mix(flow1, flow2, 0.5 + 0.5 * sin(t * 0.15)));
+        let blend_b = smoothstep(0.18, 0.82, 0.5 + 0.5 * sin(q.x * 1.4 - q.y * 1.2 + warp.x * 1.8));
+        c = palette(blend_a, blend_b * (0.6 + soft * 0.4));
+    } else if kind == 10 {
+        let ray_origin = vec2f(point.x, point.y + 0.7);
+        let ray_dir = normalize(ray_origin);
+        let ray_angle = atan2(ray_dir.y, ray_dir.x);
+        let ray_dist = length(ray_origin);
+        let beams = 0.5 + 0.5 * sin(ray_angle * (14.0 + u.detail.x * 3.0) + t * 0.6 + sin(ray_angle * 5.0 - t * 0.3));
+        let dust = fbm(vec2f(ray_angle * 3.0, ray_dist * 2.0 - t * 0.15));
+        let intensity = pow(beams, 1.8) * exp(-ray_dist * (0.7 + (1.0 - soft) * 0.8)) * (0.7 + 0.3 * dust);
+        c = palette(intensity * 0.85, smoothstep(0.4, 0.9, intensity) * 0.75);
+    } else if kind == 11 {
+        c = mix(u.color0.rgb, u.color1.rgb, 0.12 + 0.15 * sin(p.y * 1.2 + t * 0.05));
+        let nebula_dust = fbm(p * 2.2 + vec2f(t * 0.03, -t * 0.02));
+        c += u.color1.rgb * smoothstep(0.35, 0.75, nebula_dust) * 0.45;
+        for (var i = 0; i < 48; i++) {
+            let fi = f32(i);
+            let h1 = hash(vec2f(fi * 13.1 + 1.7, fi * 37.7 + 5.3));
+            let h2 = hash(vec2f(fi * 59.3 + 9.1, fi * 17.9 + 3.7));
+            let star_pos = vec2f(fract(h1 + t * 0.006 * (0.4 + h2)), fract(h2 - t * 0.004 * (0.4 + h1)));
+            let d = length((uv - star_pos) * vec2f(aspect, 1.0));
+            let twinkle = 0.4 + 0.6 * sin(t * (1.2 + h1 * 2.5) + h2 * 30.0);
+            let size = (0.002 + h1 * 0.0035) * (0.6 + soft * 0.5);
+            let brightness = exp(-d * d / max(size * size * 0.45, 0.000001)) * twinkle * step(0.12, h2);
+            c += mix(u.color1.rgb, u.color2.rgb, h1) * brightness * 0.85;
+        }
+        for (var j = 0; j < 8; j++) {
+            let fj = f32(j);
+            let h3 = hash(vec2f(fj * 71.3 + 4.1, fj * 93.1 + 8.7));
+            let h4 = hash(vec2f(fj * 29.7 + 2.3, fj * 83.5 + 6.9));
+            let flare_pos = vec2f(fract(h3 + sin(t * 0.03 + fj) * 0.05), fract(h4 + cos(t * 0.025 + fj) * 0.05));
+            let df = length((uv - flare_pos) * vec2f(aspect, 1.0));
+            let flare_glow = exp(-df * (12.0 + (1.0 - soft) * 10.0)) * (0.6 + 0.4 * sin(t * 0.8 + fj * 4.0));
+            c += u.color2.rgb * flare_glow * 0.6;
+        }
+    } else if kind == 12 {
+        let r = length(point) * (3.5 + u.detail.x * 0.8);
+        let pulse_wave = sin(r - t * 1.2 + fbm(rotated * 3.0) * soft * 2.0);
+        let core = exp(-length(point) * (2.8 - soft * 1.2));
+        let ring_wave = smoothstep(0.0, 0.8, pulse_wave) * exp(-r * 0.28);
+        c = palette(core * 0.9 + ring_wave * 0.65, (core + ring_wave) * (0.5 + 0.5 * sin(t * 0.5)));
     } else {
-        let grid = p * (3.0 + u.detail.x * 0.7);
-        let cell = floor(grid);
-        let local = fract(grid);
-        let triangle = step(local.x, local.y);
-        let facet = hash(cell + triangle * vec2f(0.5, 1.7));
-        let shimmer = 0.5 + 0.5 * sin(t * 0.4 + facet * 6.28 + p.x);
-        c = palette(facet * (0.5 + shimmer * 0.5), (1.0 - facet) * (0.3 + soft * 0.4));
+        c = palette(0.5, 0.5);
     }
     c *= u.motion.z;
     c *= 1.0 - clamp(length((uv - 0.5) * 1.3), 0.0, 1.0) * u.detail.w;

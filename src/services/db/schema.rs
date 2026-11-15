@@ -217,6 +217,7 @@ impl AppDb {
             "shader_nebula",
             "shader_grid",
             "shader_prism",
+            "shader_silk",
         ];
 
         {
@@ -277,6 +278,25 @@ impl AppDb {
             "INSERT OR IGNORE INTO app_migrations (name) VALUES ('dynamic_themes_first_v1')",
             [],
         )?;
+        Ok(())
+    }
+
+    pub fn remove_silk_theme(&self) -> Result<()> {
+        let installed: bool = self.conn.lock().unwrap().query_row(
+            "SELECT EXISTS(SELECT 1 FROM app_migrations WHERE name = 'remove_silk_theme_v2')",
+            [],
+            |row| row.get(0),
+        )?;
+        if installed {
+            return Ok(());
+        }
+
+        let conn = self.conn.lock().unwrap();
+        let _ = conn.execute("DELETE FROM themes WHERE id = 'shader_silk';", []);
+        let _ = conn.execute(
+            "INSERT OR IGNORE INTO app_migrations (name) VALUES ('remove_silk_theme_v2')",
+            [],
+        );
         Ok(())
     }
 }

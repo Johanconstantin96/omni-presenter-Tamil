@@ -109,6 +109,16 @@ library-projection-modal-title = Configuración de Proyección de Biblioteca
 library-projection-modal-subtitle = Personaliza elementos visuales, títulos de apertura, transiciones y comportamientos
 
 library-projection-lyrics-title = Proyección de Letras
+library-projection-lyrics-typography-title = Ajuste y Salto de Líneas
+library-projection-lyrics-typography-desc = Elija cómo deben comportarse las frases largas en la proyección:
+library-projection-lyrics-mode-wrap = Quebrar
+library-projection-lyrics-mode-wrap-desc = Mantiene el tamaño de la fuente y divide en nuevas líneas.
+library-projection-lyrics-mode-fit = Adaptar
+library-projection-lyrics-mode-fit-desc = Mantiene una sola línea y reduce la fuente para encajar.
+library-projection-lyrics-wrap-text = Ajuste automático de líneas (Wrap)
+library-projection-lyrics-wrap-text-desc = Salta a nuevas líneas cuando las frases son largas para mantener la legibilidad de la fuente.
+library-projection-lyrics-auto-fit = Reducción automática de tamaño (Auto-fit)
+library-projection-lyrics-auto-fit-desc = Reduce suavemente el tamaño de la fuente para que el texto nunca desborde la pantalla.
 library-projection-lyrics-title-slide = Diapositiva de Apertura (Título y Artista)
 library-projection-lyrics-enable-title-slide = Proyectar diapositiva de apertura
 library-projection-lyrics-enable-title-slide-desc = Genera una diapositiva con el título de la canción y el artista antes de la letra

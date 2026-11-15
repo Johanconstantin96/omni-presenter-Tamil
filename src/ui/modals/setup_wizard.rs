@@ -498,6 +498,13 @@ fn render_step_screens(
             "settings-keep-the-output-ready-show-the-standby-wallpaper-when-no",
             tokens,
         );
+        setting_toggle(
+            ui,
+            &mut state.settings.suspend_projection_while_configuring,
+            "settings-suspend-projection-while-configuring",
+            "settings-suspend-projection-while-configuring-desc",
+            tokens,
+        );
     });
 
     ui.add_space(8.0);

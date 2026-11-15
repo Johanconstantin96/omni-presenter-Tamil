@@ -18,10 +18,13 @@ fn physical_windows_reuse_ids_and_only_show_wallpaper_in_standby() {
     db.save_settings(&AppSettings {
         server_enabled: false,
         chat_enabled: false,
+        first_run_completed: true,
         ..Default::default()
     })
     .unwrap();
     let mut app = PresentationApp::with_db(db.clone());
+    app.control_state.settings.first_run_completed = true;
+    app.control_state.show_setup_wizard = false;
     app.monitors = ["Projector", "Stage"]
         .iter()
         .enumerate()
@@ -344,4 +347,59 @@ fn test_draw_toast_renders_and_dismisses() {
     out2.textures_delta.clear();
     assert!(app.control_state.toast.is_none());
 }
+
+#[test]
+fn test_projection_suspended_during_setup_and_first_run() {
+    let db = AppDb::open_in_memory().unwrap();
+    let mut app = PresentationApp::with_db(db);
+    app.monitors = vec![MonitorInfo {
+        winit_index: 0,
+        name: "Projector".to_string(),
+        display_name: "Projector".to_string(),
+        resolution: (1920, 1080),
+        position: (0, 0),
+        scale_factor: 1.0,
+    }];
+    app.control_state.settings.physical_output_enabled = true;
+    app.control_state.settings.persistent_physical_output = true;
+
+    let ctx = egui::Context::default();
+    ctx.set_embed_viewports(false);
+
+    // Case 1: First run not completed -> should not project
+    app.control_state.settings.first_run_completed = false;
+    app.control_state.show_setup_wizard = true;
+    let mut out = ctx.run_ui(Default::default(), |ui| {
+        app.draw_presentation_viewport(ui.ctx());
+    });
+    out.textures_delta.clear();
+    // No viewports generated
+
+    // Case 2: In setup wizard -> should not project even if first_run_completed was true
+    app.control_state.settings.first_run_completed = true;
+    app.control_state.show_setup_wizard = true;
+    let mut out = ctx.run_ui(Default::default(), |ui| {
+        app.draw_presentation_viewport(ui.ctx());
+    });
+    out.textures_delta.clear();
+
+    // Case 3: In settings modal with suspend_projection_while_configuring enabled
+    app.control_state.show_setup_wizard = false;
+    app.control_state.settings_ui.open = true;
+    app.control_state.settings.suspend_projection_while_configuring = true;
+    let mut out = ctx.run_ui(Default::default(), |ui| {
+        app.draw_presentation_viewport(ui.ctx());
+    });
+    out.textures_delta.clear();
+
+    // Case 4: Setup saved and closed -> can project
+    app.control_state.settings_ui.open = false;
+    app.control_state.show_setup_wizard = false;
+    app.control_state.settings.first_run_completed = true;
+    let mut out = ctx.run_ui(Default::default(), |ui| {
+        app.draw_presentation_viewport(ui.ctx());
+    });
+    out.textures_delta.clear();
+}
+
 

@@ -31,6 +31,7 @@ pub struct SlideDirectives {
     pub ref_align: Option<String>,
     pub ref_size: Option<String>,
     pub valign: Option<String>,
+    pub is_bible: bool,
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -106,6 +107,7 @@ pub fn is_directive_command(trimmed: &str) -> bool {
         "ref:", "ref ", "ref-pos:", "ref-pos ", "ref-alinhar:", "ref-alinear:", "ref-align:", "ref-alinhar ", "ref-alinear ", "ref-align ",
         "ref-size:", "ref-size ", "ref-tamanho:", "ref-tamanho ", "ref-tamaño:", "ref-tamaño ", "ref-tamano:", "ref-tamano ",
         "valign:", "valign ", "valinhar:", "valinhar ", "va:", "va ",
+        "bible", "biblia", "bíblia", "bible:", "biblia:", "bíblia:", "bible ", "biblia ", "bíblia ",
     ] {
         if after_slash.len() >= prefix.len()
             && after_slash.is_char_boundary(prefix.len())
@@ -268,6 +270,15 @@ pub fn parse_slide_directives(text: &str) -> SlideDirectives {
                 _ => va.trim(),
             };
             dirs.valign = Some(norm.to_string());
+        }
+        let lower = trimmed.to_lowercase();
+        let cmd = lower.trim_start_matches('/');
+        let cmd = cmd.trim();
+        if cmd == "bible" || cmd == "biblia" || cmd == "bíblia"
+            || cmd.starts_with("bible:") || cmd.starts_with("biblia:") || cmd.starts_with("bíblia:")
+            || cmd.starts_with("bible ") || cmd.starts_with("biblia ") || cmd.starts_with("bíblia ")
+        {
+            dirs.is_bible = true;
         }
     }
     dirs

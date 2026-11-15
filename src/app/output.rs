@@ -136,6 +136,12 @@ impl PresentationApp {
         }
         if !settings.physical_output_enabled
             || !(active || opacity > 0.0 || settings.persistent_physical_output)
+            || !settings.first_run_completed
+            || self.control_state.show_setup_wizard
+            || (settings.suspend_projection_while_configuring
+                && (self.control_state.settings_ui.open
+                    || self.control_state.show_library_projection_modal
+                    || self.control_state.show_presentation_settings_modal))
         {
             return;
         }

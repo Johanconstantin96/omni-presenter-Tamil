@@ -665,27 +665,27 @@ workspace-themes = Themes
 
 theme-obsidian-pro = Obsidian Minimalist
 
-theme-golden-champagne = Golden Champagne
+theme-golden-champagne = Champagne
 
-theme-midnight-sapphire = Deep Ocean & Cyan
+theme-midnight-sapphire = Ocean
 
-theme-warm-ember = Warm Terracotta
+theme-warm-ember = Terracotta
 
-theme-deep-emerald = Deep Emerald & Forest
+theme-deep-emerald = Emerald
 
-theme-nordic-sage = Sage & Linen
+theme-nordic-sage = Sage
 
-theme-scripture-serif = Scripture & Liturgy
+theme-scripture-serif = Scripture
 
-theme-celestial-violet = Celestial Amethyst
+theme-celestial-violet = Amethyst
 
-theme-bold-anthem = Stadium Worship
+theme-bold-anthem = Stadium
 
-theme-clean-alabaster = Clean Alabaster
+theme-clean-alabaster = Alabaster
 
-theme-broadcast-lower-third = Broadcast Lower Third
+theme-broadcast-lower-third = Lower Third
 
-theme-frosted-glass-card = Modern Frosted Glass
+theme-frosted-glass-card = Frosted Glass
 
 workspace-this-screen-is-currently-inactive = This screen is currently inactive.
 

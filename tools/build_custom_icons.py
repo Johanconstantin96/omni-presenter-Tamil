@@ -132,7 +132,7 @@ ICON_TO_SVG = {
     "DOWNLOAD_SIMPLE": "arrow-alt-down.svg",
     "UPLOAD_SIMPLE": "arrow-alt-up.svg",
     "FILE": "page.svg",
-    "FILE_TEXT": "select-text.svg",
+    "FILE_TEXT": "text.svg",
     "FILE_PLUS": "add-square.svg",
     "FOLDER": "folder.svg",
     "FOLDER_OPEN": "folder.svg",

@@ -7,14 +7,20 @@ use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 mod custom;
 
-pub const PRESETS: [(&str, &str, &str); 7] = [
+pub const PRESETS: [(&str, &str, &str); 13] = [
     ("aurora", "settings-aurora", "settings-moving-curtains-of-light"),
+    ("nebula", "settings-nebula", "settings-drifting-cosmic-clouds"),
     ("waves", "settings-waves", "settings-smooth-flowing-layers"),
     ("silk", "settings-silk", "settings-delicate-folds-and-reflections"),
     ("particles", "settings-particles", "settings-floating-points-of-light"),
     ("rings", "settings-rings", "settings-concentric-ripples"),
     ("fluid", "settings-fluid", "settings-ink-and-organic-motion"),
+    ("grid", "settings-light-grid", "settings-cybernetic-perspective-grid"),
     ("bokeh", "settings-bokeh", "settings-soft-atmospheric-lights"),
+    ("mesh", "settings-mesh", "settings-smooth-flowing-chromatic-mesh"),
+    ("rays", "settings-rays", "settings-volumetric-celestial-sunbeams"),
+    ("stars", "settings-stars", "settings-twinkling-deep-space-starfield"),
+    ("pulse", "settings-pulse", "settings-radiant-energy-waves"),
 ];
 
 #[repr(C)]
@@ -112,7 +118,22 @@ pub fn install(state: &egui_wgpu::RenderState, ctx: &egui::Context) {
 }
 
 pub fn kind_index(kind: &str) -> usize {
-    PRESETS.iter().position(|p| p.0 == kind).unwrap_or(0)
+    match kind {
+        "aurora" => 0,
+        "nebula" => 1,
+        "waves" => 2,
+        "silk" => 3,
+        "particles" => 4,
+        "rings" => 5,
+        "fluid" => 6,
+        "grid" => 7,
+        "bokeh" => 8,
+        "prism" | "mesh" => 9,
+        "rays" => 10,
+        "constellation" | "stars" => 11,
+        "pulse" => 12,
+        _ => 0,
+    }
 }
 
 pub fn clock() -> f32 {
@@ -272,16 +293,34 @@ impl egui_wgpu::CallbackTrait for ShaderCallback {
     }
 }
 
+#[allow(clippy::field_reassign_with_default)]
 pub fn default_themes() -> Vec<PresentationTheme> {
-    PRESETS
+    const GALLERY_DYNAMIC_KINDS: [&str; 6] = [
+        "aurora",
+        "waves",
+        "particles",
+        "rings",
+        "fluid",
+        "bokeh",
+    ];
+
+    GALLERY_DYNAMIC_KINDS
         .iter()
         .enumerate()
-        .map(|(index, (kind, name, _))| {
+        .map(|(index, kind)| {
             let mut theme = PresentationTheme::default();
             theme.id = format!("shader_{kind}");
-            let translated = crate::core::i18n::Language::English.text(name);
-            theme.name = crate::core::i18n::Language::English
-                .format("services-animated", &[("name", translated)]);
+            let name_key = match *kind {
+                "aurora" => "settings-aurora",
+                "waves" => "settings-waves",
+                "particles" => "settings-particles",
+                "rings" => "settings-rings",
+                "fluid" => "settings-fluid",
+                "bokeh" => "settings-bokeh",
+                _ => "settings-aurora",
+            };
+            let translated = crate::core::i18n::Language::English.text(name_key);
+            theme.name = translated.to_string();
             theme.bg_type = "shader".into();
             theme.transition = "blur".into();
             theme.font_size = 46.0;
@@ -306,7 +345,10 @@ pub fn default_themes() -> Vec<PresentationTheme> {
                 "fluid" => (0.20, [[6, 16, 24], [20, 95, 110], [70, 190, 175]]),
                 "grid" => (0.22, [[10, 14, 22], [35, 65, 115], [90, 145, 230]]),
                 "bokeh" => (0.20, [[18, 12, 10], [95, 52, 28], [240, 170, 90]]),
-                "prism" => (0.18, [[10, 10, 24], [75, 45, 130], [130, 200, 215]]),
+                "prism" | "mesh" => (0.18, [[14, 18, 36], [32, 140, 160], [120, 70, 210]]),
+                "rays" => (0.16, [[10, 12, 20], [160, 140, 75], [255, 240, 170]]),
+                "constellation" | "stars" => (0.15, [[6, 8, 18], [40, 65, 115], [180, 210, 255]]),
+                "pulse" => (0.20, [[12, 8, 24], [110, 35, 140], [240, 130, 90]]),
                 _ => (0.25, theme.options.shader.colors),
             };
             theme.options.shader.speed = speed;
@@ -320,6 +362,25 @@ pub fn default_themes() -> Vec<PresentationTheme> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_shader_kind_indices_match_wgsl() {
+        assert_eq!(kind_index("aurora"), 0);
+        assert_eq!(kind_index("nebula"), 1);
+        assert_eq!(kind_index("waves"), 2);
+        assert_eq!(kind_index("silk"), 3);
+        assert_eq!(kind_index("particles"), 4);
+        assert_eq!(kind_index("rings"), 5);
+        assert_eq!(kind_index("fluid"), 6);
+        assert_eq!(kind_index("grid"), 7);
+        assert_eq!(kind_index("bokeh"), 8);
+        assert_eq!(kind_index("prism"), 9);
+        assert_eq!(kind_index("mesh"), 9);
+        assert_eq!(kind_index("rays"), 10);
+        assert_eq!(kind_index("constellation"), 11);
+        assert_eq!(kind_index("stars"), 11);
+        assert_eq!(kind_index("pulse"), 12);
+    }
 
     #[test]
     fn scrolling_and_resizing_reuse_shader_buffers_without_aliasing_draws() {
@@ -427,6 +488,6 @@ mod tests {
         )
         .validate(&module)
         .unwrap();
-        assert_eq!(super::default_themes().len(), 7);
+        assert_eq!(super::default_themes().len(), 6);
     }
 }

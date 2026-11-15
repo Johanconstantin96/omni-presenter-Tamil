@@ -97,27 +97,75 @@ pub fn text_button(
     theme: &AppTheme,
 ) -> egui::Response {
     let text = crate::ui::i18n::text(ui, text);
-    let (fill, color, stroke) = match tone {
-        ButtonTone::Neutral => (
-            theme.bg_pill,
-            theme.text_primary,
-            egui::Stroke::new(1.0, theme.border_default),
-        ),
-        ButtonTone::Primary => (theme.accent, theme.text_on_accent, egui::Stroke::NONE),
-        ButtonTone::Danger => (
-            theme.status_danger.linear_multiply(0.12),
-            theme.status_danger,
-            egui::Stroke::new(1.0, theme.status_danger.linear_multiply(0.3)),
-        ),
+    let font_id = egui::FontId::proportional(12.5);
+    let dummy_galley = ui.painter().layout_no_wrap(text.to_string(), font_id.clone(), egui::Color32::WHITE);
+    let pad_x = 14.0;
+    let desired_size = egui::vec2(dummy_galley.size().x + pad_x * 2.0, 32.0);
+
+    let (rect, response) = ui.allocate_exact_size(desired_size, egui::Sense::click());
+
+    let hover = ui.ctx().animate_bool(response.id.with("hov"), response.hovered());
+    let press = ui.ctx().animate_bool(response.id.with("prs"), response.is_pointer_button_down_on());
+
+    let (bg, stroke, fg) = match tone {
+        ButtonTone::Primary => {
+            let base_bg = theme.accent;
+            let bg = if press > 0.05 {
+                base_bg.linear_multiply(0.88)
+            } else {
+                base_bg.lerp_to_gamma(egui::Color32::WHITE, hover * 0.15)
+            };
+            let stroke = if hover > 0.05 {
+                egui::Stroke::new(1.0, theme.text_on_accent.linear_multiply(0.45 * hover))
+            } else {
+                egui::Stroke::NONE
+            };
+            (bg, stroke, theme.text_on_accent)
+        }
+        ButtonTone::Neutral => {
+            let bg = if press > 0.05 {
+                theme.accent_soft
+            } else {
+                theme.bg_pill.lerp_to_gamma(theme.bg_card_hover, hover)
+            };
+            let border_color = if press > 0.05 {
+                theme.accent
+            } else {
+                theme.border_default.lerp_to_gamma(theme.accent, hover)
+            };
+            let text_color = if press > 0.05 {
+                theme.accent
+            } else {
+                theme.text_primary.lerp_to_gamma(theme.accent, hover * 0.75)
+            };
+            (bg, egui::Stroke::new(1.0 + hover * 0.25, border_color), text_color)
+        }
+        ButtonTone::Danger => {
+            let base_bg = theme.status_danger.linear_multiply(0.12);
+            let bg = if press > 0.05 {
+                theme.status_danger.linear_multiply(0.35)
+            } else {
+                base_bg.lerp_to_gamma(theme.status_danger.linear_multiply(0.25), hover)
+            };
+            let stroke = egui::Stroke::new(
+                1.0 + hover * 0.25,
+                theme.status_danger.linear_multiply(0.3 + hover * 0.7),
+            );
+            (bg, stroke, theme.status_danger)
+        }
     };
-    ui.add(
-        egui::Button::new(RichText::new(text).size(12.5).color(color))
-            .fill(fill)
-            .stroke(stroke)
-            .corner_radius(7.0)
-            .min_size(egui::vec2(0.0, 32.0)),
-    )
-    .on_hover_cursor(egui::CursorIcon::PointingHand)
+
+    let draw_rect = rect.shrink(press * 0.5);
+    ui.painter().rect(draw_rect, 7.0, bg, stroke, egui::StrokeKind::Inside);
+
+    let real_galley = ui.painter().layout_no_wrap(text.to_string(), font_id, fg);
+    let text_pos = egui::pos2(
+        draw_rect.center().x - real_galley.size().x * 0.5,
+        draw_rect.center().y - real_galley.size().y * 0.5,
+    );
+    ui.painter().galley(text_pos, real_galley, fg);
+
+    response.on_hover_cursor(egui::CursorIcon::PointingHand)
 }
 
 pub fn section_heading(ui: &mut egui::Ui, text: &str, theme: &AppTheme) {

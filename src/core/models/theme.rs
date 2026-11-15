@@ -617,16 +617,19 @@ impl PresentationTheme {
                 }
             })
             .or_else(|| match self.name.as_str() {
-                "Aurora · Dinâmico" | "Aurora · Animated" | "Aurora · Animado" => Some("aurora"),
-                "Nebulosa · Dinâmico" | "Nebula · Animated" | "Nebulosa · Animado" => Some("nebula"),
-                "Ondas · Dinâmico" | "Waves · Animated" | "Olas · Animado" => Some("waves"),
-                "Seda · Dinâmico" | "Silk · Animated" | "Seda · Animado" => Some("silk"),
-                "Partículas · Dinâmico" | "Particles · Animated" | "Partículas · Animado" => Some("particles"),
-                "Anéis · Dinâmico" | "Rings · Animated" | "Anillos · Animado" => Some("rings"),
-                "Fluido · Dinâmico" | "Fluid · Animated" | "Fluido · Animado" => Some("fluid"),
-                "Grade de Luz · Dinâmico" | "Grade de luz · Dinâmico" | "Light grid · Animated" | "Light Grid · Animated" | "Cuadrícula de luz · Animado" => Some("grid"),
-                "Bokeh · Dinâmico" | "Bokeh · Animated" | "Bokeh · Animado" => Some("bokeh"),
-                "Prisma · Dinâmico" | "Prism · Animated" | "Prisma · Animado" => Some("prism"),
+                "Aurora Boreal" | "Northern Aurora" | "Aurora · Dinâmico" | "Aurora · Animated" | "Aurora · Animado" | "Aurora" => Some("aurora"),
+                "Nebulosa Estelar" | "Stellar Nebula" | "Nebulosa · Dinâmico" | "Nebula · Animated" | "Nebulosa · Animado" | "Nebula" | "Nebulosa" => Some("nebula"),
+                "Ondas Suaves" | "Smooth Waves" | "Ondas · Dinâmico" | "Waves · Animated" | "Olas · Animado" | "Olas Suaves" | "Waves" | "Ondas" => Some("waves"),
+                "Seda Fluida" | "Flowing Silk" | "Seda · Dinâmico" | "Silk · Animated" | "Seda · Animado" | "Silk" | "Seda" => Some("silk"),
+                "Partículas de Luz" | "Luminous Particles" | "Partículas · Dinâmico" | "Particles · Animated" | "Partículas · Animado" | "Particles" | "Partículas" => Some("particles"),
+                "Anéis Concéntricos" | "Concentric Rings" | "Anillos Concéntricos" | "Anéis · Dinâmico" | "Rings · Animated" | "Anillos · Animado" | "Rings" | "Anéis" => Some("rings"),
+                "Fluxo Cósmico" | "Cosmic Flow" | "Flujo Cósmico" | "Fluido · Dinâmico" | "Fluid · Animated" | "Fluido · Animado" | "Fluid" | "Fluido" => Some("fluid"),
+                "Grade Luminosa" | "Luminous Grid" | "Cuadrícula Luminosa" | "Grade de Luz · Dinâmico" | "Light grid · Animated" | "Grid" => Some("grid"),
+                "Luzes Bokeh" | "Bokeh Lights" | "Luces Bokeh" | "Bokeh · Dinâmico" | "Bokeh · Animated" | "Bokeh · Animado" | "Bokeh" => Some("bokeh"),
+                "Gradiente Fluido" | "Liquid Gradient" | "Fluid Gradient" | "Prisma Cristalino" | "Crystal Prism" | "Prisma · Dinâmico" | "Prism · Animated" | "Prisma · Animado" | "Prism" | "Prisma" => Some("mesh"),
+                "Raios Celestiais" | "Celestial Rays" | "Rayos Celestiales" | "Rays" => Some("rays"),
+                "Céu Estrelado" | "Starfield" | "Cielo Estrellado" | "Constelação" | "Constellation" | "Constelación" => Some("stars"),
+                "Pulso Cósmico" | "Cosmic Pulse" | "Pulso" | "Pulse" => Some("pulse"),
                 _ => None,
             });
 
@@ -641,12 +644,15 @@ impl PresentationTheme {
                 "fluid" => Some("settings-fluid"),
                 "grid" => Some("settings-light-grid"),
                 "bokeh" => Some("settings-bokeh"),
-                "prism" => Some("settings-prism"),
+                "mesh" | "prism" => Some("settings-mesh"),
+                "rays" => Some("settings-rays"),
+                "stars" | "constellation" => Some("settings-stars"),
+                "pulse" => Some("settings-pulse"),
                 _ => None,
             };
             if let Some(key) = name_key {
                 let translated = language.text(key);
-                return language.format("services-animated", &[("name", translated)]);
+                return translated.to_string();
             }
         }
 
@@ -691,10 +697,10 @@ impl PresentationTheme {
             "Louvor Vibrante" | "Bold Anthem" | "Alabanza Vibrante" => {
                 return language.text("theme-bold-anthem").to_string();
             }
-            "Alabastro Editorial" | "Clean Alabaster" => {
+            "Alabastro" | "Clean Alabaster" => {
                 return language.text("theme-clean-alabaster").to_string();
             }
-            "Tarja para Transmissão" | "Broadcast Lower Third" | "Cintillo de Transmisión" => {
+            "Tarja Simples" | "Broadcast Lower Third" | "Cintillo de Transmisión" => {
                 return language.text("theme-broadcast-lower-third").to_string();
             }
             "Vidro Fumê Card" | "Frosted Glass Card" | "Tarjeta de Vidrio Esmerilado" => {
@@ -791,19 +797,19 @@ mod tests {
         // Shader theme by ID
         let mut shader = PresentationTheme::default();
         shader.id = "shader_aurora".into();
-        shader.name = "Aurora · Dinâmico".into();
+        shader.name = "Aurora".into();
         shader.bg_type = "shader".into();
-        assert_eq!(shader.display_name(Language::English), "Aurora · Animated");
-        assert_eq!(shader.display_name(Language::Portuguese), "Aurora · Dinâmico");
-        assert_eq!(shader.display_name(Language::Spanish), "Aurora · Animado");
+        assert_eq!(shader.display_name(Language::English), "Aurora");
+        assert_eq!(shader.display_name(Language::Portuguese), "Aurora");
+        assert_eq!(shader.display_name(Language::Spanish), "Aurora");
 
         // Legacy stored name
         let mut legacy = PresentationTheme::default();
         legacy.id = "custom_123".into();
         legacy.name = "Safira da Meia-Noite".into();
-        assert_eq!(legacy.display_name(Language::English), "Deep Ocean & Cyan");
-        assert_eq!(legacy.display_name(Language::Portuguese), "Oceano & Ciano");
-        assert_eq!(legacy.display_name(Language::Spanish), "Océano & Cian");
+        assert_eq!(legacy.display_name(Language::English), "Ocean");
+        assert_eq!(legacy.display_name(Language::Portuguese), "Oceano");
+        assert_eq!(legacy.display_name(Language::Spanish), "Océano");
 
         // Custom user-defined name
         let mut custom = PresentationTheme::default();
