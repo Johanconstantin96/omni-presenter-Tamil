@@ -81,5 +81,6 @@ common-confirm-delete-verse = Are you sure you want to delete the saved verse "{
 common-confirm-delete-multiple = Are you sure you want to delete the { $count } selected items? This action cannot be undone.
 
 common-confirm-delete-folder = Are you sure you want to delete the folder "{ $name }"? Items will be moved out of the folder.
+common-delete-folder-items = Also delete items inside this folder
 
 common-confirm-clear-playlist = Are you sure you want to clear the entire playlist?

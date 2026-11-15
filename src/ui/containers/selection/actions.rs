@@ -462,14 +462,18 @@ pub(super) fn prompt_delete_folder(
     let language = state.settings.language;
     let title = language.text("common-delete-folder");
     let message = language.format("common-confirm-delete-folder", &[("name", folder)]);
-    state.confirm_dialog = Some(crate::core::state::ConfirmDialogState::new(
-        title,
-        message,
-        crate::core::state::ConfirmAction::DeleteFolder {
-            category: kind.category().to_owned(),
-            folder: folder.to_owned(),
-        },
-    ));
+    state.confirm_dialog = Some(
+        crate::core::state::ConfirmDialogState::new(
+            title,
+            message,
+            crate::core::state::ConfirmAction::DeleteFolder {
+                category: kind.category().to_owned(),
+                folder: folder.to_owned(),
+                delete_contents: false,
+            },
+        )
+        .with_checkbox(language.text("common-delete-folder-items"), false),
+    );
 }
 
 pub(super) fn append_items(

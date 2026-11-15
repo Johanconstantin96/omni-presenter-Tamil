@@ -66,6 +66,37 @@ impl AppDb {
         Ok(())
     }
 
+    pub fn delete_folder_and_items_from_category(&self, category: &str, name: &str) -> Result<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "DELETE FROM category_folders WHERE (category = ?1 OR (category = 'bible' AND ?1 = 'verse') OR (category = 'verse' AND ?1 = 'bible')) AND name = ?2;",
+            params![category, name],
+        )?;
+
+        match category {
+            "media" => {
+                conn.execute(
+                    "DELETE FROM media_items WHERE folder = ?1;",
+                    params![name],
+                )?;
+            }
+            "text" => {
+                conn.execute(
+                    "DELETE FROM custom_texts WHERE folder = ?1;",
+                    params![name],
+                )?;
+            }
+            "bible" | "verse" => {
+                conn.execute(
+                    "DELETE FROM saved_verses WHERE folder = ?1;",
+                    params![name],
+                )?;
+            }
+            _ => {}
+        }
+        Ok(())
+    }
+
     // ---------------------------------------------------------
     // Media Items
     // ---------------------------------------------------------

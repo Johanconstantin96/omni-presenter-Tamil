@@ -81,5 +81,6 @@ common-confirm-delete-verse = ¿Está seguro de que desea eliminar el versículo
 common-confirm-delete-multiple = ¿Está seguro de que desea eliminar los { $count } elementos seleccionados? Esta acción no se puede deshacer.
 
 common-confirm-delete-folder = ¿Está seguro de que desea eliminar la carpeta "{ $name }"? Los elementos se moverán fuera de la carpeta.
+common-delete-folder-items = Eliminar también los elementos de la carpeta
 
 common-confirm-clear-playlist = ¿Está seguro de que desea vaciar toda la lista de reproducción?

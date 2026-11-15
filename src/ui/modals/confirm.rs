@@ -22,6 +22,7 @@ pub fn render_confirm_dialog(
     let tokens = &state.theme;
     let mut confirmed = false;
     let mut closed = false;
+    let mut action_to_execute = dialog.action.clone();
 
     let frame = egui::Frame::new()
         .fill(tokens.bg_panel)
@@ -81,6 +82,36 @@ pub fn render_confirm_dialog(
                 .color(tokens.text_secondary),
         );
 
+        if let Some(ref cb_label) = dialog.checkbox_label {
+            ui.add_space(4.0);
+            let mut checked = dialog.checkbox_checked;
+            if ui
+                .checkbox(
+                    &mut checked,
+                    RichText::new(cb_label).size(13.0).color(tokens.text_primary),
+                )
+                .changed()
+            {
+                if let Some(ref mut d) = state.confirm_dialog {
+                    d.checkbox_checked = checked;
+                    if let ConfirmAction::DeleteFolder {
+                        ref mut delete_contents,
+                        ..
+                    } = d.action
+                    {
+                        *delete_contents = checked;
+                    }
+                }
+            }
+            if let ConfirmAction::DeleteFolder {
+                ref mut delete_contents,
+                ..
+            } = action_to_execute
+            {
+                *delete_contents = checked;
+            }
+        }
+
         ui.add_space(8.0);
 
         // Buttons
@@ -135,7 +166,7 @@ pub fn render_confirm_dialog(
     }
 
     if confirmed {
-        execute_confirm_action(&dialog.action, state, deck, db);
+        execute_confirm_action(&action_to_execute, state, deck, db);
         state.confirm_dialog = None;
     } else if closed || response.should_close() {
         state.confirm_dialog = None;
@@ -204,19 +235,81 @@ pub fn execute_confirm_action(
             }
             state.clear_verse_selection();
         }
-        ConfirmAction::DeleteFolder { category, folder } => {
+        ConfirmAction::DeleteFolder {
+            category,
+            folder,
+            delete_contents,
+        } => {
             if let Some(db) = db {
-                if category == "song" {
-                    let _ = db.delete_folder(folder);
-                    deck.reload_from_db(db);
+                if *delete_contents {
+                    if category == "song" {
+                        let _ = db.delete_folder_and_songs(folder);
+                        deck.reload_from_db(db);
+                    } else {
+                        let _ = db.delete_folder_and_items_from_category(category, folder);
+                        match category.as_str() {
+                            "media" => state.reload_media_items(db),
+                            "text" => state.reload_custom_texts(db),
+                            "bible" => state.reload_saved_verses(db),
+                            _ => {}
+                        }
+                    }
                 } else {
-                    let _ = db.delete_folder_from_category(category, folder);
+                    if category == "song" {
+                        let _ = db.delete_folder(folder);
+                        deck.reload_from_db(db);
+                    } else {
+                        let _ = db.delete_folder_from_category(category, folder);
+                        match category.as_str() {
+                            "media" => state.reload_media_items(db),
+                            "text" => state.reload_custom_texts(db),
+                            "bible" => state.reload_saved_verses(db),
+                            _ => {}
+                        }
+                    }
+                }
+            } else {
+                if *delete_contents {
                     match category.as_str() {
-                        "media" => state.reload_media_items(db),
-                        "text" => state.reload_custom_texts(db),
-                        "bible" => state.reload_saved_verses(db),
+                        "media" => state.media_items.retain(|m| m.folder != *folder),
+                        "text" => state.custom_texts.retain(|t| t.folder != *folder),
+                        "bible" => state.saved_verses.retain(|v| v.folder != *folder),
                         _ => {}
                     }
+                } else {
+                    match category.as_str() {
+                        "media" => {
+                            for m in state.media_items.iter_mut() {
+                                if m.folder == *folder {
+                                    m.folder.clear();
+                                }
+                            }
+                        }
+                        "text" => {
+                            for t in state.custom_texts.iter_mut() {
+                                if t.folder == *folder {
+                                    t.folder.clear();
+                                }
+                            }
+                        }
+                        "bible" => {
+                            for v in state.saved_verses.iter_mut() {
+                                if v.folder == *folder {
+                                    v.folder.clear();
+                                }
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            if *delete_contents {
+                match category.as_str() {
+                    "song" => state.clear_song_selection(),
+                    "media" => state.clear_media_selection(),
+                    "text" => state.clear_text_selection(),
+                    "bible" => state.clear_verse_selection(),
+                    _ => {}
                 }
             }
             match category.as_str() {
@@ -335,5 +428,54 @@ mod tests {
 
         assert!(state.playlist.is_empty());
         assert_eq!(state.selected_playlist_index, None);
+    }
+
+    #[test]
+    fn test_execute_confirm_delete_folder_with_and_without_contents() {
+        let mut state = ControlPanelState::default();
+        let mut deck = SlideDeck::default();
+
+        let mut item1 = MediaItem::new("Vídeo 1", "/path/1.mp4", "");
+        item1.folder = "Culto".into();
+        let mut item2 = MediaItem::new("Vídeo 2", "/path/2.mp4", "");
+        item2.folder = "Culto".into();
+        state.media_items.push(item1);
+        state.media_items.push(item2);
+        state.open_media_folders.insert("Culto".into());
+
+        // 1. Delete folder WITHOUT deleting contents: items moved to root
+        execute_confirm_action(
+            &ConfirmAction::DeleteFolder {
+                category: "media".into(),
+                folder: "Culto".into(),
+                delete_contents: false,
+            },
+            &mut state,
+            &mut deck,
+            None,
+        );
+        assert_eq!(state.media_items.len(), 2);
+        assert!(state.media_items.iter().all(|m| m.folder.is_empty()));
+        assert!(!state.open_media_folders.contains("Culto"));
+
+        // Put items in a new folder
+        for item in state.media_items.iter_mut() {
+            item.folder = "Avisos".into();
+        }
+        state.open_media_folders.insert("Avisos".into());
+
+        // 2. Delete folder WITH deleting contents: items removed
+        execute_confirm_action(
+            &ConfirmAction::DeleteFolder {
+                category: "media".into(),
+                folder: "Avisos".into(),
+                delete_contents: true,
+            },
+            &mut state,
+            &mut deck,
+            None,
+        );
+        assert!(state.media_items.is_empty());
+        assert!(!state.open_media_folders.contains("Avisos"));
     }
 }

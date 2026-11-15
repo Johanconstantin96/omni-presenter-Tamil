@@ -42,6 +42,18 @@ impl AppDb {
         Ok(())
     }
 
+    /// Deletes a folder and all songs contained within it
+    pub fn delete_folder_and_songs(&self, name: &str) -> Result<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute("DELETE FROM folders WHERE name = ?1;", params![name])?;
+        conn.execute(
+            "DELETE FROM song_versions WHERE song_id IN (SELECT id FROM songs WHERE folder = ?1);",
+            params![name],
+        )?;
+        conn.execute("DELETE FROM songs WHERE folder = ?1;", params![name])?;
+        Ok(())
+    }
+
     /// Moves a song to a given folder
     pub fn move_song_to_folder(&self, song_id: i64, folder: &str) -> Result<()> {
         self.move_songs_to_folder(&[song_id], folder)

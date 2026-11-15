@@ -19,6 +19,7 @@ pub enum ConfirmAction {
     DeleteFolder {
         category: String,
         folder: String,
+        delete_contents: bool,
     },
     ClearPlaylist,
     DeletePlaylistItems {
@@ -32,6 +33,8 @@ pub struct ConfirmDialogState {
     pub message: String,
     pub confirm_label: Option<String>,
     pub action: ConfirmAction,
+    pub checkbox_label: Option<String>,
+    pub checkbox_checked: bool,
 }
 
 impl ConfirmDialogState {
@@ -41,11 +44,19 @@ impl ConfirmDialogState {
             message: message.into(),
             confirm_label: None,
             action,
+            checkbox_label: None,
+            checkbox_checked: false,
         }
     }
 
     pub fn with_confirm_label(mut self, label: impl Into<String>) -> Self {
         self.confirm_label = Some(label.into());
+        self
+    }
+
+    pub fn with_checkbox(mut self, label: impl Into<String>, checked: bool) -> Self {
+        self.checkbox_label = Some(label.into());
+        self.checkbox_checked = checked;
         self
     }
 }

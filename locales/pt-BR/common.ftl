@@ -81,5 +81,6 @@ common-confirm-delete-verse = Tem certeza de que deseja excluir o versículo sal
 common-confirm-delete-multiple = Tem certeza de que deseja excluir os { $count } itens selecionados? Esta ação não pode ser desfeita.
 
 common-confirm-delete-folder = Tem certeza de que deseja excluir a pasta "{ $name }"? Os itens serão movidos para fora da pasta.
+common-delete-folder-items = Excluir os itens da pasta também
 
 common-confirm-clear-playlist = Tem certeza de que deseja limpar toda a lista de reprodução?
