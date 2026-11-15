@@ -85,6 +85,83 @@ pub(super) use crate::core::bible_search::{matching_books, number_is_complete, p
 #[cfg(test)]
 pub(super) use crate::core::bible_search::QueryParse;
 
+pub(crate) fn has_completed_book(bible: &BibleTranslation, search: &str) -> bool {
+    let folded_search = fold(search);
+    for book in &bible.books {
+        let folded_name = fold(&book.name);
+        if folded_search == folded_name {
+            return true;
+        }
+        for prefix in [&book.name, &book.abbrev] {
+            if prefix.is_empty() {
+                continue;
+            }
+            let folded_prefix = fold(prefix);
+            if folded_search.starts_with(&folded_prefix) {
+                let rest = &folded_search[folded_prefix.len()..];
+                if rest.starts_with(' ')
+                    || rest.starts_with(':')
+                    || rest.starts_with('.')
+                    || rest.starts_with(|c: char| c.is_ascii_digit())
+                {
+                    return true;
+                }
+            }
+        }
+    }
+    false
+}
+
+pub(crate) fn sanitize_bible_search(bible: &BibleTranslation, search: &str) -> String {
+    let folded_search = fold(search);
+    for book in &bible.books {
+        for prefix in [&book.name, &book.abbrev] {
+            if prefix.is_empty() {
+                continue;
+            }
+            let folded_prefix = fold(prefix);
+            if folded_search.starts_with(&folded_prefix) {
+                let rest_folded = &folded_search[folded_prefix.len()..];
+                if rest_folded.starts_with(' ')
+                    || rest_folded.starts_with(':')
+                    || rest_folded.starts_with('.')
+                    || rest_folded.starts_with(|c: char| c.is_ascii_digit())
+                {
+                    let prefix_chars = folded_prefix.chars().count();
+                    let book_part: String = search.chars().take(prefix_chars).collect();
+                    let rest_part: String = search.chars().skip(prefix_chars).collect();
+                    let starts_with_space = rest_part.starts_with(' ');
+                    let mut filtered_rest: String = rest_part
+                        .chars()
+                        .filter(|c| c.is_ascii_digit() || *c == ':' || *c == '.' || *c == '-' || *c == ',' || *c == ' ')
+                        .collect();
+                    if rest_part.ends_with(char::is_alphabetic) {
+                        filtered_rest = filtered_rest.trim_end().to_string();
+                    }
+                    if starts_with_space && filtered_rest.is_empty() {
+                        filtered_rest = " ".to_string();
+                    }
+                    let mut collapsed = String::new();
+                    let mut last_space = false;
+                    for c in filtered_rest.chars() {
+                        if c == ' ' {
+                            if !last_space {
+                                collapsed.push(c);
+                                last_space = true;
+                            }
+                        } else {
+                            collapsed.push(c);
+                            last_space = false;
+                        }
+                    }
+                    return format!("{book_part}{collapsed}");
+                }
+            }
+        }
+    }
+    search.to_string()
+}
+
 pub(super) fn close_bible_search(state: &mut ControlPanelState) {
     state.bible.show_search = false;
     state.bible.search_focus = false;
@@ -166,6 +243,23 @@ pub fn render_bible_search_overlay(
         else {
             return;
         };
+
+        if has_completed_book(&bible, &state.bible.search) {
+            ctx.input_mut(|i| {
+                i.events.retain(|event| {
+                    if let egui::Event::Text(text) = event {
+                        !text.chars().any(char::is_alphabetic)
+                    } else {
+                        true
+                    }
+                });
+            });
+            let sanitized = sanitize_bible_search(&bible, &state.bible.search);
+            if sanitized != state.bible.search {
+                state.bible.search = sanitized;
+            }
+        }
+
         let query = state.bible.search.trim().to_owned();
         let parsed = parse_query(&bible, &query);
 
@@ -263,6 +357,10 @@ pub fn render_bible_search_overlay(
                                         .hint_text(RichText::new(crate::ui::i18n::text(ui, "workspace-type-or-choose-below")).size(19.0).color(theme.text_muted)),
                                 )
                             }).inner;
+                        let sanitized = sanitize_bible_search(&bible, &state.bible.search);
+                        if sanitized != state.bible.search {
+                            state.bible.search = sanitized;
+                        }
                         if state.bible.search_focus {
                             field.request_focus();
                             state.bible.search_focus = false;

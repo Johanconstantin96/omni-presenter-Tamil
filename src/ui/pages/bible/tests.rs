@@ -527,6 +527,48 @@ fn test_floating_bible_search_overlay_renders_from_any_page() {
 }
 
 #[test]
+fn test_bible_search_blocks_letters_after_book_is_found() {
+    use super::search::{has_completed_book, sanitize_bible_search};
+    let lib = crate::core::bible::BibleLibrary::default();
+    let bible = lib.get("ARA").or_else(|| lib.get("KJV")).expect("Bible translation not found");
+
+    // 1. Incomplete queries: user is still typing the book name
+    assert!(!has_completed_book(&bible, "isa"));
+    assert!(!has_completed_book(&bible, "1"));
+    assert_eq!(sanitize_bible_search(&bible, "isa"), "isa");
+
+    // 2. Completed book: letters should be blocked and sanitized
+    assert!(has_completed_book(&bible, "Isaías "));
+    assert!(has_completed_book(&bible, "Isaías sa"));
+    assert_eq!(sanitize_bible_search(&bible, "Isaías sa"), "Isaías ");
+    assert_eq!(sanitize_bible_search(&bible, "Isaías 53:5 abc"), "Isaías 53:5");
+    assert_eq!(sanitize_bible_search(&bible, "1 João xyz 3:16"), "1 João 3:16");
+
+    // 3. Test running the overlay: when book is found and a text event with letters arrives, it is dropped
+    let mut state = ControlPanelState::default();
+    state.bible.show_search = true;
+    state.bible.search = "Isaías ".into();
+    let mut deck = SlideDeck::default();
+    let ctx = egui::Context::default();
+
+    let mut input = egui::RawInput {
+        screen_rect: Some(egui::Rect::from_min_size(
+            egui::Pos2::ZERO,
+            egui::vec2(1280.0, 1024.0),
+        )),
+        ..Default::default()
+    };
+    input.events.push(egui::Event::Text("sa".into()));
+
+    let mut output = ctx.run_ui(input, |ui| {
+        render_bible_search_overlay(ui.ctx(), &mut state, &mut deck);
+    });
+    output.textures_delta.clear();
+
+    assert_eq!(state.bible.search, "Isaías ");
+}
+
+#[test]
 fn test_pressing_enter_projects_selected_verse() {
     let mut state = ControlPanelState::default();
     let mut deck = SlideDeck::default();

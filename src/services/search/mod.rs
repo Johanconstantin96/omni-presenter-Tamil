@@ -39,7 +39,7 @@ pub struct SearchResult {
     pub detail: String,
     pub category: &'static str,
     pub target: SearchTarget,
-    score: u32,
+    pub score: u32,
 }
 
 struct SearchDocument {
@@ -51,6 +51,7 @@ pub struct SearchSnapshot {
     documents: Vec<SearchDocument>,
     bibles: BibleLibrary,
     bible_enabled: bool,
+    bible_shortcuts: Vec<String>,
     chat: Option<(crate::services::chat::ChatService, String, String)>,
 }
 
@@ -183,6 +184,7 @@ impl SearchSnapshot {
             documents,
             bibles: state.bible.library.clone(),
             bible_enabled: state.settings.bible_enabled,
+            bible_shortcuts: state.bible_shortcuts.clone(),
             chat: if state.settings.chat_enabled && !state.chat.token.is_empty() {
                 state.chat.service.clone().map(|service| {
                     (
@@ -242,11 +244,24 @@ impl SearchSnapshot {
         }
         // Full Bible scans and chat lookups run in the search worker, never in the UI frame.
         if query.chars().count() >= 2 && self.bible_enabled {
-            for (version, _) in self.bibles.catalog() {
+            let mut versions: Vec<String> = Vec::new();
+            for v in &self.bible_shortcuts {
+                if !versions.contains(v) && self.bibles.get(v).is_some() {
+                    versions.push(v.clone());
+                }
+            }
+            if versions.is_empty() {
+                for (v, _) in self.bibles.catalog() {
+                    if !versions.contains(&v) {
+                        versions.push(v);
+                    }
+                }
+            }
+            for version in &versions {
                 if cancelled.load(Ordering::Relaxed) {
                     return Vec::new();
                 }
-                let Some(bible) = self.bibles.get(&version) else {
+                let Some(bible) = self.bibles.get(version) else {
                     continue;
                 };
                 if let Some((book, chapter, verse, end)) = bible.reference(&query)
@@ -403,5 +418,25 @@ mod tests {
                 .iter()
                 .any(|result| result.target == SearchTarget::Command(Command::Settings))
         );
+    }
+
+    #[test]
+    fn test_bible_search_only_searches_translations_in_bible_shortcuts() {
+        let mut state = ControlPanelState::default();
+        state.settings.bible_enabled = true;
+        state.settings.chat_enabled = false;
+        // Limit shortcuts to just ARA
+        state.bible_shortcuts = vec!["ARA".into()];
+        let results = SearchSnapshot::capture(&state, &SlideDeck::default()).search("princípio");
+        let bible_results: Vec<_> = results
+            .iter()
+            .filter(|r| matches!(r.target, SearchTarget::Bible { .. }))
+            .collect();
+        assert!(!bible_results.is_empty());
+        for result in bible_results {
+            if let SearchTarget::Bible { version, .. } = &result.target {
+                assert_eq!(version, "ARA");
+            }
+        }
     }
 }
