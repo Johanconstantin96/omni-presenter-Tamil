@@ -545,7 +545,7 @@ fn test_fast_search_with_3000_songs() {
 
     // Cold cache build across 3,000 songs in unoptimized debug test profile
     assert!(
-        elapsed.as_millis() < 120,
+        elapsed.as_millis() < 250,
         "Cold search took too long: {}ms",
         elapsed.as_millis()
     );

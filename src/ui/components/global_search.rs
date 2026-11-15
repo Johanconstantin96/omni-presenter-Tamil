@@ -250,10 +250,10 @@ impl GlobalSearch {
         let id = egui::Id::unique("global_search");
         let screen = ctx.input(|input| input.viewport_rect());
         let modal = egui::Modal::new(id)
-            .area(egui::Modal::default_area(id).anchor(
-                egui::Align2::CENTER_TOP,
-                egui::vec2(0.0, (screen.height() * 0.16).max(32.0)),
-            ))
+            .area(
+                egui::Modal::default_area(id)
+                    .anchor(egui::Align2::CENTER_CENTER, egui::vec2(0.0, 0.0)),
+            )
             .backdrop_color(egui::Color32::from_black_alpha(100))
             .frame(
                 egui::Frame::new()
@@ -272,83 +272,88 @@ impl GlobalSearch {
                 ui.set_width(580.0_f32.min(screen.width() - 48.0));
                 let has_query = !self.query.trim().is_empty();
 
-                // Search input row
+                // Search input row (perfectly centered vertically)
                 egui::Frame::new()
-                    .inner_margin(egui::Margin { left: 14, right: 14, top: 11, bottom: 11 })
+                    .inner_margin(egui::Margin::symmetric(14, 0))
                     .show(ui, |ui| {
-                        ui.horizontal(|ui| {
-                            ui.spacing_mut().item_spacing = egui::vec2(10.0, 0.0);
-                            let icon_color = if has_query { theme.accent } else { theme.icon_muted };
-                            ui.label(RichText::new(MAGNIFYING_GLASS).size(16.0).color(icon_color));
+                        ui.allocate_ui_with_layout(
+                            egui::vec2(ui.available_width(), 48.0),
+                            egui::Layout::left_to_right(egui::Align::Center),
+                            |ui| {
+                                ui.spacing_mut().item_spacing = egui::vec2(10.0, 0.0);
+                                let icon_color = if has_query { theme.accent } else { theme.icon_muted };
+                                ui.label(RichText::new(MAGNIFYING_GLASS).size(16.0).color(icon_color));
 
-                            let edit_w = (ui.available_width() - if has_query || self.pending { 28.0 } else { 38.0 }).max(40.0);
-                            let response = ui.add_sized(
-                                [edit_w, 24.0],
-                                egui::TextEdit::singleline(&mut self.query)
-                                    .font(egui::FontId::proportional(15.0))
-                                    .hint_text(language.text("common-search"))
-                                    .text_color(theme.text_primary)
-                                    .frame(egui::Frame::NONE),
-                            );
-                            if self.focus {
-                                response.request_focus();
-                                self.focus = false;
-                            }
-                            if response.changed() {
-                                if let Some(flag) = &self.cancellation {
-                                    flag.store(true, Ordering::Relaxed);
+                                let edit_w = (ui.available_width() - if has_query || self.pending { 28.0 } else { 38.0 }).max(40.0);
+                                let response = ui.add_sized(
+                                    [edit_w, 24.0],
+                                    egui::TextEdit::singleline(&mut self.query)
+                                        .font(egui::FontId::proportional(15.0))
+                                        .hint_text(language.text("common-search"))
+                                        .text_color(theme.text_primary)
+                                        .frame(egui::Frame::NONE)
+                                        .margin(egui::Margin::symmetric(0, 2)),
+                                );
+                                if self.focus {
+                                    response.request_focus();
+                                    self.focus = false;
                                 }
-                                self.revision += 1;
-                                self.results.clear();
-                                self.selected = 0;
-                                self.pending = !self.query.trim().is_empty();
-                                self.requested_at = if self.pending {
-                                    Some(Instant::now())
-                                } else {
-                                    None
-                                };
-                                if self.pending {
-                                    ctx.request_repaint_after(Duration::from_millis(65));
-                                }
-                            }
-
-                            if self.pending {
-                                ui.spinner();
-                            } else if has_query {
-                                if ui.add(
-                                    egui::Button::new(
-                                        RichText::new(X)
-                                            .size(13.0)
-                                            .color(theme.icon_muted),
-                                    )
-                                    .frame(false),
-                                )
-                                .on_hover_cursor(egui::CursorIcon::PointingHand)
-                                .clicked()
-                                {
-                                    self.query.clear();
+                                if response.changed() {
+                                    if let Some(flag) = &self.cancellation {
+                                        flag.store(true, Ordering::Relaxed);
+                                    }
+                                    self.revision += 1;
                                     self.results.clear();
                                     self.selected = 0;
-                                    self.pending = false;
+                                    self.pending = !self.query.trim().is_empty();
+                                    self.requested_at = if self.pending {
+                                        Some(Instant::now())
+                                    } else {
+                                        None
+                                    };
+                                    if self.pending {
+                                        ctx.request_repaint_after(Duration::from_millis(65));
+                                    }
                                 }
-                            } else {
-                                let (esc_rect, _) = ui.allocate_exact_size(egui::vec2(32.0, 18.0), egui::Sense::hover());
-                                ui.painter().rect_filled(esc_rect, 4.0, theme.bg_card);
-                                ui.painter().rect_stroke(
-                                    esc_rect,
-                                    4.0,
-                                    egui::Stroke::new(1.0, theme.border_subtle),
-                                    egui::StrokeKind::Inside,
-                                );
-                                ui.painter().text(
-                                    esc_rect.center(),
-                                    egui::Align2::CENTER_CENTER,
-                                    "ESC",
-                                    egui::FontId::proportional(9.5),
-                                    theme.text_muted,
-                                );
-                            }
-                        });
+
+                                if self.pending {
+                                    ui.spinner();
+                                } else if has_query {
+                                    if ui.add(
+                                        egui::Button::new(
+                                            RichText::new(X)
+                                                .size(13.0)
+                                                .color(theme.icon_muted),
+                                        )
+                                        .frame(false),
+                                    )
+                                    .on_hover_cursor(egui::CursorIcon::PointingHand)
+                                    .clicked()
+                                    {
+                                        self.query.clear();
+                                        self.results.clear();
+                                        self.selected = 0;
+                                        self.pending = false;
+                                    }
+                                } else {
+                                    let (esc_rect, _) = ui.allocate_exact_size(egui::vec2(32.0, 18.0), egui::Sense::hover());
+                                    ui.painter().rect_filled(esc_rect, 4.0, theme.bg_card);
+                                    ui.painter().rect_stroke(
+                                        esc_rect,
+                                        4.0,
+                                        egui::Stroke::new(1.0, theme.border_subtle),
+                                        egui::StrokeKind::Inside,
+                                    );
+                                    ui.painter().text(
+                                        esc_rect.center(),
+                                        egui::Align2::CENTER_CENTER,
+                                        "ESC",
+                                        egui::FontId::proportional(9.5),
+                                        theme.text_muted,
+                                    );
+                                }
+                            },
+                        );
                     });
 
                 if has_query || !self.results.is_empty() {

@@ -25,7 +25,7 @@ struct LibrarySearchCache {
     count: usize,
     first_id: Option<i64>,
     last_id: Option<i64>,
-    entries: Vec<(i64, String)>,
+    entries: std::sync::Arc<[(i64, String)]>,
 }
 
 pub fn render_selection_column(
@@ -66,7 +66,7 @@ pub fn render_selection_column(
             cache.count = current_fingerprint.1;
             cache.first_id = current_fingerprint.2;
             cache.last_id = current_fingerprint.3;
-            cache.entries = match kind {
+            let raw_entries: Vec<(i64, String)> = match kind {
                 LibraryKind::Song => deck
                     .library()
                     .iter()
@@ -85,6 +85,7 @@ pub fn render_selection_column(
                     })
                     .collect(),
             };
+            cache.entries = raw_entries.into();
             ui.ctx().data_mut(|d| d.insert_temp(cache_id, cache.clone()));
         }
 

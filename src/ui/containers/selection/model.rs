@@ -300,26 +300,29 @@ pub(super) fn filter_and_sort<'a>(
 
     let query_folded = fold(query.trim());
     if !query_folded.is_empty() {
-        filtered.sort_by(|a, b| {
-            let a_title = fold(&a.title);
-            let b_title = fold(&b.title);
-            let a_starts = a_title.starts_with(&query_folded);
-            let b_starts = b_title.starts_with(&query_folded);
-            if a_starts != b_starts {
-                return b_starts.cmp(&a_starts);
-            }
-            let a_contains = a_title.contains(&query_folded);
-            let b_contains = b_title.contains(&query_folded);
-            if a_contains != b_contains {
-                return b_contains.cmp(&a_contains);
-            }
-            let a_words = query_folded.split_whitespace().all(|w| a_title.contains(w));
-            let b_words = query_folded.split_whitespace().all(|w| b_title.contains(w));
-            if a_words != b_words {
-                return b_words.cmp(&a_words);
-            }
-            a_title.cmp(&b_title)
+        let words: Vec<&str> = query_folded.split_whitespace().collect();
+        let mut ranked: Vec<(u8, String, &'a LibraryEntry)> = filtered
+            .into_iter()
+            .map(|entry| {
+                let title = fold(&entry.title);
+                let rank = if title.starts_with(&query_folded) {
+                    0
+                } else if title.contains(&query_folded) {
+                    1
+                } else if !words.is_empty() && words.iter().all(|w| title.contains(w)) {
+                    2
+                } else {
+                    3
+                };
+                (rank, title, entry)
+            })
+            .collect();
+
+        ranked.sort_by(|(rank_a, title_a, _), (rank_b, title_b, _)| {
+            rank_a.cmp(rank_b).then_with(|| title_a.cmp(title_b))
         });
+
+        filtered = ranked.into_iter().map(|(_, _, entry)| entry).collect();
     }
 
     filtered
