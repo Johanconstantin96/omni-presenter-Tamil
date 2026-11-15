@@ -3,13 +3,12 @@ use crate::core::interface_theme::ThemeMode;
 use crate::core::state::ControlPanelState;
 use crate::services::db::AppDb;
 use crate::services::monitor::MonitorInfo;
-use crate::ui::modals::settings::components::{appearance_card, card, setting_toggle, styled_button, ButtonTone};
-use crate::ui::modals::settings::screen_card::{render_screen_card, ScreenCardAction, ScreenCardProps};
+use crate::ui::modals::settings::components::{appearance_card, card, styled_button, ButtonTone};
 use crate::ui::theme::AppTheme;
 use eframe::egui::{self, Color32, RichText, Stroke};
 use egui_phosphor::regular::{
-    ARROW_LEFT, ARROW_RIGHT, CHECK, CHECK_CIRCLE, DESKTOP, GLOBE, HAND_WAVING, MONITOR,
-    PAINT_BRUSH, TEXT_AA,
+    ARROW_LEFT, ARROW_RIGHT, CHECK, CHECK_CIRCLE, DESKTOP, GLOBE, HAND_WAVING, PAINT_BRUSH,
+    TEXT_AA, X,
 };
 
 pub fn render_setup_wizard_modal(
@@ -26,11 +25,24 @@ pub fn render_setup_wizard_modal(
     let language = state.settings.language;
     let mut monitor_target = None;
 
+    let screen_rect = ctx.content_rect();
+    let is_compact_height = screen_rect.height() < 680.0;
+    let is_narrow_width = screen_rect.width() < 640.0;
+
+    let margin_y = if screen_rect.height() < 580.0 {
+        10
+    } else if is_compact_height {
+        14
+    } else {
+        22
+    };
+    let margin_x = if is_narrow_width { 14 } else { 22 };
+
     let frame = egui::Frame::new()
         .fill(tokens.bg_panel)
         .stroke(Stroke::new(1.0, tokens.border_default))
         .corner_radius(16.0)
-        .inner_margin(24)
+        .inner_margin(egui::Margin::symmetric(margin_x, margin_y))
         .shadow(egui::epaint::Shadow {
             offset: [0, 14],
             blur: 48,
@@ -42,7 +54,7 @@ pub fn render_setup_wizard_modal(
         .frame(frame)
         .backdrop_color(Color32::from_black_alpha(140))
         .show(ctx, |ui| {
-            let max_w = 620.0_f32.min((ctx.content_rect().width() - 48.0).max(320.0));
+            let max_w = 620.0_f32.min((screen_rect.width() - 32.0).max(300.0));
             ui.set_width(max_w);
 
             let visuals = &mut ui.style_mut().visuals;
@@ -51,24 +63,55 @@ pub fn render_setup_wizard_modal(
             visuals.widgets.inactive.bg_stroke = Stroke::new(1.0, tokens.border_default);
             visuals.widgets.hovered.weak_bg_fill = tokens.bg_card_hover;
             visuals.widgets.hovered.bg_fill = tokens.bg_card_hover;
-            ui.spacing_mut().item_spacing = egui::vec2(8.0, 10.0);
+            ui.spacing_mut().item_spacing = egui::vec2(8.0, if is_compact_height { 6.0 } else { 10.0 });
+
+            // Close button (X) in top right corner
+            let close_rect = egui::Rect::from_min_size(
+                egui::pos2(ui.max_rect().right() - 20.0, ui.max_rect().top() - 2.0),
+                egui::vec2(20.0, 20.0),
+            );
+            let close_resp = ui.interact(close_rect, ui.auto_id_with("close_setup_wizard_x"), egui::Sense::click());
+            if close_resp.hovered() {
+                ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
+                ui.painter().circle_filled(close_rect.center(), 10.0, tokens.bg_card_hover);
+            }
+            ui.painter().text(
+                close_rect.center(),
+                egui::Align2::CENTER_CENTER,
+                X,
+                egui::FontId::proportional(11.0),
+                tokens.text_muted,
+            );
+            if close_resp.on_hover_text(language.text("settings-wizard-skip")).clicked() {
+                monitor_target = finish_wizard(state, db);
+            }
 
             // Centered Stepper Navigation Header
             render_stepper_header(ui, state, &tokens, language);
-            ui.add_space(14.0);
+            ui.add_space(if is_compact_height { 8.0 } else { 12.0 });
 
-            // Content Area depending on active step (centered & clean without nested card cascades)
-            match state.setup_wizard.step {
-                0 => render_step_welcome(ui, state, &tokens, language),
-                1 => render_step_appearance(ui, state, &tokens, language),
-                2 => render_step_screens(ui, state, monitors, &tokens, language),
-                3 => render_step_breaks(ui, state, &tokens, language),
-                _ => render_step_ready(ui, state, monitors, &tokens, language),
-            }
+            // Ensure content area scrolls if window height is small, keeping header and footer pinned
+            let header_and_footer_reserve = if is_compact_height { 110.0 } else { 135.0 };
+            let body_max_h = (screen_rect.height() - (margin_y as f32 * 2.0 + header_and_footer_reserve)).max(160.0);
 
-            ui.add_space(18.0);
+            egui::ScrollArea::vertical()
+                .id_salt(("setup_wizard_step_scroll", state.setup_wizard.step))
+                .max_height(body_max_h)
+                .auto_shrink([false, true])
+                .show(ui, |ui| {
+                    ui.set_width(ui.available_width());
+                    match state.setup_wizard.step {
+                        0 => render_step_welcome(ui, state, &tokens, language),
+                        1 => render_step_appearance(ui, state, &tokens, language),
+                        2 => render_step_screens(ui, state, monitors, &tokens, language),
+                        3 => render_step_breaks(ui, state, &tokens, language),
+                        _ => render_step_ready(ui, state, monitors, &tokens, language),
+                    }
+                });
 
-            // Bottom Navigation Footer
+            ui.add_space(if is_compact_height { 8.0 } else { 14.0 });
+
+            // Bottom Navigation Footer (always visible and pinned)
             render_wizard_footer(ui, state, db, &mut monitor_target, &tokens, language);
         });
 
@@ -89,28 +132,36 @@ fn render_stepper_header(
         (4, CHECK_CIRCLE, language.text("settings-wizard-step-ready")),
     ];
 
-    let gap = 8.0;
+    let current = state.setup_wizard.step;
+    let available_w = ui.available_width();
+    let compact_pills = available_w < 520.0;
+    let gap = if compact_pills { 6.0 } else { 8.0 };
+
     let pill_widths: Vec<f32> = steps
         .iter()
-        .map(|(_, icon, label)| {
-            let text = format!("{icon} {label}");
+        .map(|(step_idx, icon, label)| {
+            let text = if compact_pills && *step_idx != current {
+                (*icon).to_string()
+            } else {
+                format!("{icon} {label}")
+            };
             let text_layout = ui.painter().layout_no_wrap(
                 text,
                 egui::FontId::proportional(11.0),
                 tokens.text_primary,
             );
-            (text_layout.size().x + 20.0).max(64.0)
+            let min_w = if compact_pills && *step_idx != current { 28.0 } else { 64.0 };
+            (text_layout.size().x + if compact_pills && *step_idx != current { 12.0 } else { 20.0 }).max(min_w)
         })
         .collect();
 
     let total_w: f32 = pill_widths.iter().sum::<f32>() + gap * (steps.len() - 1) as f32;
-    let offset_x = ((ui.available_width() - total_w) * 0.5).max(0.0);
+    let offset_x = ((available_w - total_w) * 0.5).max(0.0);
 
     ui.horizontal(|ui| {
         if offset_x > 0.0 {
             ui.add_space(offset_x);
         }
-        let current = state.setup_wizard.step;
         for (idx, (step_idx, icon, label)) in steps.iter().enumerate() {
             let is_active = *step_idx == current;
             let is_past = *step_idx < current;
@@ -123,7 +174,11 @@ fn render_stepper_header(
                 (tokens.bg_pill, tokens.text_muted, tokens.border_default)
             };
 
-            let text = format!("{icon} {label}");
+            let text = if compact_pills && !is_active {
+                (*icon).to_string()
+            } else {
+                format!("{icon} {label}")
+            };
             let pill_w = pill_widths[idx];
             let (rect, response) = ui.allocate_exact_size(egui::vec2(pill_w, 28.0), egui::Sense::click());
 
@@ -148,6 +203,11 @@ fn render_stepper_header(
                 egui::FontId::proportional(11.0),
                 text_color,
             );
+
+            if compact_pills && !is_active {
+                response.on_hover_text(*label);
+            }
+
             if idx + 1 < steps.len() {
                 ui.add_space(gap);
             }
@@ -161,92 +221,147 @@ fn render_step_welcome(
     tokens: &AppTheme,
     language: Language,
 ) {
+    let is_compact_height = ui.available_height() < 420.0;
     ui.vertical_centered(|ui| {
-        ui.add_space(10.0);
-        let (icon_rect, _) = ui.allocate_exact_size(egui::vec2(56.0, 56.0), egui::Sense::hover());
-        ui.painter().rect_filled(icon_rect, 14.0, tokens.accent_soft);
+        ui.add_space(if is_compact_height { 4.0 } else { 10.0 });
+        let icon_size = if is_compact_height { 44.0 } else { 56.0 };
+        let (icon_rect, _) = ui.allocate_exact_size(egui::vec2(icon_size, icon_size), egui::Sense::hover());
+        ui.painter().rect_filled(icon_rect, 12.0, tokens.accent_soft);
         ui.painter().text(
             icon_rect.center(),
             egui::Align2::CENTER_CENTER,
             HAND_WAVING,
-            egui::FontId::proportional(30.0),
+            egui::FontId::proportional(if is_compact_height { 24.0 } else { 30.0 }),
             tokens.accent,
         );
-        ui.add_space(8.0);
+        ui.add_space(if is_compact_height { 4.0 } else { 8.0 });
         ui.label(
             RichText::new(language.text("settings-wizard-welcome"))
-                .size(22.0)
+                .size(if is_compact_height { 19.0 } else { 22.0 })
                 .strong()
                 .color(tokens.text_primary),
         );
         ui.add_space(2.0);
         ui.label(
             RichText::new(language.text("settings-wizard-welcome-desc"))
-                .size(13.0)
+                .size(if is_compact_height { 11.5 } else { 13.0 })
                 .color(tokens.text_secondary),
         );
-        ui.add_space(22.0);
-
-        ui.label(
-            RichText::new(format!("{GLOBE}  {}", language.text("settings-language")))
-                .size(13.0)
-                .strong()
-                .color(tokens.text_primary),
-        );
-        ui.add_space(10.0);
-
-        let languages = [
-            (Language::Portuguese, "Português (Brasil)", "🇧🇷"),
-            (Language::English, "English", "🇺🇸"),
-            (Language::Spanish, "Español", "🇪🇸"),
-        ];
-
-        let gap = 12.0;
-        let total_avail = ui.available_width();
-        let item_w = ((total_avail - gap * (languages.len() - 1) as f32) / languages.len() as f32).max(110.0);
-
-        ui.horizontal(|ui| {
-            for (idx, (lang_opt, name, flag)) in languages.iter().enumerate() {
-                let selected = state.settings.language == *lang_opt;
-                let (rect, response) = ui.allocate_exact_size(egui::vec2(item_w, 48.0), egui::Sense::click());
-                if response.hovered() {
-                    ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
-                }
-                if response.clicked() {
-                    state.settings.language = *lang_opt;
-                }
-
-                let fill = if selected {
-                    tokens.accent_soft
-                } else if response.hovered() {
-                    tokens.bg_card_hover
-                } else {
-                    tokens.bg_pill
-                };
-
-                let stroke = if selected {
-                    Stroke::new(1.5, tokens.accent)
-                } else {
-                    Stroke::new(1.0, tokens.border_default)
-                };
-
-                ui.painter().rect(rect, 10.0, fill, stroke, egui::StrokeKind::Inside);
-                ui.painter().text(
-                    rect.center(),
-                    egui::Align2::CENTER_CENTER,
-                    format!("{flag}  {name}"),
-                    egui::FontId::proportional(13.0),
-                    if selected { tokens.accent } else { tokens.text_primary },
-                );
-
-                if idx + 1 < languages.len() {
-                    ui.add_space(gap);
-                }
-            }
-        });
-
-        ui.add_space(14.0);
+        ui.add_space(if is_compact_height { 14.0 } else { 22.0 });
     });
+
+    // Language selection card with ComboBox that scales gracefully to any number of languages
+    card(ui, tokens, |ui| {
+        let is_narrow = ui.available_width() < 440.0;
+        if is_narrow {
+            ui.vertical(|ui| {
+                ui.horizontal(|ui| {
+                    let icon_dim = if is_compact_height { 26.0 } else { 30.0 };
+                    let (icon_rect, _) = ui.allocate_exact_size(egui::vec2(icon_dim, icon_dim), egui::Sense::hover());
+                    ui.painter().rect_filled(icon_rect, 7.0, tokens.accent_soft);
+                    ui.painter().text(
+                        icon_rect.center(),
+                        egui::Align2::CENTER_CENTER,
+                        GLOBE,
+                        egui::FontId::proportional(if is_compact_height { 13.0 } else { 15.0 }),
+                        tokens.accent,
+                    );
+                    ui.add_space(4.0);
+                    ui.vertical(|ui| {
+                        ui.label(
+                            RichText::new(language.text("settings-language"))
+                                .size(if is_compact_height { 12.5 } else { 13.0 })
+                                .strong()
+                                .color(tokens.text_primary),
+                        );
+                        ui.label(
+                            RichText::new(language.text("settings-language-hint"))
+                                .size(if is_compact_height { 10.5 } else { 11.0 })
+                                .color(tokens.text_secondary),
+                        );
+                    });
+                });
+                ui.add_space(6.0);
+                let current_lang = state.settings.language;
+                let selected_text = format!("{}  {}", current_lang.flag(), current_lang.name());
+                let combo_w = ui.available_width();
+                egui::ComboBox::from_id_salt("wizard_language_picker")
+                    .selected_text(
+                        RichText::new(selected_text)
+                            .size(12.5)
+                            .strong()
+                            .color(tokens.text_primary),
+                    )
+                    .width(combo_w)
+                    .show_ui(ui, |ui| {
+                        for lang in Language::ALL {
+                            let is_selected = state.settings.language == lang;
+                            let label = format!("{}  {}", lang.flag(), lang.name());
+                            if ui.selectable_value(&mut state.settings.language, lang, label).clicked() {
+                                ui.ctx().request_repaint();
+                            }
+                            if is_selected {
+                                ui.scroll_to_cursor(Some(egui::Align::Center));
+                            }
+                        }
+                    });
+            });
+        } else {
+            ui.horizontal(|ui| {
+                let icon_dim = if is_compact_height { 28.0 } else { 32.0 };
+                let (icon_rect, _) = ui.allocate_exact_size(egui::vec2(icon_dim, icon_dim), egui::Sense::hover());
+                ui.painter().rect_filled(icon_rect, 8.0, tokens.accent_soft);
+                ui.painter().text(
+                    icon_rect.center(),
+                    egui::Align2::CENTER_CENTER,
+                    GLOBE,
+                    egui::FontId::proportional(if is_compact_height { 14.0 } else { 16.0 }),
+                    tokens.accent,
+                );
+                ui.add_space(4.0);
+                ui.vertical(|ui| {
+                    ui.label(
+                        RichText::new(language.text("settings-language"))
+                            .size(if is_compact_height { 12.5 } else { 13.0 })
+                            .strong()
+                            .color(tokens.text_primary),
+                    );
+                    ui.label(
+                        RichText::new(language.text("settings-language-hint"))
+                            .size(if is_compact_height { 10.5 } else { 11.0 })
+                            .color(tokens.text_secondary),
+                    );
+                });
+
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    let current_lang = state.settings.language;
+                    let selected_text = format!("{}  {}", current_lang.flag(), current_lang.name());
+                    egui::ComboBox::from_id_salt("wizard_language_picker")
+                        .selected_text(
+                            RichText::new(selected_text)
+                                .size(if is_compact_height { 12.0 } else { 12.5 })
+                                .strong()
+                                .color(tokens.text_primary),
+                        )
+                        .width(220.0)
+                        .show_ui(ui, |ui| {
+                            for lang in Language::ALL {
+                                let is_selected = state.settings.language == lang;
+                                let label = format!("{}  {}", lang.flag(), lang.name());
+                                if ui.selectable_value(&mut state.settings.language, lang, label).clicked() {
+                                    ui.ctx().request_repaint();
+                                }
+                                if is_selected {
+                                    ui.scroll_to_cursor(Some(egui::Align::Center));
+                                }
+                            }
+                        });
+                });
+            });
+        }
+    });
+
+    ui.add_space(if is_compact_height { 8.0 } else { 14.0 });
 }
 
 fn render_step_appearance(
@@ -255,29 +370,31 @@ fn render_step_appearance(
     tokens: &AppTheme,
     language: Language,
 ) {
+    let is_compact_height = ui.available_height() < 420.0;
     ui.vertical_centered(|ui| {
-        let (icon_rect, _) = ui.allocate_exact_size(egui::vec2(44.0, 44.0), egui::Sense::hover());
+        let icon_size = if is_compact_height { 36.0 } else { 44.0 };
+        let (icon_rect, _) = ui.allocate_exact_size(egui::vec2(icon_size, icon_size), egui::Sense::hover());
         ui.painter().rect_filled(icon_rect, 10.0, tokens.accent_soft);
         ui.painter().text(
             icon_rect.center(),
             egui::Align2::CENTER_CENTER,
             PAINT_BRUSH,
-            egui::FontId::proportional(22.0),
+            egui::FontId::proportional(if is_compact_height { 18.0 } else { 22.0 }),
             tokens.accent,
         );
-        ui.add_space(4.0);
+        ui.add_space(if is_compact_height { 2.0 } else { 4.0 });
         ui.label(
             RichText::new(language.text("appearance-title"))
-                .size(19.0)
+                .size(if is_compact_height { 17.0 } else { 19.0 })
                 .strong()
                 .color(tokens.text_primary),
         );
         ui.label(
             RichText::new(language.text("appearance-hint"))
-                .size(12.0)
+                .size(if is_compact_height { 11.5 } else { 12.0 })
                 .color(tokens.text_secondary),
         );
-        ui.add_space(14.0);
+        ui.add_space(if is_compact_height { 8.0 } else { 14.0 });
 
         // Centered 3 equal-width mode choices
         let operator = state.settings.operator_mut();
@@ -296,11 +413,12 @@ fn render_step_appearance(
         let gap = 12.0;
         let total_avail = ui.available_width();
         let btn_w = ((total_avail - gap * (modes.len() - 1) as f32) / modes.len() as f32).max(100.0);
+        let btn_h = if is_compact_height { 36.0 } else { 42.0 };
 
         ui.horizontal(|ui| {
             for (idx, (mode, label_key, icon)) in modes.iter().enumerate() {
                 let is_sel = selected_mode == *mode;
-                let (rect, response) = ui.allocate_exact_size(egui::vec2(btn_w, 42.0), egui::Sense::click());
+                let (rect, response) = ui.allocate_exact_size(egui::vec2(btn_w, btn_h), egui::Sense::click());
                 if response.hovered() {
                     ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
                 }
@@ -332,7 +450,7 @@ fn render_step_appearance(
                     rect.center(),
                     egui::Align2::CENTER_CENTER,
                     format!("{icon}  {}", language.text(label_key)),
-                    egui::FontId::proportional(12.5),
+                    egui::FontId::proportional(if is_compact_height { 11.5 } else { 12.5 }),
                     if is_sel { tokens.accent } else { tokens.text_primary },
                 );
 
@@ -343,7 +461,7 @@ fn render_step_appearance(
         });
     });
 
-    ui.add_space(16.0);
+    ui.add_space(if is_compact_height { 10.0 } else { 16.0 });
 
     // Palettes section
     card(ui, tokens, |ui| {
@@ -404,367 +522,11 @@ fn render_step_appearance(
     });
 }
 
-fn render_step_screens(
-    ui: &mut egui::Ui,
-    state: &mut ControlPanelState,
-    monitors: &[MonitorInfo],
-    tokens: &AppTheme,
-    language: Language,
-) {
-    ui.vertical_centered(|ui| {
-        let (icon_rect, _) = ui.allocate_exact_size(egui::vec2(44.0, 44.0), egui::Sense::hover());
-        ui.painter().rect_filled(icon_rect, 10.0, tokens.accent_soft);
-        ui.painter().text(
-            icon_rect.center(),
-            egui::Align2::CENTER_CENTER,
-            DESKTOP,
-            egui::FontId::proportional(22.0),
-            tokens.accent,
-        );
-        ui.add_space(4.0);
-        ui.label(
-            RichText::new(language.text("settings-presentation-screens"))
-                .size(19.0)
-                .strong()
-                .color(tokens.text_primary),
-        );
-        ui.label(
-            RichText::new(language.text("settings-send-the-presentation-to-all-enabled-screens-above-click-a"))
-                .size(12.0)
-                .color(tokens.text_secondary),
-        );
-        ui.add_space(10.0);
-    });
+#[path = "setup_wizard_steps.rs"]
+mod steps;
+use steps::{render_step_breaks, render_step_ready, render_step_screens};
 
-    card(ui, tokens, |ui| {
-        if monitors.is_empty() {
-            ui.vertical_centered(|ui| {
-                ui.add_space(6.0);
-                ui.label(
-                    RichText::new(language.text("workspace-no-monitors-detected"))
-                        .color(tokens.text_secondary)
-                        .size(12.0),
-                );
-                ui.add_space(6.0);
-            });
-        } else {
-            egui::ScrollArea::horizontal()
-                .id_salt("wizard_physical_screens")
-                .show(ui, |ui| {
-                    ui.horizontal(|ui| {
-                        ui.spacing_mut().item_spacing.x = 10.0;
-                        for (index, monitor) in monitors.iter().enumerate() {
-                            let enabled = state.settings.physical_monitor_enabled(&monitor.name);
-                            let label = (index + 1).to_string();
-                            let res_str = format!("{} × {}", monitor.resolution.0, monitor.resolution.1);
 
-                            let (_resp, action) = render_screen_card(
-                                ui,
-                                ScreenCardProps {
-                                    id_salt: &format!("wiz_screen_{}", monitor.name),
-                                    label: &label,
-                                    name: &monitor.display_name,
-                                    subtitle: Some(&res_str),
-                                    selected: enabled,
-                                    enabled: enabled && state.settings.physical_output_enabled,
-                                    is_virtual: false,
-                                    theme: tokens,
-                                },
-                            );
-
-                            if matches!(action, ScreenCardAction::Select | ScreenCardAction::ToggleEnabled) {
-                                state.settings.toggle_physical_monitor(&monitor.name);
-                                if state.settings.physical_monitor_enabled(&monitor.name) {
-                                    state.settings.monitor_name = monitor.name.clone();
-                                }
-                            }
-                        }
-                    });
-                });
-        }
-
-        ui.add_space(6.0);
-        setting_toggle(
-            ui,
-            &mut state.settings.physical_output_enabled,
-            "workspace-open-the-projection-window-on-the-monitor",
-            "settings-send-the-presentation-to-all-enabled-screens-above-click-a",
-            tokens,
-        );
-        setting_toggle(
-            ui,
-            &mut state.settings.persistent_physical_output,
-            "settings-keep-the-presentation-window-ready",
-            "settings-keep-the-output-ready-show-the-standby-wallpaper-when-no",
-            tokens,
-        );
-        setting_toggle(
-            ui,
-            &mut state.settings.suspend_projection_while_configuring,
-            "settings-suspend-projection-while-configuring",
-            "settings-suspend-projection-while-configuring-desc",
-            tokens,
-        );
-    });
-
-    ui.add_space(8.0);
-
-    // Aspect ratio selection - Centered horizontal row
-    card(ui, tokens, |ui| {
-        ui.horizontal(|ui| {
-            ui.label(
-                RichText::new(format!("{MONITOR}  {}", language.text("settings-screen-aspect-ratio")))
-                    .size(12.5)
-                    .strong()
-                    .color(tokens.text_primary),
-            );
-        });
-        ui.add_space(6.0);
-
-        #[derive(Clone, Copy, PartialEq)]
-        enum AspectOption {
-            Monitor,
-            Wide16_9,
-            Wide16_10,
-            Standard4_3,
-            Ultra21_9,
-        }
-
-        let detected_monitor = monitors
-            .iter()
-            .find(|m| state.settings.physical_monitor_enabled(&m.name))
-            .or_else(|| monitors.iter().find(|m| m.name == state.settings.monitor_name))
-            .or_else(|| monitors.first());
-        let detected_ratio = detected_monitor
-            .map(|m| if m.resolution.0 > 0 && m.resolution.1 > 0 { m.resolution.0 as f32 / m.resolution.1 as f32 } else { 16.0 / 9.0 })
-            .unwrap_or(16.0 / 9.0);
-
-        let current_aspect = state.setup_wizard.presentation_aspect_ratio;
-        let selected_opt = if current_aspect <= 0.05 {
-            AspectOption::Monitor
-        } else if (current_aspect - 16.0 / 9.0).abs() < 0.05 {
-            AspectOption::Wide16_9
-        } else if (current_aspect - 16.0 / 10.0).abs() < 0.05 {
-            AspectOption::Wide16_10
-        } else if (current_aspect - 4.0 / 3.0).abs() < 0.05 {
-            AspectOption::Standard4_3
-        } else if (current_aspect - 21.0 / 9.0).abs() < 0.05 {
-            AspectOption::Ultra21_9
-        } else {
-            AspectOption::Monitor
-        };
-
-        let draw_btn = |ui: &mut egui::Ui, w: f32, h: f32, is_sel: bool, text: &str| -> egui::Response {
-            let (rect, resp) = ui.allocate_exact_size(egui::vec2(w, h), egui::Sense::click());
-            if resp.hovered() { ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand); }
-            let fill = if is_sel { tokens.accent_soft } else if resp.hovered() { tokens.bg_card_hover } else { tokens.bg_pill };
-            let stroke = Stroke::new(if is_sel { 1.5 } else { 1.0 }, if is_sel { tokens.accent } else { tokens.border_default });
-            ui.painter().rect(rect, 8.0, fill, stroke, egui::StrokeKind::Inside);
-            ui.painter().text(rect.center(), egui::Align2::CENTER_CENTER, text, egui::FontId::proportional(11.5), if is_sel { tokens.accent } else { tokens.text_primary });
-            resp
-        };
-
-        let monitor_label = if let Some(m) = detected_monitor {
-            if m.resolution.0 > 0 && m.resolution.1 > 0 {
-                format!("{MONITOR}  {} ({}×{})", language.text("settings-aspect-monitor"), m.resolution.0, m.resolution.1)
-            } else {
-                format!("{MONITOR}  {}", language.text("settings-aspect-monitor"))
-            }
-        } else {
-            format!("{MONITOR}  {}", language.text("settings-aspect-monitor"))
-        };
-        if draw_btn(ui, ui.available_width(), 36.0, selected_opt == AspectOption::Monitor, &monitor_label).clicked() {
-            state.setup_wizard.presentation_aspect_ratio = 0.0;
-            state.presentation_aspect_ratio = detected_ratio;
-            state.settings.service_mut().aspect_ratio = 0.0;
-        }
-
-        ui.add_space(6.0);
-
-        let aspect_list = [
-            (AspectOption::Wide16_9, "16:9 Widescreen", 16.0 / 9.0),
-            (AspectOption::Wide16_10, "16:10", 16.0 / 10.0),
-            (AspectOption::Standard4_3, "4:3 Clássico", 4.0 / 3.0),
-            (AspectOption::Ultra21_9, "21:9 Ultrawide", 21.0 / 9.0),
-        ];
-
-        let gap = 8.0;
-        let total_avail = ui.available_width();
-        let btn_w = ((total_avail - gap * (aspect_list.len() - 1) as f32) / aspect_list.len() as f32).max(80.0);
-
-        ui.horizontal(|ui| {
-            for (idx, (opt, label, ratio_val)) in aspect_list.iter().enumerate() {
-                if draw_btn(ui, btn_w, 36.0, selected_opt == *opt, label).clicked() {
-                    state.setup_wizard.presentation_aspect_ratio = *ratio_val;
-                    state.presentation_aspect_ratio = *ratio_val;
-                    state.settings.service_mut().aspect_ratio = *ratio_val;
-                }
-                if idx + 1 < aspect_list.len() {
-                    ui.add_space(gap);
-                }
-            }
-        });
-    });
-}
-
-fn render_step_breaks(
-    ui: &mut egui::Ui,
-    state: &mut ControlPanelState,
-    tokens: &AppTheme,
-    language: Language,
-) {
-    ui.vertical_centered(|ui| {
-        let (icon_rect, _) = ui.allocate_exact_size(egui::vec2(44.0, 44.0), egui::Sense::hover());
-        ui.painter().rect_filled(icon_rect, 10.0, tokens.accent_soft);
-        ui.painter().text(
-            icon_rect.center(),
-            egui::Align2::CENTER_CENTER,
-            TEXT_AA,
-            egui::FontId::proportional(22.0),
-            tokens.accent,
-        );
-        ui.add_space(4.0);
-        ui.label(
-            RichText::new(language.text("settings-wizard-step-breaks"))
-                .size(19.0)
-                .strong()
-                .color(tokens.text_primary),
-        );
-        ui.label(
-            RichText::new("Ajuste a formatação automática e quebras de linhas nas letras e versículos.")
-                .size(12.0)
-                .color(tokens.text_secondary),
-        );
-        ui.add_space(10.0);
-    });
-
-    card(ui, tokens, |ui| {
-        setting_toggle(
-            ui,
-            &mut state.setup_wizard.wrap_text,
-            "settings-wizard-auto-wrap",
-            "settings-wizard-auto-wrap-desc",
-            tokens,
-        );
-
-        setting_toggle(
-            ui,
-            &mut state.setup_wizard.auto_fit,
-            "settings-wizard-auto-fit",
-            "settings-wizard-auto-fit-desc",
-            tokens,
-        );
-
-        setting_toggle(
-            ui,
-            &mut state.setup_wizard.dock_preview_bg,
-            "settings-thumbnails-with-theme-background",
-            "settings-show-the-theme-background-colors-and-fonts-in-stanza-cards",
-            tokens,
-        );
-    });
-}
-
-fn render_step_ready(
-    ui: &mut egui::Ui,
-    state: &ControlPanelState,
-    monitors: &[MonitorInfo],
-    tokens: &AppTheme,
-    language: Language,
-) {
-    ui.vertical_centered(|ui| {
-        ui.add_space(6.0);
-        let (icon_rect, _) = ui.allocate_exact_size(egui::vec2(52.0, 52.0), egui::Sense::hover());
-        ui.painter().rect_filled(icon_rect, 13.0, tokens.status_success_bg);
-        ui.painter().text(
-            icon_rect.center(),
-            egui::Align2::CENTER_CENTER,
-            CHECK,
-            egui::FontId::proportional(28.0),
-            tokens.status_success_fg,
-        );
-        ui.add_space(6.0);
-        ui.label(
-            RichText::new(language.text("settings-wizard-ready-title"))
-                .size(21.0)
-                .strong()
-                .color(tokens.text_primary),
-        );
-        ui.add_space(2.0);
-        ui.label(
-            RichText::new(language.text("settings-wizard-ready-desc"))
-                .size(12.5)
-                .color(tokens.text_secondary),
-        );
-        ui.add_space(14.0);
-    });
-
-    // Clean, structured summary card
-    card(ui, tokens, |ui| {
-        let lang_name = match state.settings.language {
-            Language::Portuguese => "Português 🇧🇷",
-            Language::English => "English 🇺🇸",
-            Language::Spanish => "Español 🇪🇸",
-        };
-
-        let screen_name = if monitors.is_empty() {
-            "Monitor Principal".to_string()
-        } else if let Some(first) = monitors.iter().find(|m| state.settings.physical_monitor_enabled(&m.name)) {
-            first.display_name.clone()
-        } else {
-            "Projeção em Janela".to_string()
-        };
-
-        let aspect_name = if state.setup_wizard.presentation_aspect_ratio <= 0.05 {
-            language.text("settings-aspect-monitor")
-        } else if (state.setup_wizard.presentation_aspect_ratio - 16.0 / 9.0).abs() < 0.05 {
-            "16:9 Widescreen"
-        } else if (state.setup_wizard.presentation_aspect_ratio - 16.0 / 10.0).abs() < 0.05 {
-            "16:10"
-        } else if (state.setup_wizard.presentation_aspect_ratio - 4.0 / 3.0).abs() < 0.05 {
-            "4:3 Clássico"
-        } else if (state.setup_wizard.presentation_aspect_ratio - 21.0 / 9.0).abs() < 0.05 {
-            "21:9 Ultrawide"
-        } else {
-            "16:9 Widescreen"
-        };
-
-        let rows = [
-            ("🌐  Idioma da Interface", lang_name),
-            ("🖥️  Saída de Projeção", screen_name.as_str()),
-            ("📐  Proporção da Tela", aspect_name),
-            ("🔄  Quebra Automática de Linhas", if state.setup_wizard.wrap_text { "Ativada" } else { "Desativada" }),
-            ("🔍  Ajuste Automático (Auto-fit)", if state.setup_wizard.auto_fit { "Ativado" } else { "Desativado" }),
-        ];
-
-        for (idx, (label, val)) in rows.iter().enumerate() {
-            ui.horizontal(|ui| {
-                ui.label(RichText::new(*label).size(12.0).color(tokens.text_secondary));
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    egui::Frame::new()
-                        .fill(tokens.bg_pill)
-                        .corner_radius(6.0)
-                        .inner_margin(egui::vec2(10.0, 3.0))
-                        .show(ui, |ui| {
-                            ui.label(RichText::new(*val).size(12.0).strong().color(tokens.text_primary));
-                        });
-                });
-            });
-            if idx + 1 < rows.len() {
-                ui.add_space(4.0);
-            }
-        }
-    });
-
-    ui.add_space(10.0);
-    ui.vertical_centered(|ui| {
-        ui.label(
-            RichText::new("Dica: você pode alterar todas as opções acima a qualquer momento nas Preferências do sistema.")
-                .size(11.5)
-                .color(tokens.text_secondary),
-        );
-    });
-}
 
 fn render_wizard_footer(
     ui: &mut egui::Ui,
@@ -818,8 +580,8 @@ fn render_wizard_footer(
                 }
             }
 
-            if step > 0 {
-                if styled_button(
+            if step > 0
+                && styled_button(
                     ui,
                     Some(ARROW_LEFT),
                     "settings-wizard-back",
@@ -827,9 +589,8 @@ fn render_wizard_footer(
                     tokens,
                 )
                 .clicked()
-                {
-                    state.setup_wizard.step -= 1;
-                }
+            {
+                state.setup_wizard.step -= 1;
             }
         });
     });
@@ -869,66 +630,5 @@ fn finish_wizard(
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_setup_wizard_lifecycle_and_steps_rendering() {
-        let mut state = ControlPanelState {
-            show_setup_wizard: true,
-            ..Default::default()
-        };
-        assert!(!state.settings.first_run_completed);
-
-        let ctx = egui::Context::default();
-        let raw_input = egui::RawInput {
-            screen_rect: Some(egui::Rect::from_min_size(
-                egui::pos2(0.0, 0.0),
-                egui::vec2(1024.0, 768.0),
-            )),
-            ..Default::default()
-        };
-
-        let monitors = vec![
-            MonitorInfo {
-                winit_index: 0,
-                name: "HDMI-1".to_string(),
-                display_name: "Samsung 4K".to_string(),
-                resolution: (3840, 2160),
-                position: (0, 0),
-                scale_factor: 1.0,
-            },
-            MonitorInfo {
-                winit_index: 1,
-                name: "DP-1".to_string(),
-                display_name: "LG Projector".to_string(),
-                resolution: (1920, 1080),
-                position: (3840, 0),
-                scale_factor: 1.0,
-            },
-        ];
-
-        // Verify each step renders without panic
-        for step in 0..=4 {
-            state.setup_wizard.step = step;
-            let mut output = ctx.run_ui(raw_input.clone(), |ui| {
-                render_setup_wizard_modal(ui.ctx(), &mut state, &monitors, None);
-            });
-            output.textures_delta.clear();
-            assert!(!output.shapes.is_empty(), "Step {step} should produce shapes");
-        }
-
-        // Test finish_wizard
-        state.setup_wizard.wrap_text = true;
-        state.setup_wizard.auto_fit = true;
-        finish_wizard(&mut state, None);
-
-        assert!(state.settings.first_run_completed);
-        assert!(!state.show_setup_wizard);
-        assert_eq!(state.settings.service().aspect_ratio, 0.0);
-        for theme in &state.themes {
-            assert!(theme.options.wrap_text);
-            assert!(theme.options.auto_fit);
-        }
-    }
-}
+#[path = "setup_wizard_tests.rs"]
+mod tests;

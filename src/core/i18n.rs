@@ -40,6 +40,13 @@ impl Language {
             Self::Spanish => "es",
         }
     }
+    pub fn flag(self) -> &'static str {
+        match self {
+            Self::Portuguese => "🇧🇷",
+            Self::English => "🇺🇸",
+            Self::Spanish => "🇪🇸",
+        }
+    }
     pub fn name(self) -> &'static str { &catalog::registry().negotiate(self.code()).metadata.native_name }
     pub fn direction(self) -> Direction { catalog::registry().negotiate(self.code()).metadata.direction }
     pub fn available() -> impl Iterator<Item = Self> + Clone {

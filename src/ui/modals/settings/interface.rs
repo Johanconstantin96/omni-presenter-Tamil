@@ -49,18 +49,20 @@ pub(super) fn interface(
                 );
             });
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                let selected_text = format!("{}  {}", draft.language.flag(), draft.language.name());
                 egui::ComboBox::from_id_salt("interface_language_picker")
                     .selected_text(
-                        RichText::new(draft.language.name())
+                        RichText::new(selected_text)
                             .size(12.5)
                             .strong()
                             .color(theme.text_primary),
                     )
-                    .width(180.0)
+                    .width(200.0)
                     .show_ui(ui, |ui| {
                         for lang in crate::core::i18n::Language::ALL {
                             let is_selected = draft.language == lang;
-                            if ui.selectable_value(&mut draft.language, lang, lang.name()).clicked() {
+                            let label = format!("{}  {}", lang.flag(), lang.name());
+                            if ui.selectable_value(&mut draft.language, lang, label).clicked() {
                                 ui.ctx().request_repaint();
                             }
                             if is_selected {
