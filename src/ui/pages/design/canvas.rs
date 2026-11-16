@@ -64,41 +64,27 @@ pub(super) fn render(
         return;
     };
     let available = ui.available_size();
-    let has_layers = !scene.layers.is_empty();
-    let reserve = if editor.show_filmstrip {
-        match editor.timeline_mode {
-            super::TimelineMode::Layers => {
-                if has_layers {
-                    (84.0 + editor.timeline_height).min(available.y - 120.0).max(84.0)
-                } else {
-                    76.0
-                }
-            }
-            super::TimelineMode::Slides => (135.0f32).min(available.y - 120.0).max(100.0),
-        }
-    } else {
-        44.0
-    };
-    let gap = 8.0f32;
-    let max_h = (available.y - reserve - gap).max(90.0);
     let aspect = editor
         .preview_aspect_ratio
         .unwrap_or(state.presentation_aspect_ratio)
         .clamp(0.4, 4.0);
-    let w = available.x.min(max_h * aspect).max(90.0);
+    let w = available.x.min(available.y * aspect).max(90.0);
     let size = Vec2::new(w, w / aspect);
 
-    let leftover_y = (available.y - size.y - reserve - gap).max(0.0);
+    let leftover_y = (available.y - size.y).max(0.0);
     let top_pad = (leftover_y * 0.5).round();
-    let bottom_pad = leftover_y - top_pad;
 
     if top_pad > 0.0 {
         ui.add_space(top_pad);
     }
     let (slot, _) = ui.allocate_exact_size(egui::vec2(available.x, size.y), egui::Sense::hover());
     let canvas = Rect::from_center_size(slot.center(), size);
+    let canvas_interact = Rect::from_min_max(
+        Pos2::new(canvas.min.x - 28.0, canvas.min.y - 28.0),
+        Pos2::new(canvas.max.x + 28.0, canvas.max.y),
+    ).intersect(ui.clip_rect());
     let response = ui.interact(
-        canvas.expand(28.0).intersect(ui.clip_rect()),
+        canvas_interact,
         ui.scope_id().with("design_canvas"),
         egui::Sense::click_and_drag(),
     );
@@ -250,13 +236,15 @@ pub(super) fn render(
         }
     }
     if let Some(index) = hovered {
-        ui.ctx().set_cursor_icon(if scene.layers[index].locked {
-            egui::CursorIcon::NotAllowed
-        } else if response.dragged() {
-            egui::CursorIcon::Grabbing
-        } else {
-            egui::CursorIcon::Grab
-        });
+        if response.dragged() {
+            ui.ctx().set_cursor_icon(egui::CursorIcon::Grabbing);
+        } else if response.hovered() && !ui.input(|i| i.pointer.is_decidedly_dragging()) {
+            ui.ctx().set_cursor_icon(if scene.layers[index].locked {
+                egui::CursorIcon::NotAllowed
+            } else {
+                egui::CursorIcon::Grab
+            });
+        }
     }
     let menu_id = response.id.with(("context_layer", &scene.id));
     if response.secondary_clicked() {
@@ -299,8 +287,4 @@ pub(super) fn render(
     if let Some((index, action)) = menu_action {
         super::menus::apply_layer(editor, index, action);
     }
-    if bottom_pad + gap > 0.0 {
-        ui.add_space(bottom_pad + gap);
-    }
-    super::animation_bar::render(ui, editor, theme, &state.themes);
 }

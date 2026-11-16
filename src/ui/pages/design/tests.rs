@@ -596,4 +596,52 @@ fn test_multiselection_and_grouping_lifecycle() {
     assert!(editor.scene.as_ref().unwrap().layers.len() < before_count);
 }
 
+#[test]
+fn test_animation_bar_desired_height_and_canvas_safe_reserve() {
+    let mut editor = DesignEditor {
+        show_filmstrip: false,
+        ..Default::default()
+    };
+    assert_eq!(super::animation_bar::desired_height(&editor, false), 44.0);
+
+    editor.show_filmstrip = true;
+    editor.timeline_mode = super::TimelineMode::Layers;
+    assert_eq!(super::animation_bar::desired_height(&editor, false), 76.0);
+    assert_eq!(
+        super::animation_bar::desired_height(&editor, true),
+        86.0 + editor.timeline_height
+    );
+
+    editor.timeline_mode = super::TimelineMode::Slides;
+    let expected_slide_h = 68.0 + (editor.timeline_height * 0.75).clamp(52.0, 200.0);
+    assert_eq!(
+        super::animation_bar::desired_height(&editor, false),
+        expected_slide_h
+    );
+
+    // Verify canvas::render executes cleanly with empty layers
+    let db = AppDb::open_in_memory().unwrap();
+    let mut deck = SlideDeck::default();
+    let theme = AppTheme::dark();
+    let state = ControlPanelState::default();
+    editor.new_scene(0, &db, &mut deck);
+
+    let ctx = egui::Context::default();
+    let mut out = ctx.run_ui(
+        egui::RawInput {
+            screen_rect: Some(egui::Rect::from_min_size(
+                egui::Pos2::ZERO,
+                egui::vec2(800.0, 600.0),
+            )),
+            ..Default::default()
+        },
+        |ui| {
+            super::canvas::render(ui, &mut editor, &theme, &state, &deck, false);
+        },
+    );
+    assert!(!out.shapes.is_empty());
+    out.textures_delta.clear();
+}
+
+
 

@@ -274,7 +274,7 @@ pub fn render_playlist_column(
                 crate::ui::components::paint_status_circle(
                     ui.painter(),
                     circle_rect.center(),
-                    6.5,
+                    crate::ui::components::STATUS_CIRCLE_RADIUS,
                     item.played,
                     circle_resp.hovered(),
                     &theme,

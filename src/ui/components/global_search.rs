@@ -286,13 +286,13 @@ impl GlobalSearch {
 
                                 let edit_w = (ui.available_width() - if has_query || self.pending { 28.0 } else { 38.0 }).max(40.0);
                                 let response = ui.add_sized(
-                                    [edit_w, 24.0],
+                                    [edit_w, 48.0],
                                     egui::TextEdit::singleline(&mut self.query)
                                         .font(egui::FontId::proportional(15.0))
                                         .hint_text(language.text("common-search"))
                                         .text_color(theme.text_primary)
                                         .frame(egui::Frame::NONE)
-                                        .margin(egui::Margin::symmetric(0, 2)),
+                                        .align(egui::Align2::LEFT_CENTER),
                                 );
                                 if self.focus {
                                     response.request_focus();

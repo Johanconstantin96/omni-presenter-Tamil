@@ -72,10 +72,20 @@ pub(super) fn render_layers_timeline(
                 [Pos2::new(x, ruler_rect.max.y - 6.0), Pos2::new(x, ruler_rect.max.y)],
                 Stroke::new(1.0, theme.border_default),
             );
+            let is_last = (s - max_sec).abs() < 0.05 || (x + 18.0) > ruler_track_rect.max.x;
+            let (pos_x, align) = if is_last {
+                (x - 3.0, egui::Align2::RIGHT_TOP)
+            } else {
+                (x + 2.0, egui::Align2::LEFT_TOP)
+            };
             ui.painter().text(
-                Pos2::new(x + 2.0, ruler_rect.min.y + 2.0),
-                egui::Align2::LEFT_TOP,
-                format!("{:.0}s", s),
+                Pos2::new(pos_x, ruler_rect.min.y + 2.0),
+                align,
+                if s.fract().abs() < 0.05 {
+                    format!("{:.0}s", s)
+                } else {
+                    format!("{:.1}s", s)
+                },
                 egui::FontId::proportional(8.5),
                 theme.text_muted,
             );
@@ -86,12 +96,12 @@ pub(super) fn render_layers_timeline(
     ui.add_space(2.0);
 
     // --- Vertical list of layer tracks ---
-    let tracks_h = editor.timeline_height.clamp(60.0, 600.0);
+    let avail_tracks_h = (ui.available_height() - 6.0).max(24.0);
+    let tracks_h = avail_tracks_h.min(editor.timeline_height.clamp(36.0, 500.0));
     let tracks_scroll = egui::ScrollArea::vertical()
         .id_salt("design_layer_tracks_scroll")
         .max_height(tracks_h)
-        .min_scrolled_height(tracks_h)
-        .auto_shrink([false, false]);
+        .auto_shrink([true, false]);
 
     let tracks_content = tracks_scroll.show(ui, |ui| {
         let pointer_pos = ui.input(|i| i.pointer.hover_pos());
@@ -288,7 +298,8 @@ pub(super) fn render_layers_timeline(
     let needle_frac = (curr_time_ms as f32 / total_slide_ms as f32).clamp(0.0, 1.0);
     let needle_x = ruler_track_rect.min.x + needle_frac * ruler_track_rect.width();
     let needle_top = ruler_rect.min.y;
-    let needle_bottom = tracks_content.inner_rect.max.y.max(ruler_rect.bottom() + 20.0);
+    let layers_total_h = scene.layers.len() as f32 * 26.0;
+    let needle_bottom = (ruler_rect.bottom() + 2.0 + layers_total_h).min(tracks_content.inner_rect.bottom());
 
     // Vertical line
     ui.painter().line_segment(

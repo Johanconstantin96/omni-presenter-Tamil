@@ -1,6 +1,8 @@
 use crate::ui::theme::AppTheme;
 use eframe::egui::{self, Color32, Painter, Pos2, Stroke, Vec2};
 
+pub const STATUS_CIRCLE_RADIUS: f32 = 5.2;
+
 /// Paints a modern circular checkbox with fill and crisp inner checkmark
 pub fn paint_status_circle(
     painter: &Painter,
@@ -21,8 +23,8 @@ pub fn paint_status_circle(
         painter.circle_filled(center, radius, fill_col);
         painter.circle_stroke(center, radius, Stroke::new(1.0, stroke_col));
 
-        let check_scale = radius / 8.5;
-        let check_stroke = Stroke::new((1.6 * check_scale).max(1.2), Color32::WHITE);
+        let check_scale = radius / 7.2;
+        let check_stroke = Stroke::new((1.5 * check_scale).max(1.1), Color32::WHITE);
         painter.line_segment(
             [
                 Pos2::new(center.x - 3.2 * check_scale, center.y + 0.2 * check_scale),
@@ -48,7 +50,7 @@ pub fn paint_status_circle(
             )
         };
         painter.circle_filled(center, radius, fill_col);
-        painter.circle_stroke(center, radius, Stroke::new(1.2, stroke_col));
+        painter.circle_stroke(center, radius, Stroke::new(1.1, stroke_col));
     }
 }
 
@@ -63,6 +65,25 @@ pub fn render_status_circle(ui: &mut egui::Ui, played: bool, theme: &AppTheme) -
     if resp.hovered() {
         ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
     }
-    paint_status_circle(ui.painter(), rect.center(), 6.5, played, resp.hovered(), theme);
+    paint_status_circle(ui.painter(), rect.center(), STATUS_CIRCLE_RADIUS, played, resp.hovered(), theme);
     resp
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_status_circle_rendering() {
+        let ctx = egui::Context::default();
+        let theme = AppTheme::dark();
+        let mut output = ctx.run_ui(Default::default(), |ui| {
+            let resp_played = render_status_circle(ui, true, &theme);
+            assert_eq!(resp_played.rect.size(), Vec2::splat(16.0));
+
+            let resp_unplayed = render_status_circle(ui, false, &theme);
+            assert_eq!(resp_unplayed.rect.size(), Vec2::splat(16.0));
+        });
+        output.textures_delta.clear();
+    }
 }

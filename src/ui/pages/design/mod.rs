@@ -124,7 +124,7 @@ impl Default for DesignEditor {
             show_filmstrip: true,
             timeline_mode: TimelineMode::Layers,
             timeline_drag: None,
-            timeline_height: 140.0,
+            timeline_height: 38.0,
         }
     }
 }
@@ -600,18 +600,34 @@ impl DesignEditor {
                     }
                 });
         });
-        let mut center_ui = ui.new_child(
+        let has_layers = self.scene.as_ref().is_some_and(|s| !s.layers.is_empty());
+        let max_dock_h = (center_rect.height() - 120.0).max(44.0);
+        let dock_h = animation_bar::desired_height(self, has_layers).min(max_dock_h).max(44.0);
+        let dock_rect = egui::Rect::from_min_max(
+            egui::pos2(center_rect.min.x + 6.0, center_rect.max.y - dock_h),
+            egui::pos2(center_rect.max.x - 6.0, center_rect.max.y),
+        );
+        let top_rect = egui::Rect::from_min_max(
+            center_rect.min,
+            egui::pos2(center_rect.max.x, (dock_rect.min.y - 4.0).max(center_rect.min.y)),
+        );
+
+        let mut top_ui = ui.new_child(
             egui::UiBuilder::new()
-                .id_salt("design_center_body")
-                .max_rect(center_rect)
+                .id_salt("design_top_body")
+                .max_rect(top_rect)
                 .layout(egui::Layout::top_down(egui::Align::Min)),
         );
-        center_ui.set_clip_rect(center_rect);
-        center_ui.set_min_size(center_rect.size());
+        top_ui.set_clip_rect(top_rect);
         egui::Frame::new()
             .fill(theme.bg_app)
-            .inner_margin(12)
-            .show(&mut center_ui, |ui| {
+            .inner_margin(egui::Margin {
+                left: 6,
+                right: 6,
+                top: 6,
+                bottom: 0,
+            })
+            .show(&mut top_ui, |ui| {
                 toolbar::canvas_toolbar(self, ui, &theme, state);
                 if let Some(scene) = &self.scene
                     && let Some(live) = &deck.live_design && live.id == scene.id && *presenting {
@@ -622,6 +638,16 @@ impl DesignEditor {
                 ui.add_space(6.0);
                 canvas::render(ui, self, &theme, state, deck, *presenting);
             });
+
+        let mut dock_ui = ui.new_child(
+            egui::UiBuilder::new()
+                .id_salt("design_dock_body")
+                .max_rect(dock_rect)
+                .layout(egui::Layout::top_down(egui::Align::Min)),
+        );
+        dock_ui.set_clip_rect(dock_rect.expand(2.0));
+        dock_ui.set_min_size(dock_rect.size());
+        animation_bar::render(&mut dock_ui, self, &theme, &state.themes);
         let mut left_drag = 0.0;
         let mut right_drag = 0.0;
         for (index, x) in [left_rect.right() + gap * 0.5, right_rect.left() - gap * 0.5]

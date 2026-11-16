@@ -125,10 +125,9 @@ pub(super) fn render(
     let mut start_drag: Option<TimelineDrag> = None;
 
     let curr_sec = (curr_time_ms as f32 / 1000.0).min(max_sec);
-    let has_layers = editor.scene.as_ref().is_some_and(|s| !s.layers.is_empty());
 
-    // --- 0. Vertical Resize Splitter Handle (only when layers exist to resize) ---
-    if show_filmstrip && timeline_mode == TimelineMode::Layers && has_layers {
+    // --- 0. Vertical Resize Splitter Handle ---
+    if show_filmstrip {
         let (split_rect, split_resp) = ui.allocate_exact_size(
             Vec2::new(ui.available_width(), 10.0),
             egui::Sense::click_and_drag(),
@@ -140,24 +139,24 @@ pub(super) fn render(
 
         if split_resp.dragged() {
             let dy = split_resp.drag_delta().y;
-            editor.timeline_height = (editor.timeline_height - dy).clamp(60.0, 550.0);
+            editor.timeline_height = (editor.timeline_height - dy).clamp(36.0, 500.0);
             ui.ctx().request_repaint();
         }
 
         if split_resp.double_clicked() {
-            editor.timeline_height = if (editor.timeline_height - 140.0).abs() < 15.0 {
-                240.0
+            editor.timeline_height = if (editor.timeline_height - 38.0).abs() < 15.0 {
+                160.0
             } else {
-                140.0
+                38.0
             };
             ui.ctx().request_repaint();
         }
 
         let is_active = split_resp.hovered() || split_resp.dragged();
         let grip_anim = ui.ctx().animate_bool_with_time(split_resp.id.with("split_hov"), is_active, 0.12);
-        let grip_w = 44.0 + grip_anim * 16.0;
+        let grip_w = 48.0 + grip_anim * 16.0;
         let grip_h = 4.0;
-        let grip_color = theme.border_default.lerp_to_gamma(theme.accent, grip_anim);
+        let grip_color = theme.splitter_grip.lerp_to_gamma(theme.accent, if is_active { 1.0 } else { 0.0 });
 
         let grip_rect = Rect::from_center_size(
             split_rect.center(),
@@ -165,32 +164,46 @@ pub(super) fn render(
         );
         ui.painter().rect_filled(grip_rect, 2.0, grip_color);
 
-        split_resp.on_hover_text(crate::ui::i18n::text(ui, "design-resize-timeline"));
+        if split_resp.hovered() && !split_resp.dragged() {
+            split_resp.on_hover_text(crate::ui::i18n::text(ui, "design-resize-timeline"));
+        }
         ui.add_space(2.0);
     }
 
     let mut cycle_height = false;
+    let card_inner_h = (ui.available_height() - 16.0).max(28.0);
 
     // Dock container card
     egui::Frame::new()
         .fill(theme.bg_card)
-        .stroke(Stroke::new(1.0, theme.border_default))
-        .corner_radius(8.0)
+        .stroke(Stroke::new(1.0, theme.border_subtle))
+        .corner_radius(12.0)
         .inner_margin(egui::Margin::symmetric(10, 8))
         .show(ui, |ui| {
+            ui.spacing_mut().item_spacing.y = 2.0;
+            ui.set_min_height(card_inner_h);
+            ui.set_max_height(card_inner_h);
             // --- 1. Playback & Timeline Header Bar ---
             ui.horizontal(|ui| {
                 ui.spacing_mut().item_spacing.x = 6.0;
+                let avail_w = ui.available_width();
+                let is_compact = avail_w < 640.0;
+                let is_tight = avail_w < 520.0;
 
                 // Play / Pause Button
                 let play_icon = if is_playing { PAUSE } else { PLAY };
-                let play_text = if is_playing {
+                let play_text = if is_tight {
+                    if is_playing { "Pausar" } else { "Prévia" }
+                } else if is_compact {
+                    if is_playing { "Pausar" } else { "Pré-visualizar" }
+                } else if is_playing {
                     crate::ui::i18n::text(ui, "design-pause")
                 } else {
                     crate::ui::i18n::text(ui, "design-preview-animation")
                 };
 
-                let (play_rect, play_resp) = ui.allocate_exact_size(Vec2::new(170.0, 28.0), egui::Sense::click());
+                let play_w = if is_tight { 95.0 } else if is_compact { 128.0 } else { 165.0 };
+                let (play_rect, play_resp) = ui.allocate_exact_size(Vec2::new(play_w, 28.0), egui::Sense::click());
                 if play_resp.hovered() {
                     ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
                 }
@@ -290,14 +303,14 @@ pub(super) fn render(
                 ui.add_space(6.0);
 
                 // Segmented Control: Exactly identical widths & heights with animated on-hold / hover
-                let seg_total_w = 236.0f32;
+                let seg_total_w = if is_tight { 160.0 } else if is_compact { 190.0 } else { 224.0 };
                 let seg_h = 28.0f32;
                 let (seg_rect, _) = ui.allocate_exact_size(Vec2::new(seg_total_w, seg_h), egui::Sense::hover());
 
                 ui.painter().rect_filled(seg_rect, 6.0, theme.bg_app);
                 ui.painter().rect_stroke(seg_rect, 6.0, Stroke::new(1.0, theme.border_default), egui::StrokeKind::Inside);
 
-                let half_w = (seg_total_w - 4.0) * 0.5; // 116.0 px each
+                let half_w = (seg_total_w - 4.0) * 0.5;
                 let seg1_rect = Rect::from_min_size(seg_rect.min + egui::vec2(2.0, 2.0), Vec2::new(half_w, seg_h - 4.0));
                 let seg2_rect = Rect::from_min_size(Pos2::new(seg1_rect.max.x, seg1_rect.min.y), Vec2::new(half_w, seg_h - 4.0));
 
@@ -325,10 +338,15 @@ pub(super) fn render(
                 if is_layers {
                     ui.painter().rect_stroke(draw1, 4.5, Stroke::new(1.0, theme.accent), egui::StrokeKind::Inside);
                 }
+                let seg1_text = if is_tight {
+                    format!("{CLOCK} Linha")
+                } else {
+                    format!("{CLOCK} {}", crate::ui::i18n::text(ui, "design-timeline"))
+                };
                 ui.painter().text(
                     draw1.center(),
                     egui::Align2::CENTER_CENTER,
-                    format!("{CLOCK} {}", crate::ui::i18n::text(ui, "design-timeline")),
+                    seg1_text,
                     egui::FontId::proportional(11.0),
                     if is_layers { Color32::WHITE } else if hov1 > 0.0 { theme.text_primary } else { theme.text_secondary },
                 );
@@ -366,60 +384,62 @@ pub(super) fn render(
                 );
 
                 // Generous separation and Scrubber Timeline (in Slides mode)
-                if timeline_mode == TimelineMode::Slides {
-                    ui.add_space(16.0);
+                if timeline_mode == TimelineMode::Slides && avail_w > 560.0 {
+                    ui.add_space(10.0);
                     ui.painter().line_segment(
                         [Pos2::new(ui.cursor().min.x, ui.cursor().center().y - 10.0), Pos2::new(ui.cursor().min.x, ui.cursor().center().y + 10.0)],
                         Stroke::new(1.0, theme.border_default),
                     );
-                    ui.add_space(16.0);
+                    ui.add_space(10.0);
 
-                    let scrubber_w = (ui.available_width() - 230.0).max(60.0);
-                    let (track_rect, track_resp) = ui.allocate_exact_size(
-                        Vec2::new(scrubber_w, 28.0),
-                        egui::Sense::click_and_drag(),
-                    );
-
-                    let margin_x = 8.0f32;
-                    let usable_w = (track_rect.width() - margin_x * 2.0).max(10.0);
-                    let track_min_x = track_rect.min.x + margin_x;
-
-                    if track_resp.clicked() || track_resp.dragged() {
-                        if let Some(pos) = track_resp.interact_pointer_pos() {
-                            let frac =
-                                ((pos.x - track_min_x) / usable_w).clamp(0.0, 1.0);
-                            scrub_to_ms = Some((frac * max_sec * 1000.0) as u64);
-                        }
-                    }
-                    if track_resp.hovered() {
-                        ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
-                    }
-
-                    let track_bar = Rect::from_min_max(
-                        Pos2::new(track_min_x, track_rect.center().y - 3.0),
-                        Pos2::new(track_min_x + usable_w, track_rect.center().y + 3.0),
-                    );
-                    ui.painter().rect_filled(track_bar, 3.0, theme.border_default);
-
-                    let progress_frac = (curr_sec / max_sec).clamp(0.0, 1.0);
-                    let progress_w = track_bar.width() * progress_frac;
-                    if progress_w > 0.0 {
-                        let filled_rect = Rect::from_min_size(
-                            track_bar.min,
-                            Vec2::new(progress_w, track_bar.height()),
+                    let scrubber_w = (ui.available_width() - 200.0).max(40.0);
+                    if scrubber_w > 40.0 {
+                        let (track_rect, track_resp) = ui.allocate_exact_size(
+                            Vec2::new(scrubber_w, 28.0),
+                            egui::Sense::click_and_drag(),
                         );
-                        ui.painter().rect_filled(filled_rect, 3.0, theme.accent);
-                    }
 
-                    let knob_center = Pos2::new(track_bar.min.x + progress_w, track_bar.center().y);
-                    let is_hot = track_resp.hovered() || track_resp.dragged();
-                    let knob_radius = if is_hot { 7.5 } else { 5.5 };
-                    ui.painter().circle_filled(knob_center, knob_radius, Color32::WHITE);
-                    ui.painter().circle_stroke(
-                        knob_center,
-                        knob_radius,
-                        Stroke::new(1.5, theme.accent),
-                    );
+                        let margin_x = 8.0f32;
+                        let usable_w = (track_rect.width() - margin_x * 2.0).max(10.0);
+                        let track_min_x = track_rect.min.x + margin_x;
+
+                        if track_resp.clicked() || track_resp.dragged() {
+                            if let Some(pos) = track_resp.interact_pointer_pos() {
+                                let frac =
+                                    ((pos.x - track_min_x) / usable_w).clamp(0.0, 1.0);
+                                scrub_to_ms = Some((frac * max_sec * 1000.0) as u64);
+                            }
+                        }
+                        if track_resp.hovered() {
+                            ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
+                        }
+
+                        let track_bar = Rect::from_min_max(
+                            Pos2::new(track_min_x, track_rect.center().y - 3.0),
+                            Pos2::new(track_min_x + usable_w, track_rect.center().y + 3.0),
+                        );
+                        ui.painter().rect_filled(track_bar, 3.0, theme.border_default);
+
+                        let progress_frac = (curr_sec / max_sec).clamp(0.0, 1.0);
+                        let progress_w = track_bar.width() * progress_frac;
+                        if progress_w > 0.0 {
+                            let filled_rect = Rect::from_min_size(
+                                track_bar.min,
+                                Vec2::new(progress_w, track_bar.height()),
+                            );
+                            ui.painter().rect_filled(filled_rect, 3.0, theme.accent);
+                        }
+
+                        let knob_center = Pos2::new(track_bar.min.x + progress_w, track_bar.center().y);
+                        let is_hot = track_resp.hovered() || track_resp.dragged();
+                        let knob_radius = if is_hot { 7.5 } else { 5.5 };
+                        ui.painter().circle_filled(knob_center, knob_radius, Color32::WHITE);
+                        ui.painter().circle_stroke(
+                            knob_center,
+                            knob_radius,
+                            Stroke::new(1.5, theme.accent),
+                        );
+                    }
                 }
 
                 // Time Counter label & Duration Quick Edit
@@ -453,8 +473,8 @@ pub(super) fn render(
                         toggle_filmstrip = true;
                     }
 
-                    // Optional timeline height cycle button in Layers mode (only when layers exist)
-                    if show_filmstrip && timeline_mode == TimelineMode::Layers && has_layers {
+                    // Optional timeline height cycle button in Layers mode
+                    if show_filmstrip && timeline_mode == TimelineMode::Layers {
                         let (h_rect, h_resp) = ui.allocate_exact_size(Vec2::new(28.0, 28.0), egui::Sense::click());
                         if h_resp.hovered() {
                             ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
@@ -484,40 +504,51 @@ pub(super) fn render(
                         h_resp.on_hover_text(crate::ui::i18n::text(ui, "design-toggle-timeline-height"));
                     }
 
-                    // Slide duration quick editor
-                    let mut dur = current_slide_duration;
-                    let dv = ui.add(
-                        egui::DragValue::new(&mut dur)
-                            .range(0.5..=120.0)
-                            .speed(0.2)
-                            .suffix("s"),
-                    )
-                    .on_hover_text(crate::ui::i18n::text(ui, "design-slide-duration"));
-                    if dv.changed() {
-                        new_slide_duration = Some(dur);
+                    let rem_w = ui.available_width();
+                    if rem_w > 120.0 {
+                        let mut dur = current_slide_duration;
+                        let dv = ui.add(
+                            egui::DragValue::new(&mut dur)
+                                .range(0.5..=120.0)
+                                .speed(0.2)
+                                .suffix("s"),
+                        )
+                        .on_hover_text(crate::ui::i18n::text(ui, "design-slide-duration"));
+                        if dv.changed() {
+                            new_slide_duration = Some(dur);
+                        }
+
+                        ui.label(RichText::new(CLOCK).size(13.0).color(theme.text_muted));
                     }
 
-                    ui.label(RichText::new(CLOCK).size(13.0).color(theme.text_muted));
-
                     // Time Counter label
-                    ui.label(
-                        RichText::new(format!("{:.1}s / {:.1}s", curr_sec, max_sec))
-                            .size(11.0)
-                            .color(theme.text_secondary)
-                            .monospace(),
-                    );
+                    if rem_w > 210.0 {
+                        ui.label(
+                            RichText::new(format!("{:.1}s / {:.1}s", curr_sec, max_sec))
+                                .size(11.0)
+                                .color(theme.text_secondary)
+                                .monospace(),
+                        );
+                    } else if rem_w > 160.0 {
+                        ui.label(
+                            RichText::new(format!("{:.1}s", curr_sec))
+                                .size(11.0)
+                                .color(theme.text_secondary)
+                                .monospace(),
+                        );
+                    }
                 });
             });
 
             // --- 2. Body Area (Layers Timeline or Slides Filmstrip) ---
             if show_filmstrip {
-                ui.add_space(3.0);
+                ui.add_space(2.0);
                 let sep_rect = Rect::from_min_size(
                     Pos2::new(ui.cursor().min.x, ui.cursor().min.y),
                     Vec2::new(ui.available_width(), 1.0),
                 );
-                ui.painter().rect_filled(sep_rect, 0.0, theme.border_default);
-                ui.add_space(4.0);
+                ui.painter().rect_filled(sep_rect, 0.0, theme.border_subtle);
+                ui.add_space(2.0);
 
                 match timeline_mode {
                     TimelineMode::Layers => {
@@ -545,6 +576,7 @@ pub(super) fn render(
                             &mut add_requested,
                             &mut duplicate_requested,
                             &mut delete_requested,
+                            editor.timeline_height,
                         );
                     }
                 }
@@ -571,12 +603,12 @@ pub(super) fn render(
         editor.show_filmstrip = !editor.show_filmstrip;
     }
     if cycle_height {
-        editor.timeline_height = if editor.timeline_height < 170.0 {
-            240.0
-        } else if editor.timeline_height < 290.0 {
-            360.0
-        } else {
+        editor.timeline_height = if editor.timeline_height < 70.0 {
             140.0
+        } else if editor.timeline_height < 200.0 {
+            260.0
+        } else {
+            38.0
         };
         ui.ctx().request_repaint();
     }
@@ -638,6 +670,28 @@ pub(super) fn render(
     }
 }
 
+/// Computes the exact vertical space required by the animation dock card and splitter
+pub(super) fn desired_height(editor: &DesignEditor, has_layers: bool) -> f32 {
+    if !editor.show_filmstrip {
+        44.0
+    } else {
+        match editor.timeline_mode {
+            TimelineMode::Layers => {
+                if !has_layers {
+                    76.0
+                } else {
+                    let tracks_h = editor.timeline_height.clamp(36.0, 500.0);
+                    86.0 + tracks_h
+                }
+            }
+            TimelineMode::Slides => {
+                let filmstrip_h = (editor.timeline_height * 0.75).clamp(52.0, 200.0);
+                68.0 + filmstrip_h
+            }
+        }
+    }
+}
+
 /// Renders the 16:9 filmstrip of slides with live miniatures
 fn render_slides_filmstrip(
     ui: &mut egui::Ui,
@@ -651,10 +705,17 @@ fn render_slides_filmstrip(
     add_requested: &mut bool,
     duplicate_requested: &mut bool,
     delete_requested: &mut Option<usize>,
+    timeline_height: f32,
 ) {
+    let avail_h = (ui.available_height() - 6.0).max(40.0);
+    let filmstrip_h = (timeline_height * 0.75).clamp(52.0, 200.0).min(avail_h);
+    let card_h = (filmstrip_h - 4.0).max(38.0);
+    let thumb_h = (card_h - 16.0).clamp(24.0, 180.0);
+    let thumb_w = (thumb_h * (16.0 / 9.0)).round().max(44.0);
+    let card_size = Vec2::new(thumb_w, thumb_h + 16.0);
     egui::ScrollArea::horizontal()
         .id_salt("design_slide_filmstrip")
-        .max_height(78.0)
+        .max_height(card_size.y + 2.0)
         .show(ui, |ui| {
             ui.horizontal(|ui| {
                 ui.spacing_mut().item_spacing.x = 6.0;
@@ -669,8 +730,7 @@ fn render_slides_filmstrip(
                             .on_hover_text(transition_name);
                     }
 
-                    // Card 104x74 with hover & hold emphasis
-                    let card_size = Vec2::new(104.0, 74.0);
+                    // Card with hover & hold emphasis
                     let (rect, resp) = ui.allocate_exact_size(card_size, egui::Sense::click());
                     if resp.hovered() {
                         ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
@@ -678,10 +738,10 @@ fn render_slides_filmstrip(
                     let card_hov = ui.ctx().animate_bool_with_time(resp.id.with("card_hov"), resp.hovered(), 0.12);
                     let card_hold = ui.ctx().animate_bool_with_time(resp.id.with("card_hold"), resp.is_pointer_button_down_on(), 0.12);
 
-                    let thumb_rect = Rect::from_min_size(rect.min, Vec2::new(104.0, 56.0)).shrink(card_hold * 0.5);
+                    let thumb_rect = Rect::from_min_size(rect.min, Vec2::new(card_size.x, thumb_h)).shrink(card_hold * 0.5);
                     let label_rect = Rect::from_min_size(
-                        Pos2::new(rect.min.x, rect.min.y + 57.0),
-                        Vec2::new(104.0, 16.0),
+                        Pos2::new(rect.min.x, rect.min.y + thumb_h + 1.0),
+                        Vec2::new(card_size.x, 16.0),
                     );
 
                     // Miniature slide preview
@@ -795,7 +855,7 @@ fn render_slides_filmstrip(
                 }
 
                 // Add slide card with hover & hold emphasis
-                let add_size = Vec2::new(104.0, 74.0);
+                let add_size = card_size;
                 let (add_rect, add_resp) = ui.allocate_exact_size(add_size, egui::Sense::click());
                 if add_resp.hovered() {
                     ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
@@ -803,7 +863,7 @@ fn render_slides_filmstrip(
                 let add_hov = ui.ctx().animate_bool_with_time(add_resp.id.with("add_hov"), add_resp.hovered(), 0.12);
                 let add_hold = ui.ctx().animate_bool_with_time(add_resp.id.with("add_hold"), add_resp.is_pointer_button_down_on(), 0.12);
 
-                let add_box = Rect::from_min_size(add_rect.min, Vec2::new(104.0, 56.0)).shrink(add_hold * 0.5);
+                let add_box = Rect::from_min_size(add_rect.min, Vec2::new(card_size.x, thumb_h)).shrink(add_hold * 0.5);
 
                 let add_bg = if add_hov > 0.0 {
                     theme.bg_app.lerp_to_gamma(theme.bg_card_hover, add_hov)
