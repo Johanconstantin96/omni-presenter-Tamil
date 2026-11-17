@@ -110,7 +110,7 @@ impl PresentationApp {
         if self.global_search.open
             || modal_was_open
             || is_text_focused
-            || ctx.egui_wants_keyboard_input()
+            || ctx.text_edit_focused()
             || !self.control_state.settings.operator().keyboard_shortcuts
         {
             return;
@@ -316,6 +316,8 @@ impl PresentationApp {
                     !self.control_state.show_presentation_dock
             }
             Command::ResetLayout => self.control_state.layout = Default::default(),
+            Command::CopyLayer => self.design_editor.copy_selected(Some(ctx)),
+            Command::CutLayer => self.design_editor.cut_selected(Some(ctx)),
             command if command.is_design_edit() => self.design_editor.execute_edit(command),
             _ => {}
         }

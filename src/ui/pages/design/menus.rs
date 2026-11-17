@@ -194,3 +194,105 @@ pub(super) fn new_design_menu(ui: &mut egui::Ui, theme: &AppTheme) -> Option<usi
     });
     kind
 }
+
+pub(super) fn new_design_template_menu(ui: &mut egui::Ui, theme: &AppTheme) -> Option<usize> {
+    ui.set_width(300.0);
+    ui.spacing_mut().item_spacing = egui::vec2(4.0, 3.0);
+    ui.label(
+        egui::RichText::new(crate::ui::i18n::text(ui, "design-templates"))
+            .size(10.5)
+            .strong()
+            .color(theme.text_muted),
+    );
+    ui.add_space(2.0);
+    let mut selected = None;
+    for (kind, label, description, icon, (r, g, b), tag) in [
+        (0, "design-blank", "design-start-from-scratch", FILE_TEXT, (148, 163, 184), "SLIDE"),
+        (1, "design-welcome-label", "design-title-and-message", HAND_WAVING, (251, 191, 36), "SLIDE"),
+        (2, "design-countdown", "design-service-countdown", TIMER, (56, 189, 248), "TIMER"),
+        (3, "design-questions-and-answers", "design-interactive-activity", QUESTION, (52, 211, 153), "QUIZ"),
+        (4, "design-clock-overlay-label", "design-clock-overlay", CLOCK, (167, 139, 250), "EXTRA"),
+        (5, "design-lower-third-overlay", "design-lower-third-banner", RECTANGLE, (251, 113, 133), "EXTRA"),
+    ] {
+        if kind == 4 {
+            ui.add_space(3.0);
+            ui.separator();
+            ui.add_space(2.0);
+            ui.label(
+                egui::RichText::new(crate::ui::i18n::text(ui, "control-overlay-design"))
+                    .size(10.0)
+                    .strong()
+                    .color(theme.text_muted),
+            );
+            ui.add_space(1.0);
+        }
+        let (rect, response) = ui
+            .allocate_exact_size(egui::vec2(ui.available_width(), 46.0), egui::Sense::click());
+        if response.hovered() {
+            ui.painter().rect_filled(rect, 8.0, theme.bg_card_hover);
+            ui.painter().rect_stroke(rect, 8.0, egui::Stroke::new(1.0, theme.border_subtle), egui::StrokeKind::Inside);
+        }
+        let badge =
+            egui::Rect::from_min_size(rect.min + egui::vec2(6.0, 8.0), egui::vec2(30.0, 30.0));
+        let badge_bg = egui::Color32::from_rgba_unmultiplied(r, g, b, 35);
+        let badge_stroke = egui::Color32::from_rgba_unmultiplied(r, g, b, 70);
+        let badge_fg = egui::Color32::from_rgb(r, g, b);
+        ui.painter().rect_filled(badge, 8.0, badge_bg);
+        ui.painter().rect_stroke(badge, 8.0, egui::Stroke::new(1.0, badge_stroke), egui::StrokeKind::Inside);
+        ui.painter().text(
+            badge.center(),
+            egui::Align2::CENTER_CENTER,
+            icon,
+            egui::FontId::proportional(15.0),
+            badge_fg,
+        );
+        let title = ui.painter().layout_no_wrap(
+            crate::ui::i18n::text(ui, label).to_owned(),
+            egui::FontId::proportional(12.5),
+            theme.text_primary,
+        );
+        ui.painter().galley(
+            egui::pos2(badge.right() + 10.0, rect.center().y - title.size().y + 1.0),
+            title,
+            theme.text_primary,
+        );
+        let subtitle = ui.painter().layout_no_wrap(
+            crate::ui::i18n::text(ui, description).to_owned(),
+            egui::FontId::proportional(10.5),
+            theme.text_muted,
+        );
+        ui.painter().galley(
+            egui::pos2(badge.right() + 10.0, rect.center().y + 2.0),
+            subtitle,
+            theme.text_muted,
+        );
+
+        let chip_w = 40.0;
+        let chip_rect = egui::Rect::from_min_size(
+            egui::pos2(rect.right() - chip_w - 6.0, rect.center().y - 8.0),
+            egui::vec2(chip_w, 16.0),
+        );
+        let (chip_bg, chip_fg) = if tag == "EXTRA" {
+            (egui::Color32::from_rgba_unmultiplied(139, 92, 246, 35), egui::Color32::from_rgb(196, 181, 253))
+        } else {
+            (egui::Color32::from_rgba_unmultiplied(100, 116, 139, 25), egui::Color32::from_rgb(148, 163, 184))
+        };
+        ui.painter().rect_filled(chip_rect, 4.0, chip_bg);
+        ui.painter().text(
+            chip_rect.center(),
+            egui::Align2::CENTER_CENTER,
+            tag,
+            egui::FontId::proportional(9.0),
+            chip_fg,
+        );
+
+        if response.hovered() {
+            ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
+        }
+        if response.clicked() {
+            selected = Some(kind);
+            ui.close();
+        }
+    }
+    selected
+}

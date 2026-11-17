@@ -59,3 +59,9 @@ command-web-lyrics-search = Buscar letras en la web
 command-group-layers = Agrupar capas
 
 command-ungroup-layers = Desagrupar capas
+
+command-copy-layer = Copiar capa(s)
+
+command-cut-layer = Cortar capa(s)
+
+command-paste-layer = Pegar capa(s) o imagen

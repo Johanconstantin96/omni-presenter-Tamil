@@ -624,6 +624,14 @@ pub(super) fn render(
             }
         });
     if let Some(action) = select_action {
+        if ui.ctx().text_edit_focused() {
+            ui.memory_mut(|m| {
+                if let Some(id) = m.focused() {
+                    m.surrender_focus(id);
+                }
+                m.stop_text_input();
+            });
+        }
         match action {
             SelectAction::Toggle(idx) => editor.select_layer(idx, true),
             SelectAction::Range(idx) => editor.select_layer_range(idx),

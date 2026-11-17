@@ -59,3 +59,9 @@ command-web-lyrics-search = Search lyrics online
 command-group-layers = Group layers
 
 command-ungroup-layers = Ungroup layers
+
+command-copy-layer = Copy layer(s)
+
+command-cut-layer = Cut layer(s)
+
+command-paste-layer = Paste layer(s) or image

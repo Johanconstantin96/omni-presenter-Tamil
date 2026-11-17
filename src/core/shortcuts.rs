@@ -192,6 +192,9 @@ impl ShortcutSettings {
         self.bindings(command).iter().any(|binding| {
             ctx.input(|input| {
                 input.events.iter().any(|event| match event {
+                    egui::Event::Copy if command == Command::CopyLayer => true,
+                    egui::Event::Cut if command == Command::CutLayer => true,
+                    egui::Event::Paste(_) | egui::Event::PasteImage(_) if command == Command::PasteLayer => true,
                     egui::Event::Key {
                         key,
                         modifiers,
@@ -213,7 +216,19 @@ impl ShortcutSettings {
         ctx.input_mut(|input| {
             let mut found = false;
             input.events.retain(|event| {
-                let matches = matches!(event, egui::Event::Key { key, modifiers, pressed: true, repeat: false, .. } if bindings.iter().any(|binding| binding.matches(*key, *modifiers)));
+                let matches = match event {
+                    egui::Event::Copy if command == Command::CopyLayer => true,
+                    egui::Event::Cut if command == Command::CutLayer => true,
+                    egui::Event::Paste(_) | egui::Event::PasteImage(_) if command == Command::PasteLayer => true,
+                    egui::Event::Key {
+                        key,
+                        modifiers,
+                        pressed: true,
+                        repeat: false,
+                        ..
+                    } => bindings.iter().any(|binding| binding.matches(*key, *modifiers)),
+                    _ => false,
+                };
                 found |= matches;
                 !matches
             });
@@ -237,6 +252,12 @@ fn default_bindings(command: Command) -> Vec<KeyBinding> {
     }
     if command == Command::JumpSlide {
         return [Key::Quote, Key::Slash]
+            .into_iter()
+            .map(|key| KeyBinding::new(key, false, false, false))
+            .collect();
+    }
+    if command == Command::DeleteLayer {
+        return [Key::Delete, Key::Backspace]
             .into_iter()
             .map(|key| KeyBinding::new(key, false, false, false))
             .collect();
@@ -272,6 +293,9 @@ fn default_bindings(command: Command) -> Vec<KeyBinding> {
         Command::DeleteLayer => (Key::Delete, false, false),
         Command::GroupLayers => (Key::G, true, false),
         Command::UngroupLayers => (Key::G, true, true),
+        Command::CopyLayer => (Key::C, true, false),
+        Command::CutLayer => (Key::X, true, false),
+        Command::PasteLayer => (Key::V, true, false),
     };
     vec![KeyBinding::new(key, ctrl, shift, false)]
 }

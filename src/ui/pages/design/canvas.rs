@@ -88,6 +88,14 @@ pub(super) fn render(
         ui.scope_id().with("design_canvas"),
         egui::Sense::click_and_drag(),
     );
+    if (response.clicked() || response.drag_started()) && ui.ctx().text_edit_focused() {
+        ui.memory_mut(|m| {
+            if let Some(id) = m.focused() {
+                m.surrender_focus(id);
+            }
+            m.stop_text_input();
+        });
+    }
     // Checkerboard makes transparency visible without changing the exported scene.
     let is_light = theme.bg_app.r() > 128;
     let (checker_base, checker_alt) = if is_light {
@@ -263,6 +271,8 @@ pub(super) fn render(
         egui::StrokeKind::Inside,
     );
     super::canvas_interaction::render(ui,editor,canvas,&response,theme);
+    super::clipboard::handle_canvas_file_drop(ui, editor, canvas, theme);
+    super::clipboard::handle_canvas_keyboard_shortcuts(ui, editor, canvas);
     let menu_layer = ui
         .ctx()
         .data_mut(|data| data.get_temp::<Option<usize>>(menu_id))

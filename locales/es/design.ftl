@@ -740,6 +740,7 @@ design-timeline = Línea de tiempo
 design-no-layers-on-slide = Sin objetos en esta diapositiva
 design-resize-timeline = Arrastrar para redimensionar la línea de tiempo (doble clic para alternar)
 design-toggle-timeline-height = Ajustar altura de la línea de tiempo
+design-drop-image-cue = Suelta imágenes aquí para añadir a la diapositiva
 
 
 

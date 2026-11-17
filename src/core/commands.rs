@@ -34,6 +34,9 @@ pub enum Command {
     DeleteLayer,
     GroupLayers,
     UngroupLayers,
+    CopyLayer,
+    CutLayer,
+    PasteLayer,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -105,11 +108,14 @@ impl Command {
             | Self::DuplicateLayer
             | Self::DeleteLayer
             | Self::GroupLayers
-            | Self::UngroupLayers => CommandGroup::Design,
+            | Self::UngroupLayers
+            | Self::CopyLayer
+            | Self::CutLayer
+            | Self::PasteLayer => CommandGroup::Design,
             Self::ResetLayout => CommandGroup::Workspace,
         }
     }
-    pub const ALL: [Self; 30] = [
+    pub const ALL: [Self; 33] = [
         Self::Search,
         Self::BibleSearch,
         Self::Settings,
@@ -140,6 +146,9 @@ impl Command {
         Self::DeleteLayer,
         Self::GroupLayers,
         Self::UngroupLayers,
+        Self::CopyLayer,
+        Self::CutLayer,
+        Self::PasteLayer,
     ];
 
     pub fn label_key(self) -> &'static str {
@@ -174,6 +183,9 @@ impl Command {
             Self::DeleteLayer => "command-delete-layer",
             Self::GroupLayers => "command-group-layers",
             Self::UngroupLayers => "command-ungroup-layers",
+            Self::CopyLayer => "command-copy-layer",
+            Self::CutLayer => "command-cut-layer",
+            Self::PasteLayer => "command-paste-layer",
         }
     }
 
@@ -186,6 +198,9 @@ impl Command {
                 | Self::DeleteLayer
                 | Self::GroupLayers
                 | Self::UngroupLayers
+                | Self::CopyLayer
+                | Self::CutLayer
+                | Self::PasteLayer
         )
     }
 

@@ -28,6 +28,7 @@ pub(super) fn render_layers_timeline(
     }
 
     let label_width = 135.0f32;
+    let end_pad = 14.0f32;
 
     // --- Time Ruler Header ---
     let (ruler_rect, ruler_resp) = ui.allocate_exact_size(
@@ -37,7 +38,7 @@ pub(super) fn render_layers_timeline(
 
     let ruler_track_rect = Rect::from_min_max(
         Pos2::new(ruler_rect.min.x + label_width, ruler_rect.min.y),
-        ruler_rect.max,
+        Pos2::new(ruler_rect.max.x - end_pad, ruler_rect.max.y),
     );
 
     if ruler_resp.hovered() {
@@ -96,12 +97,12 @@ pub(super) fn render_layers_timeline(
     ui.add_space(2.0);
 
     // --- Vertical list of layer tracks ---
-    let avail_tracks_h = (ui.available_height() - 6.0).max(24.0);
-    let tracks_h = avail_tracks_h.min(editor.timeline_height.clamp(36.0, 500.0));
+    let avail_tracks_h = (ui.available_height() - 4.0).max(20.0);
+    let tracks_h = avail_tracks_h.min(editor.timeline_height.clamp(24.0, 420.0));
     let tracks_scroll = egui::ScrollArea::vertical()
         .id_salt("design_layer_tracks_scroll")
         .max_height(tracks_h)
-        .auto_shrink([true, false]);
+        .auto_shrink([false, false]);
 
     let tracks_content = tracks_scroll.show(ui, |ui| {
         let pointer_pos = ui.input(|i| i.pointer.hover_pos());
@@ -121,7 +122,7 @@ pub(super) fn render_layers_timeline(
             );
             let lane_rect = Rect::from_min_max(
                 Pos2::new(row_rect.min.x + label_width, row_rect.min.y),
-                row_rect.max,
+                Pos2::new(row_rect.max.x - end_pad, row_rect.max.y),
             );
 
             // Left: Layer Item pill button
@@ -197,14 +198,15 @@ pub(super) fn render_layers_timeline(
                 Pos2::new(end_x.max(start_x + 14.0), row_rect.max.y - 2.0),
             );
 
-            // Drag detection
+            // Drag detection strictly within bar bounds to avoid gutter false-positives
+            let handle_w = 7.0f32.min(bar_rect.width() * 0.35);
             let left_zone = Rect::from_min_max(
-                Pos2::new(bar_rect.min.x - 4.0, bar_rect.min.y),
-                Pos2::new(bar_rect.min.x + 8.0, bar_rect.max.y),
+                Pos2::new(bar_rect.min.x, bar_rect.min.y),
+                Pos2::new(bar_rect.min.x + handle_w, bar_rect.max.y),
             );
             let right_zone = Rect::from_min_max(
-                Pos2::new(bar_rect.max.x - 8.0, bar_rect.min.y),
-                Pos2::new(bar_rect.max.x + 4.0, bar_rect.max.y),
+                Pos2::new(bar_rect.max.x - handle_w, bar_rect.min.y),
+                Pos2::new(bar_rect.max.x, bar_rect.max.y),
             );
 
             let mut is_bar_hovered = false;

@@ -126,65 +126,11 @@ pub(super) fn render(
 
     let curr_sec = (curr_time_ms as f32 / 1000.0).min(max_sec);
 
-    // --- 0. Vertical Resize Splitter Handle ---
-    if show_filmstrip {
-        let (split_rect, split_resp) = ui.allocate_exact_size(
-            Vec2::new(ui.available_width(), 10.0),
-            egui::Sense::click_and_drag(),
-        );
-
-        if split_resp.hovered() || split_resp.dragged() {
-            ui.ctx().set_cursor_icon(egui::CursorIcon::ResizeVertical);
-        }
-
-        if split_resp.dragged() {
-            let dy = split_resp.drag_delta().y;
-            editor.timeline_height = (editor.timeline_height - dy).clamp(36.0, 500.0);
-            ui.ctx().request_repaint();
-        }
-
-        if split_resp.double_clicked() {
-            editor.timeline_height = if (editor.timeline_height - 38.0).abs() < 15.0 {
-                160.0
-            } else {
-                38.0
-            };
-            ui.ctx().request_repaint();
-        }
-
-        let is_active = split_resp.hovered() || split_resp.dragged();
-        let grip_anim = ui.ctx().animate_bool_with_time(split_resp.id.with("split_hov"), is_active, 0.12);
-        let grip_w = 48.0 + grip_anim * 16.0;
-        let grip_h = 4.0;
-        let grip_color = theme.splitter_grip.lerp_to_gamma(theme.accent, if is_active { 1.0 } else { 0.0 });
-
-        let grip_rect = Rect::from_center_size(
-            split_rect.center(),
-            Vec2::new(grip_w, grip_h),
-        );
-        ui.painter().rect_filled(grip_rect, 2.0, grip_color);
-
-        if split_resp.hovered() && !split_resp.dragged() {
-            split_resp.on_hover_text(crate::ui::i18n::text(ui, "design-resize-timeline"));
-        }
-        ui.add_space(2.0);
-    }
-
     let mut cycle_height = false;
-    let card_inner_h = (ui.available_height() - 16.0).max(28.0);
+    ui.spacing_mut().item_spacing.y = 2.0;
 
-    // Dock container card
-    egui::Frame::new()
-        .fill(theme.bg_card)
-        .stroke(Stroke::new(1.0, theme.border_subtle))
-        .corner_radius(12.0)
-        .inner_margin(egui::Margin::symmetric(10, 8))
-        .show(ui, |ui| {
-            ui.spacing_mut().item_spacing.y = 2.0;
-            ui.set_min_height(card_inner_h);
-            ui.set_max_height(card_inner_h);
-            // --- 1. Playback & Timeline Header Bar ---
-            ui.horizontal(|ui| {
+    // --- 1. Playback & Timeline Header Bar ---
+    ui.horizontal(|ui| {
                 ui.spacing_mut().item_spacing.x = 6.0;
                 let avail_w = ui.available_width();
                 let is_compact = avail_w < 640.0;
@@ -442,102 +388,107 @@ pub(super) fn render(
                     }
                 }
 
-                // Time Counter label & Duration Quick Edit
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    // Collapse/Expand filmstrip button with on-hold and hover
-                    let toggle_icon = if show_filmstrip { CARET_DOWN } else { CARET_UP };
-                    let (tog_rect, tog_resp) = ui.allocate_exact_size(Vec2::new(28.0, 28.0), egui::Sense::click());
-                    if tog_resp.hovered() {
+                // Right-aligned controls (spacer-based forward layout to guarantee zero overlap)
+                let show_height_btn = show_filmstrip && timeline_mode == TimelineMode::Layers;
+                let rem_w = ui.available_width();
+                let show_time = rem_w > 260.0;
+                let show_dur = rem_w > 150.0;
+
+                let mut right_w = 34.0;
+                if show_height_btn {
+                    right_w += 34.0;
+                }
+                if show_dur {
+                    right_w += 74.0;
+                }
+                if show_time {
+                    right_w += 84.0;
+                }
+
+                let spacer = (rem_w - right_w).max(4.0);
+                ui.add_space(spacer);
+
+                if show_time {
+                    ui.label(
+                        RichText::new(format!("{:.1}s / {:.1}s", curr_sec, max_sec))
+                            .size(11.0)
+                            .color(theme.text_secondary)
+                            .monospace(),
+                    );
+                }
+
+                if show_dur {
+                    ui.label(RichText::new(CLOCK).size(13.0).color(theme.text_muted));
+                    let mut dur = current_slide_duration;
+                    let dv = ui.add(
+                        egui::DragValue::new(&mut dur)
+                            .range(0.5..=120.0)
+                            .speed(0.2)
+                            .suffix("s"),
+                    )
+                    .on_hover_text(crate::ui::i18n::text(ui, "design-slide-duration"));
+                    if dv.changed() {
+                        new_slide_duration = Some(dur);
+                    }
+                }
+
+                if show_height_btn {
+                    let (h_rect, h_resp) = ui.allocate_exact_size(Vec2::new(28.0, 28.0), egui::Sense::click());
+                    if h_resp.hovered() {
                         ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
                     }
-                    let tog_hov = ui.ctx().animate_bool_with_time(tog_resp.id.with("tog_hov"), tog_resp.hovered(), 0.12);
-                    let tog_hold = ui.ctx().animate_bool_with_time(tog_resp.id.with("tog_hld"), tog_resp.is_pointer_button_down_on(), 0.12);
-                    let tog_bg = theme.bg_app.lerp_to_gamma(theme.bg_card_hover, tog_hov);
-                    let draw_tog = tog_rect.shrink(tog_hold * 0.6);
+                    let h_hov = ui.ctx().animate_bool_with_time(h_resp.id.with("h_hov"), h_resp.hovered(), 0.12);
+                    let h_hold = ui.ctx().animate_bool_with_time(h_resp.id.with("h_hld"), h_resp.is_pointer_button_down_on(), 0.12);
+                    let h_bg = theme.bg_app.lerp_to_gamma(theme.bg_card_hover, h_hov);
+                    let draw_h = h_rect.shrink(h_hold * 0.6);
 
-                    ui.painter().rect_filled(draw_tog, 6.0, tog_bg);
+                    ui.painter().rect_filled(draw_h, 6.0, h_bg);
                     ui.painter().rect_stroke(
-                        draw_tog,
+                        draw_h,
                         6.0,
-                        Stroke::new(1.0, if tog_hov > 0.0 { theme.accent } else { theme.border_default }),
+                        Stroke::new(1.0, if h_hov > 0.0 { theme.accent } else { theme.border_default }),
                         egui::StrokeKind::Inside,
                     );
                     ui.painter().text(
-                        draw_tog.center(),
+                        draw_h.center(),
                         egui::Align2::CENTER_CENTER,
-                        toggle_icon,
-                        egui::FontId::proportional(13.0),
-                        if tog_hov > 0.0 { theme.accent } else { theme.text_secondary },
+                        ARROWS_DOWN_UP,
+                        egui::FontId::proportional(12.0),
+                        if h_hov > 0.0 { theme.accent } else { theme.text_secondary },
                     );
-                    if tog_resp.clicked() {
-                        toggle_filmstrip = true;
+                    if h_resp.clicked() {
+                        cycle_height = true;
                     }
+                    h_resp.on_hover_text(crate::ui::i18n::text(ui, "design-toggle-timeline-height"));
+                }
 
-                    // Optional timeline height cycle button in Layers mode
-                    if show_filmstrip && timeline_mode == TimelineMode::Layers {
-                        let (h_rect, h_resp) = ui.allocate_exact_size(Vec2::new(28.0, 28.0), egui::Sense::click());
-                        if h_resp.hovered() {
-                            ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
-                        }
-                        let h_hov = ui.ctx().animate_bool_with_time(h_resp.id.with("h_hov"), h_resp.hovered(), 0.12);
-                        let h_hold = ui.ctx().animate_bool_with_time(h_resp.id.with("h_hld"), h_resp.is_pointer_button_down_on(), 0.12);
-                        let h_bg = theme.bg_app.lerp_to_gamma(theme.bg_card_hover, h_hov);
-                        let draw_h = h_rect.shrink(h_hold * 0.6);
+                let toggle_icon = if show_filmstrip { CARET_DOWN } else { CARET_UP };
+                let (tog_rect, tog_resp) = ui.allocate_exact_size(Vec2::new(28.0, 28.0), egui::Sense::click());
+                if tog_resp.hovered() {
+                    ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
+                }
+                let tog_hov = ui.ctx().animate_bool_with_time(tog_resp.id.with("tog_hov"), tog_resp.hovered(), 0.12);
+                let tog_hold = ui.ctx().animate_bool_with_time(tog_resp.id.with("tog_hld"), tog_resp.is_pointer_button_down_on(), 0.12);
+                let tog_bg = theme.bg_app.lerp_to_gamma(theme.bg_card_hover, tog_hov);
+                let draw_tog = tog_rect.shrink(tog_hold * 0.6);
 
-                        ui.painter().rect_filled(draw_h, 6.0, h_bg);
-                        ui.painter().rect_stroke(
-                            draw_h,
-                            6.0,
-                            Stroke::new(1.0, if h_hov > 0.0 { theme.accent } else { theme.border_default }),
-                            egui::StrokeKind::Inside,
-                        );
-                        ui.painter().text(
-                            draw_h.center(),
-                            egui::Align2::CENTER_CENTER,
-                            ARROWS_DOWN_UP,
-                            egui::FontId::proportional(12.0),
-                            if h_hov > 0.0 { theme.accent } else { theme.text_secondary },
-                        );
-                        if h_resp.clicked() {
-                            cycle_height = true;
-                        }
-                        h_resp.on_hover_text(crate::ui::i18n::text(ui, "design-toggle-timeline-height"));
-                    }
-
-                    let rem_w = ui.available_width();
-                    if rem_w > 120.0 {
-                        let mut dur = current_slide_duration;
-                        let dv = ui.add(
-                            egui::DragValue::new(&mut dur)
-                                .range(0.5..=120.0)
-                                .speed(0.2)
-                                .suffix("s"),
-                        )
-                        .on_hover_text(crate::ui::i18n::text(ui, "design-slide-duration"));
-                        if dv.changed() {
-                            new_slide_duration = Some(dur);
-                        }
-
-                        ui.label(RichText::new(CLOCK).size(13.0).color(theme.text_muted));
-                    }
-
-                    // Time Counter label
-                    if rem_w > 210.0 {
-                        ui.label(
-                            RichText::new(format!("{:.1}s / {:.1}s", curr_sec, max_sec))
-                                .size(11.0)
-                                .color(theme.text_secondary)
-                                .monospace(),
-                        );
-                    } else if rem_w > 160.0 {
-                        ui.label(
-                            RichText::new(format!("{:.1}s", curr_sec))
-                                .size(11.0)
-                                .color(theme.text_secondary)
-                                .monospace(),
-                        );
-                    }
-                });
+                ui.painter().rect_filled(draw_tog, 6.0, tog_bg);
+                ui.painter().rect_stroke(
+                    draw_tog,
+                    6.0,
+                    Stroke::new(1.0, if tog_hov > 0.0 { theme.accent } else { theme.border_default }),
+                    egui::StrokeKind::Inside,
+                );
+                ui.painter().text(
+                    draw_tog.center(),
+                    egui::Align2::CENTER_CENTER,
+                    toggle_icon,
+                    egui::FontId::proportional(13.0),
+                    if tog_hov > 0.0 { theme.accent } else { theme.text_secondary },
+                );
+                if tog_resp.clicked() {
+                    toggle_filmstrip = true;
+                }
             });
 
             // --- 2. Body Area (Layers Timeline or Slides Filmstrip) ---
@@ -581,7 +532,6 @@ pub(super) fn render(
                     }
                 }
             }
-        });
 
     // Execute requested actions
     if let Some(mode) = set_mode {

@@ -740,6 +740,7 @@ design-timeline = Timeline
 design-no-layers-on-slide = No objects on this slide
 design-resize-timeline = Drag to resize timeline (double-click to toggle size)
 design-toggle-timeline-height = Adjust timeline height
+design-drop-image-cue = Drop images here to add to slide
 
 
 

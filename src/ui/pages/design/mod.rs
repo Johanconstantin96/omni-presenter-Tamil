@@ -16,6 +16,7 @@ mod inspector_appearance;
 mod inspector_transition;
 pub mod animation_bar;
 pub(super) mod animation_timeline;
+pub(crate) mod clipboard;
 #[cfg(test)]
 mod tests;
 #[cfg(test)]
@@ -88,6 +89,7 @@ pub struct DesignEditor {
     pub timeline_mode: TimelineMode,
     pub timeline_drag: Option<TimelineDrag>,
     pub timeline_height: f32,
+    pub clipboard_layers: Vec<crate::core::design::DesignLayer>,
 }
 
 impl Default for DesignEditor {
@@ -125,6 +127,7 @@ impl Default for DesignEditor {
             timeline_mode: TimelineMode::Layers,
             timeline_drag: None,
             timeline_height: 38.0,
+            clipboard_layers: Vec::new(),
         }
     }
 }
@@ -148,6 +151,9 @@ impl DesignEditor {
             }
             Command::GroupLayers => self.group_selected(),
             Command::UngroupLayers => self.ungroup_selected(),
+            Command::CopyLayer => self.copy_selected(None),
+            Command::CutLayer => self.cut_selected(None),
+            Command::PasteLayer => self.paste(),
             _ => {}
         }
     }
@@ -378,7 +384,7 @@ impl DesignEditor {
         }
     }
 
-    fn duplicate_layer(&mut self) {
+    pub(super) fn duplicate_layer(&mut self) {
         let Some(scene) = &mut self.scene else { return; };
         if self.selected_layers.len() > 1 {
             let mut indices: Vec<usize> = self.selected_layers.iter().copied().collect();
@@ -423,7 +429,7 @@ impl DesignEditor {
         }
     }
 
-    fn delete_layer(&mut self) {
+    pub(super) fn delete_layer(&mut self) {
         let Some(scene) = &mut self.scene else { return; };
         if self.selected_layers.len() > 1 {
             let mut indices: Vec<usize> = self.selected_layers.iter().copied().collect();
@@ -451,7 +457,7 @@ impl DesignEditor {
         }
     }
 
-    fn history(&mut self, redo: bool) {
+    pub(super) fn history(&mut self, redo: bool) {
         let source = if redo { &mut self.redo } else { &mut self.undo };
         if let Some(previous) = source.pop() {
             if let Some(current) = self.scene.replace(previous) {
@@ -604,12 +610,12 @@ impl DesignEditor {
         let max_dock_h = (center_rect.height() - 120.0).max(44.0);
         let dock_h = animation_bar::desired_height(self, has_layers).min(max_dock_h).max(44.0);
         let dock_rect = egui::Rect::from_min_max(
-            egui::pos2(center_rect.min.x + 6.0, center_rect.max.y - dock_h),
-            egui::pos2(center_rect.max.x - 6.0, center_rect.max.y),
+            egui::pos2(center_rect.min.x, center_rect.max.y - dock_h),
+            egui::pos2(center_rect.max.x, center_rect.max.y),
         );
         let top_rect = egui::Rect::from_min_max(
             center_rect.min,
-            egui::pos2(center_rect.max.x, (dock_rect.min.y - 4.0).max(center_rect.min.y)),
+            egui::pos2(center_rect.max.x, (dock_rect.min.y - gap).max(center_rect.min.y)),
         );
 
         let mut top_ui = ui.new_child(
@@ -645,9 +651,44 @@ impl DesignEditor {
                 .max_rect(dock_rect)
                 .layout(egui::Layout::top_down(egui::Align::Min)),
         );
-        dock_ui.set_clip_rect(dock_rect.expand(2.0));
+        dock_ui.set_clip_rect(dock_rect);
         dock_ui.set_min_size(dock_rect.size());
-        animation_bar::render(&mut dock_ui, self, &theme, &state.themes);
+        panel(&theme).show(&mut dock_ui, |ui| {
+            animation_bar::render(ui, self, &theme, &state.themes);
+        });
+
+        let dock_split_rect = egui::Rect::from_min_max(
+            egui::pos2(center_rect.min.x, dock_rect.min.y - 4.0),
+            egui::pos2(center_rect.max.x, dock_rect.min.y + 4.0),
+        );
+        let dock_split_resp = ui.interact(
+            dock_split_rect,
+            ui.scope_id().with("design_dock_v_splitter"),
+            egui::Sense::click_and_drag(),
+        );
+        if dock_split_resp.hovered() || dock_split_resp.dragged() {
+            ui.ctx().set_cursor_icon(egui::CursorIcon::ResizeVertical);
+        }
+        if dock_split_resp.dragged() {
+            let dy = dock_split_resp.drag_delta().y;
+            if !self.show_filmstrip && dy < -2.0 {
+                self.show_filmstrip = true;
+            }
+            self.timeline_height = (self.timeline_height - dy).clamp(24.0, 420.0);
+            ui.ctx().request_repaint();
+        }
+        if dock_split_resp.double_clicked() {
+            self.show_filmstrip = !self.show_filmstrip;
+            ui.ctx().request_repaint();
+        }
+        let is_dock_split_hot = dock_split_resp.hovered() || dock_split_resp.dragged();
+        let grip_w = if is_dock_split_hot { 48.0 } else { 36.0 };
+        let grip_color = if is_dock_split_hot { theme.accent } else { theme.splitter_grip };
+        ui.painter().rect_filled(
+            egui::Rect::from_center_size(egui::pos2(dock_rect.center().x, dock_rect.min.y), egui::vec2(grip_w, 3.0)),
+            1.5,
+            grip_color,
+        );
         let mut left_drag = 0.0;
         let mut right_drag = 0.0;
         for (index, x) in [left_rect.right() + gap * 0.5, right_rect.left() - gap * 0.5]
@@ -827,121 +868,11 @@ impl DesignEditor {
             }
         }
         ui.menu_button(crate::ui::i18n::format(ui, "design-new-design", &[("icon", PLUS)]), |ui| {
-            self.new_design_menu(ui, state, deck, db, theme);
-        });
-    }
-
-    fn new_design_menu(
-        &mut self,
-        ui: &mut egui::Ui,
-        state: &mut ControlPanelState,
-        deck: &mut SlideDeck,
-        db: &AppDb,
-        theme: &AppTheme,
-    ) {
-        ui.set_width(300.0);
-        ui.spacing_mut().item_spacing = egui::vec2(4.0, 3.0);
-        ui.label(
-            RichText::new(crate::ui::i18n::text(ui, "design-templates"))
-                .size(10.5)
-                .strong()
-                .color(theme.text_muted),
-        );
-        ui.add_space(2.0);
-        for (kind, label, description, icon, (r, g, b), tag) in [
-            (0, "design-blank", "design-start-from-scratch", FILE_TEXT, (148, 163, 184), "SLIDE"),
-            (1, "design-welcome-label", "design-title-and-message", HAND_WAVING, (251, 191, 36), "SLIDE"),
-            (2, "design-countdown", "design-service-countdown", TIMER, (56, 189, 248), "TIMER"),
-            (3, "design-questions-and-answers", "design-interactive-activity", QUESTION, (52, 211, 153), "QUIZ"),
-            (4, "design-clock-overlay-label", "design-clock-overlay", CLOCK, (167, 139, 250), "EXTRA"),
-            (5, "design-lower-third-overlay", "design-lower-third-banner", RECTANGLE, (251, 113, 133), "EXTRA"),
-        ] {
-            if kind == 4 {
-                ui.add_space(3.0);
-                ui.separator();
-                ui.add_space(2.0);
-                ui.label(
-                    RichText::new(crate::ui::i18n::text(ui, "control-overlay-design"))
-                        .size(10.0)
-                        .strong()
-                        .color(theme.text_muted),
-                );
-                ui.add_space(1.0);
-            }
-            let (rect, response) = ui
-                .allocate_exact_size(egui::vec2(ui.available_width(), 46.0), egui::Sense::click());
-            if response.hovered() {
-                ui.painter().rect_filled(rect, 8.0, theme.bg_card_hover);
-                ui.painter().rect_stroke(rect, 8.0, egui::Stroke::new(1.0, theme.border_subtle), egui::StrokeKind::Inside);
-            }
-            let badge =
-                egui::Rect::from_min_size(rect.min + egui::vec2(6.0, 8.0), egui::vec2(30.0, 30.0));
-            let badge_bg = egui::Color32::from_rgba_unmultiplied(r, g, b, 35);
-            let badge_stroke = egui::Color32::from_rgba_unmultiplied(r, g, b, 70);
-            let badge_fg = egui::Color32::from_rgb(r, g, b);
-            ui.painter().rect_filled(badge, 8.0, badge_bg);
-            ui.painter().rect_stroke(badge, 8.0, egui::Stroke::new(1.0, badge_stroke), egui::StrokeKind::Inside);
-            ui.painter().text(
-                badge.center(),
-                egui::Align2::CENTER_CENTER,
-                icon,
-                egui::FontId::proportional(15.0),
-                badge_fg,
-            );
-            let title = ui.painter().layout_no_wrap(
-                crate::ui::i18n::text(ui, label).to_owned(),
-                egui::FontId::proportional(12.5),
-                theme.text_primary,
-            );
-            ui.painter().galley(
-                egui::pos2(badge.right() + 10.0, rect.center().y - title.size().y + 1.0),
-                title,
-                theme.text_primary,
-            );
-            let subtitle = ui.painter().layout_no_wrap(
-                crate::ui::i18n::text(ui, description).to_owned(),
-                egui::FontId::proportional(10.5),
-                theme.text_muted,
-            );
-            ui.painter().galley(
-                egui::pos2(badge.right() + 10.0, rect.center().y + 2.0),
-                subtitle,
-                theme.text_muted,
-            );
-
-            let chip_w = 40.0;
-            let chip_rect = egui::Rect::from_min_size(
-                egui::pos2(rect.right() - chip_w - 6.0, rect.center().y - 8.0),
-                egui::vec2(chip_w, 16.0),
-            );
-            let chip_bg = if tag == "EXTRA" {
-                egui::Color32::from_rgba_unmultiplied(139, 92, 246, 35)
-            } else {
-                egui::Color32::from_rgba_unmultiplied(100, 116, 139, 25)
-            };
-            let chip_fg = if tag == "EXTRA" {
-                egui::Color32::from_rgb(196, 181, 253)
-            } else {
-                egui::Color32::from_rgb(148, 163, 184)
-            };
-            ui.painter().rect_filled(chip_rect, 4.0, chip_bg);
-            ui.painter().text(
-                chip_rect.center(),
-                egui::Align2::CENTER_CENTER,
-                tag,
-                egui::FontId::proportional(9.0),
-                chip_fg,
-            );
-
-            if response.hovered() {
-                ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
-            }
-            if response.clicked() {
+            if let Some(kind) = menus::new_design_template_menu(ui, theme) {
                 self.new_scene(kind, db, deck);
                 state.selected_tab = 4;
-                ui.close();
             }
-        }
+        });
     }
 
     fn reorder(&mut self, forward: bool) {
