@@ -23,8 +23,7 @@ pub fn render_preview(
     let Some(mut scene) = deck.preview_design.clone() else {
         return;
     };
-    if !scene.overlay && scene.background_mode != "color" {
-        scene.background_mode = "theme".into();
+    if !scene.overlay && scene.background_mode == "theme" {
         scene.theme_id = Some(state.preview_theme().id.clone());
     }
     render_header_bar(ui, ContainerKind::Lyrics, "workspace-design-preview", &theme);

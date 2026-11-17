@@ -60,6 +60,9 @@ pub fn render_stage_column(
         egui::Rect::from_center_size(slot.center(), egui::vec2(height * aspect, height));
     if *presenting && !hidden {
         if let Some(scene) = &deck.live_design {
+            if scene.background_mode == "transparent" {
+                paint_stage_desktop_backdrop(ui.painter(), live_rect, theme.radius_lg, state);
+            }
             crate::render::design::paint_themed_with_transition(
                 ui.painter(),
                 live_rect,
@@ -123,6 +126,7 @@ pub fn render_stage_column(
             Color32::from_rgb(230, 235, 245),
         );
     }
+    crate::render::paint_corner_mask(ui.painter(), live_rect, theme.radius_lg, theme.bg_card);
     ui.painter().rect_stroke(
         live_rect,
         theme.radius_lg,
@@ -184,9 +188,8 @@ pub fn render_preview_column(
         egui::Rect::from_center_size(slot.center(), egui::vec2(height * aspect, height));
     if let Some(scene) = &mut deck.preview_design
         && !scene.overlay
-        && scene.background_mode != "color"
+        && scene.background_mode == "theme"
     {
-        scene.background_mode = "theme".into();
         scene.theme_id = Some(state.preview_theme().id.clone());
     }
     if let Some(scene) = &deck.preview_design {
@@ -208,6 +211,8 @@ pub fn render_preview_column(
                     deck.live_slide_text(),
                 );
             }
+        } else if scene.background_mode == "transparent" {
+            paint_stage_desktop_backdrop(ui.painter(), preview_rect, theme.radius_lg, state);
         }
         crate::render::design::paint_themed(ui.painter(), preview_rect, scene, &state.themes);
     } else {
@@ -224,6 +229,7 @@ pub fn render_preview_column(
     let hover = ui
         .ctx()
         .animate_bool(response.id.with("hover"), response.hovered());
+    crate::render::paint_corner_mask(ui.painter(), preview_rect, theme.radius_lg, theme.bg_card);
     ui.painter().rect_stroke(
         preview_rect,
         theme.radius_lg,
@@ -288,6 +294,24 @@ pub fn render_preview_column(
     }
 }
 
+pub fn paint_stage_desktop_backdrop(
+    painter: &egui::Painter,
+    rect: egui::Rect,
+    corner_radius: f32,
+    state: &ControlPanelState,
+) {
+    let wallpaper = state.settings.effective_wallpaper("");
+    crate::ui::presentation::paint_wallpaper_with_radius(
+        painter,
+        rect,
+        wallpaper,
+        None,
+        &state.themes,
+        corner_radius,
+        true,
+    );
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -313,5 +337,51 @@ mod tests {
         });
         output.textures_delta.clear();
         assert!(!output.shapes.is_empty());
+    }
+
+    #[test]
+    fn test_preview_column_renders_transparent_design_with_desktop_backdrop() {
+        let mut state = ControlPanelState::default();
+        let mut deck = SlideDeck::default();
+        let design = crate::core::design::DesignDocument {
+            background_mode: "transparent".into(),
+            ..Default::default()
+        };
+        deck.preview_design = Some(design);
+
+        let ctx = egui::Context::default();
+        let mut output = ctx.run_ui(egui::RawInput::default(), |ui| {
+            render_preview_column(ui, &mut state, &mut deck, &mut false)
+        });
+        output.textures_delta.clear();
+        assert!(!output.shapes.is_empty());
+
+        // Also test with custom color wallpaper
+        state.settings.physical_background =
+            crate::core::preferences::PhysicalBackground::Color { rgb: [20, 40, 60] };
+        let mut output2 = ctx.run_ui(egui::RawInput::default(), |ui| {
+            render_preview_column(ui, &mut state, &mut deck, &mut false)
+        });
+        output2.textures_delta.clear();
+        assert!(!output2.shapes.is_empty());
+    }
+
+    #[test]
+    fn test_stage_and_preview_columns_apply_corner_mask() {
+        let mut state = ControlPanelState::default();
+        let mut deck = SlideDeck::default();
+        let ctx = egui::Context::default();
+
+        let mut output_live = ctx.run_ui(egui::RawInput::default(), |ui| {
+            render_stage_column(ui, &mut state, &mut deck, &mut true);
+        });
+        output_live.textures_delta.clear();
+        assert!(!output_live.shapes.is_empty());
+
+        let mut output_preview = ctx.run_ui(egui::RawInput::default(), |ui| {
+            render_preview_column(ui, &mut state, &mut deck, &mut false);
+        });
+        output_preview.textures_delta.clear();
+        assert!(!output_preview.shapes.is_empty());
     }
 }

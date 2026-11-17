@@ -43,6 +43,7 @@ pub(super) fn preview(
     ui.painter().add(slide_shadow.as_shape(canvas_rect, 10.0));
 
     paint_theme_bg(ui.painter(), canvas_rect, &state.theme_editor.editing, 10.0);
+    crate::render::paint_corner_mask(ui.painter(), canvas_rect, 10.0, state.theme.bg_pill);
     ui.painter().rect_stroke(
         canvas_rect,
         10.0,

@@ -35,11 +35,6 @@ pub(super) fn render(
         scene.overlay = mode == 1;
         if scene.overlay {
             scene.background_mode = "transparent".into();
-        } else if scene.background_mode == "transparent" {
-            scene.background_mode = "theme".into();
-            if scene.theme_id.is_none() {
-                scene.theme_id = themes.first().map(|t| t.id.clone());
-            }
         }
     }
     controls::note(

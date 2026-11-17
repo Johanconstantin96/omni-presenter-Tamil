@@ -5,6 +5,7 @@ pub mod chat;
 pub mod control;
 pub mod credentials;
 pub mod db;
+pub mod desktop_wallpaper;
 pub mod discovery;
 pub mod effects;
 pub mod images;

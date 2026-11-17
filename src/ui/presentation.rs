@@ -313,14 +313,7 @@ fn paint_design_background(
             }
         }
         _ => {
-            if !design.overlay
-                && let Some(theme) = themes
-                    .iter()
-                    .find(|theme| Some(&theme.id) == design.theme_id.as_ref())
-                    .or_else(|| themes.first())
-                {
-                    paint_theme_bg(painter, rect, theme, 0.0);
-                }
+            // "transparent" / no background: do not paint presentation theme
         }
     }
 }
@@ -332,11 +325,58 @@ pub fn paint_wallpaper(
     design: Option<&crate::core::design::DesignDocument>,
     themes: &[PresentationTheme],
 ) {
+    paint_wallpaper_with_radius(painter, rect, background, design, themes, 0.0, false);
+}
+
+pub fn paint_desktop_fallback_pattern(painter: &egui::Painter, rect: egui::Rect, corner_radius: f32) {
+    painter.rect_filled(rect, corner_radius, Color32::from_rgb(18, 22, 32));
+    let clipped = painter.with_clip_rect(rect);
+    let step = 20.0f32;
+    let dot_radius = 1.0f32;
+    let dot_color = Color32::from_rgba_unmultiplied(255, 255, 255, 22);
+    let x_count = (rect.width() / step).ceil() as i32;
+    let y_count = (rect.height() / step).ceil() as i32;
+    for y in 0..=y_count {
+        for x in 0..=x_count {
+            let p = egui::pos2(rect.min.x + x as f32 * step, rect.min.y + y as f32 * step);
+            if rect.contains(p) {
+                clipped.circle_filled(p, dot_radius, dot_color);
+            }
+        }
+    }
+}
+
+pub fn paint_wallpaper_with_radius(
+    painter: &egui::Painter,
+    rect: egui::Rect,
+    background: &crate::core::preferences::PhysicalBackground,
+    design: Option<&crate::core::design::DesignDocument>,
+    themes: &[PresentationTheme],
+    corner_radius: f32,
+    resolve_os_desktop: bool,
+) {
     use crate::core::preferences::PhysicalBackground;
     match background {
-        PhysicalBackground::Transparent => {}
+        PhysicalBackground::Transparent => {
+            if resolve_os_desktop {
+                if let Some(os_bg) = crate::services::desktop_wallpaper::os_wallpaper() {
+                    let theme = PresentationTheme {
+                        id: "physical_wallpaper_os".into(),
+                        bg_type: "image".into(),
+                        bg_image_path: os_bg,
+                        bg_top: Color32::BLACK,
+                        bg_bottom: Color32::BLACK,
+                        is_gradient: false,
+                        ..Default::default()
+                    };
+                    paint_theme_bg(painter, rect, &theme, corner_radius);
+                } else {
+                    paint_desktop_fallback_pattern(painter, rect, corner_radius);
+                }
+            }
+        }
         PhysicalBackground::Color { rgb } => {
-            painter.rect_filled(rect, 0.0, Color32::from_rgb(rgb[0], rgb[1], rgb[2]));
+            painter.rect_filled(rect, corner_radius, Color32::from_rgb(rgb[0], rgb[1], rgb[2]));
         }
         PhysicalBackground::Image { path } | PhysicalBackground::Video { path } => {
             let theme = PresentationTheme {
@@ -353,7 +393,7 @@ pub fn paint_wallpaper(
                 is_gradient: false,
                 ..Default::default()
             };
-            paint_theme_bg(painter, rect, &theme, 0.0);
+            paint_theme_bg(painter, rect, &theme, corner_radius);
         }
         PhysicalBackground::Design { .. } => {
             if let Some(design) = design {
@@ -362,7 +402,7 @@ pub fn paint_wallpaper(
         }
         PhysicalBackground::Theme { id } => {
             if let Some(theme) = themes.iter().find(|theme| theme.id == *id) {
-                paint_theme_bg(painter, rect, theme, 0.0);
+                paint_theme_bg(painter, rect, theme, corner_radius);
             }
         }
     }

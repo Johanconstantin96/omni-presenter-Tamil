@@ -223,12 +223,14 @@ pub fn render_floating_screen_preview(
             // Transparency checkerboard grid (for OBS / stream overlays)
             paint_transparency_checkerboard(ui.painter(), screen_rect, is_light);
         } else if let Some(ref bg) = custom_bg {
-            crate::ui::presentation::paint_wallpaper(
+            crate::ui::presentation::paint_wallpaper_with_radius(
                 ui.painter(),
                 screen_rect,
                 bg,
                 None,
                 &state.themes,
+                0.0,
+                true,
             );
         } else {
             // Theme background

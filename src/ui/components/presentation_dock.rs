@@ -393,9 +393,8 @@ pub(crate) fn live_theme_control(
         if let Some(deck) = slide_deck {
             if let Some(scene) = &mut deck.live_design
                 && !scene.overlay
-                && scene.background_mode != "color"
+                && scene.background_mode == "theme"
             {
-                scene.background_mode = "theme".into();
                 scene.theme_id = Some(state.live_theme_id.clone());
             }
         }

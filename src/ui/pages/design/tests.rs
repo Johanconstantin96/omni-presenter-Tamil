@@ -464,10 +464,12 @@ fn test_theme_click_applies_live_and_preview() {
 fn test_active_theme_applies_to_non_overlay_preview_design() {
     let mut state = ControlPanelState::default();
     let mut deck = SlideDeck::default();
-    let mut doc = DesignDocument::default();
-    doc.name = "Placar teste".into();
-    doc.overlay = false;
-    doc.background_mode = "transparent".into();
+    let doc = DesignDocument {
+        name: "Placar teste".into(),
+        overlay: false,
+        background_mode: "theme".into(),
+        ..Default::default()
+    };
     deck.preview_design = Some(doc);
 
     let active_theme_id = state.preview_theme().id.clone();
@@ -488,6 +490,36 @@ fn test_active_theme_applies_to_non_overlay_preview_design() {
     let preview = deck.preview_design.as_ref().unwrap();
     assert_eq!(preview.background_mode, "theme");
     assert_eq!(preview.theme_id.as_deref(), Some(active_theme_id.as_str()));
+}
+
+#[test]
+fn test_transparent_preview_design_preserves_transparency_in_themes_container() {
+    let mut state = ControlPanelState::default();
+    let mut deck = SlideDeck::default();
+    let doc = DesignDocument {
+        name: "Placar transparente".into(),
+        overlay: false,
+        background_mode: "transparent".into(),
+        ..Default::default()
+    };
+    deck.preview_design = Some(doc);
+
+    let ctx = eframe::egui::Context::default();
+    let mut out = ctx.run_ui(eframe::egui::RawInput::default(), |ui| {
+        let mut is_pres_open = false;
+        crate::ui::render_container(
+            ui,
+            crate::core::layout::ContainerKind::Themes,
+            &mut state,
+            &mut deck,
+            &mut is_pres_open,
+            None,
+        );
+    });
+    out.textures_delta.clear();
+
+    let preview = deck.preview_design.as_ref().unwrap();
+    assert_eq!(preview.background_mode, "transparent");
 }
 
 #[test]

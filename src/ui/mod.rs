@@ -414,17 +414,23 @@ pub fn render_container(
             let active_theme_id = state.preview_theme().id.clone();
             if let Some(scene) = &mut slide_deck.preview_design
                 && !scene.overlay
-                && scene.background_mode != "color"
             {
-                scene.background_mode = "theme".into();
-                scene.theme_id = Some(active_theme_id);
+                if applied.0 {
+                    scene.background_mode = "theme".into();
+                    scene.theme_id = Some(active_theme_id);
+                } else if scene.background_mode == "theme" {
+                    scene.theme_id = Some(active_theme_id);
+                }
             }
             if let Some(scene) = &mut slide_deck.live_design
                 && !scene.overlay
-                && scene.background_mode != "color"
             {
-                scene.background_mode = "theme".into();
-                if applied.1 || previous_live != state.live_theme_id || scene.theme_id.is_none() {
+                if applied.1 {
+                    scene.background_mode = "theme".into();
+                    scene.theme_id = Some(state.live_theme_id.clone());
+                } else if scene.background_mode == "theme"
+                    && (previous_live != state.live_theme_id || scene.theme_id.is_none())
+                {
                     scene.theme_id = Some(state.live_theme_id.clone());
                 }
             }

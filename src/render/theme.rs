@@ -430,7 +430,8 @@ pub fn paint_corner_mask(
         return;
     }
 
-    let arc_steps = 6;
+    let arc_steps = 16;
+    let pad = 1.0f32;
     let mut mesh = egui::Mesh::default();
 
     let mut add_corner = |corner_p: egui::Pos2, arc_c: egui::Pos2, start_angle: f32| {
@@ -448,28 +449,28 @@ pub fn paint_corner_mask(
 
     // 1. Topo-Esquerdo
     add_corner(
-        rect.left_top(),
+        egui::pos2(rect.min.x - pad, rect.min.y - pad),
         egui::pos2(rect.min.x + r, rect.min.y + r),
         std::f32::consts::PI,
     );
 
     // 2. Topo-Direito
     add_corner(
-        rect.right_top(),
+        egui::pos2(rect.max.x + pad, rect.min.y - pad),
         egui::pos2(rect.max.x - r, rect.min.y + r),
         -std::f32::consts::FRAC_PI_2,
     );
 
     // 3. Base-Direito
     add_corner(
-        rect.right_bottom(),
+        egui::pos2(rect.max.x + pad, rect.max.y + pad),
         egui::pos2(rect.max.x - r, rect.max.y - r),
         0.0,
     );
 
     // 4. Base-Esquerdo
     add_corner(
-        rect.left_bottom(),
+        egui::pos2(rect.min.x - pad, rect.max.y + pad),
         egui::pos2(rect.min.x + r, rect.max.y - r),
         std::f32::consts::FRAC_PI_2,
     );

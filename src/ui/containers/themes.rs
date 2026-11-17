@@ -201,6 +201,12 @@ pub fn render_themes_column(
                             } else {
                                 None
                             };
+                            crate::render::paint_corner_mask(
+                                ui.painter(),
+                                rect,
+                                theme_tokens.radius_lg,
+                                theme_tokens.bg_card,
+                            );
                             if let Some(stroke) = border_stroke {
                                 ui.painter().rect_stroke(
                                     rect,
