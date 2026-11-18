@@ -10,12 +10,6 @@ const background = byId("background");
 const video = byId<HTMLVideoElement>("video");
 const canvas = byId<HTMLCanvasElement>("shader");
 const layer = byId("current-layer");
-const nativeText = document.createElement("img");
-nativeText.id = "native-text";
-nativeText.alt = "";
-nativeText.hidden = true;
-Object.assign(nativeText.style, { position: "absolute", inset: "0", width: "100%", height: "100%", pointerEvents: "none" });
-layer.append(nativeText);
 const layers = byId("text-layers");
 const title = byId("title");
 const connection = byId("connection");
@@ -54,7 +48,7 @@ let failures = 0;
 let fontUrl = "";
 let pendingFont = 0;
 let shaderState: ViewerState | null = null;
-let shaderSync = 0;
+let shaderStartTime = 0;
 let gl: WebGL2RenderingContext | null = null;
 let program: WebGLProgram | null = null;
 const locations: Record<string, WebGLUniformLocation | null> = {};
@@ -267,8 +261,10 @@ function fit(): void {
     1920 / w,
     1080 / h,
   );
-  canvas.width = Math.max(1, Math.round(w * resolutionScale));
-  canvas.height = Math.max(1, Math.round(h * resolutionScale));
+  const targetW = Math.max(1, Math.round(w * resolutionScale));
+  const targetH = Math.max(1, Math.round(h * resolutionScale));
+  if (canvas.width !== targetW) canvas.width = targetW;
+  if (canvas.height !== targetH) canvas.height = targetH;
   designRenderer?.resize(w, h);
 }
 
@@ -494,8 +490,8 @@ function render(s: ViewerState): void {
     }
     lyrics.replaceChildren();
 
-    // 1. Estrofe atual
-    if (!s.nativeText) renderStrophe(lyrics, s.text, false, s.showComments);
+    // 1. Estrofe atual (HTML nítido e responsivo)
+    renderStrophe(lyrics, s.text, false, s.showComments);
 
     // 2. Estrofe a seguir (junto com o texto da música, em cor mais fraca, limitando às duas primeiras linhas)
     if (s.showNextPreview && s.nextText && s.nextText.trim()) {
@@ -520,22 +516,9 @@ function render(s: ViewerState): void {
   document.body.style.background = s.transparent ? "transparent" : "#000";
   // Hide content, not the theme background, just like the physical projector.
   background.style.background = s.background || "transparent";
-  box.style.display = s.nativeText || s.hidden || !s.text ? "none" : "flex";
-  const nativeUrl = s.nativeText && !s.hidden ? s.textLayer : null;
-  if (nativeUrl && nativeText.dataset.source !== nativeUrl) {
-    nativeText.hidden = true;
-    nativeText.dataset.source = nativeUrl;
-    nativeText.onload = () => {
-      if (current?.textLayer === nativeUrl && !current.hidden) {
-        nativeText.hidden = false;
-        nativeText.dataset.ready = nativeUrl;
-      }
-    };
-    nativeText.onerror = () => { delete nativeText.dataset.source; };
-    nativeText.src = nativeUrl;
-  } else nativeText.hidden = !nativeUrl || nativeText.dataset.ready !== nativeUrl;
+  box.style.display = s.hidden || !s.text ? "none" : "flex";
   title.textContent = s.title || "";
-  title.hidden = !!s.nativeText && !s.showTitle;
+  title.hidden = !s.showTitle;
   if (stageClock) {
     stageClock.hidden = !s.showClock;
     if (s.showClock) updateClock();
@@ -606,7 +589,6 @@ function render(s: ViewerState): void {
     : "transparent";
   if (showBackground && s.backgroundType === "shader") {
     shaderState = s;
-    shaderSync = performance.now();
     canvas.style.display = "block";
     const source = s.shaderFragment || "builtin";
     if (
@@ -618,6 +600,7 @@ function render(s: ViewerState): void {
     }
   } else {
     shaderState = null;
+    shaderStartTime = 0;
     canvas.style.display = "none";
   }
   if (changed) transition(oldLayer, s);
@@ -701,29 +684,42 @@ function drawShader(now: number): void {
     try {
       const s = shaderState;
       const p = options(s).shader || {};
+      if (!shaderStartTime) {
+        shaderStartTime = now;
+      }
+      const elapsed = (now - shaderStartTime) / 1000;
+      if (shaderVertexArray) {
+        gl.bindVertexArray(shaderVertexArray);
+      }
       gl.viewport(0, 0, canvas.width, canvas.height);
       gl.useProgram(program);
-      gl.uniform4f(
-        locations.screen!,
-        canvas.width,
-        canvas.height,
-        (s.clock || 0) + (now - shaderSync) / 1000,
-        s.shaderIndex || 0,
-      );
-      gl.uniform4f(
-        locations.motion!,
-        p.speed ?? 0.2,
-        p.scale ?? 1,
-        p.intensity ?? 1,
-        p.softness ?? 0.5,
-      );
-      gl.uniform4f(
-        locations.detail!,
-        p.detail ?? 4,
-        ((p.direction ?? 0) * Math.PI) / 180,
-        p.seed ?? 0,
-        p.vignette ?? 0.4,
-      );
+      if (locations.screen) {
+        gl.uniform4f(
+          locations.screen,
+          canvas.width,
+          canvas.height,
+          elapsed,
+          s.shaderIndex || 0,
+        );
+      }
+      if (locations.motion) {
+        gl.uniform4f(
+          locations.motion,
+          p.speed ?? 0.2,
+          p.scale ?? 1,
+          p.intensity ?? 1,
+          p.softness ?? 0.5,
+        );
+      }
+      if (locations.detail) {
+        gl.uniform4f(
+          locations.detail,
+          p.detail ?? 4,
+          ((p.direction ?? 0) * Math.PI) / 180,
+          p.seed ?? 0,
+          p.vignette ?? 0.4,
+        );
+      }
       const colors =
         Array.isArray(p.colors) && p.colors.length >= 3
           ? p.colors
@@ -732,19 +728,24 @@ function drawShader(now: number): void {
               [24, 160, 130],
               [90, 60, 180],
             ];
-      colors.forEach((col, i) =>
-        gl!.uniform4f(
-          locations["color" + i]!,
-          col[0] / 255,
-          col[1] / 255,
-          col[2] / 255,
-          1,
-        ),
-      );
-      gl.uniform4f(locations.finish!, p.grain ?? 0.01, 0, 0, 0);
+      colors.forEach((col, i) => {
+        const loc = locations["color" + i];
+        if (loc) {
+          gl!.uniform4f(
+            loc,
+            col[0] / 255,
+            col[1] / 255,
+            col[2] / 255,
+            1,
+          );
+        }
+      });
+      if (locations.finish) {
+        gl.uniform4f(locations.finish, p.grain ?? 0.01, 0, 0, 0);
+      }
       gl.drawArrays(gl.TRIANGLES, 0, 3);
-    } catch {
-      /* ignore */
+    } catch (err) {
+      console.error("Shader draw error:", err);
     }
   }
   requestAnimationFrame(drawShader);

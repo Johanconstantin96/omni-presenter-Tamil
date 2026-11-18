@@ -384,7 +384,7 @@ pub(super) fn outputs(
                                     .unwrap_or_else(|| crate::services::web::http_url(
                                         host, draft.server_port, &format!("/screen/{url_slug}"),
                                     ));
-                                ui.ctx().copy_text(url);
+                                crate::ui::copy_to_clipboard(ui.ctx(), &url);
                             }
                             ScreenCardAction::ShowQrCode => {
                                 let host = if draft.allow_lan {
@@ -411,7 +411,7 @@ pub(super) fn outputs(
                                 let url = crate::services::web::http_url(
                                     "127.0.0.1", draft.server_port, &format!("/screen/{url_slug}"),
                                 );
-                                ui.ctx().open_url(egui::OpenUrl::new_tab(url));
+                                crate::ui::open_browser_url(ui.ctx(), &url);
                             }
                             ScreenCardAction::Duplicate => {
                                 duplicate_screen_id = Some(screen.id.clone());
@@ -801,7 +801,7 @@ pub(super) fn outputs(
                         .on_hover_text(language.text("workspace-copy-url-to-clipboard"))
                         .clicked()
                         {
-                            ui.ctx().copy_text(url.clone());
+                            crate::ui::copy_to_clipboard(ui.ctx(), &url);
                         }
 
                         if styled_button(
@@ -843,9 +843,10 @@ pub(super) fn outputs(
                             .clicked()
                             {
                                 let url_slug = unique_screen_slug(&screen.name, &screen.id, &other_slugs_before);
-                                ui.ctx().open_url(egui::OpenUrl::new_tab(crate::services::web::http_url(
+                                let open_url = crate::services::web::http_url(
                                     "127.0.0.1", draft.server_port, &format!("/screen/{url_slug}"),
-                                )));
+                                );
+                                crate::ui::open_browser_url(ui.ctx(), &open_url);
                             }
                         });
 

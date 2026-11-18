@@ -175,10 +175,10 @@ pub(super) fn open_browser(ui: &egui::Ui, state: &ControlPanelState, service: &C
         } else {
             crate::services::web::http_url(&host, port, "/chat")
         };
-        ui.ctx().open_url(egui::OpenUrl::new_tab(format!(
+        crate::ui::open_browser_url(ui.ctx(), &format!(
             "{url}#token={token}&profile={}",
             state.settings.active_operator
-        )));
+        ));
     }
 }
 

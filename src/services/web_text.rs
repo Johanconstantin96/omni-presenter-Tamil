@@ -1,6 +1,7 @@
 use super::Published;
 use crate::core::models::PresentationTheme;
 
+#[allow(dead_code)]
 pub(super) fn layer(
     data: &mut Published,
     theme: &PresentationTheme,

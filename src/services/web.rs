@@ -510,7 +510,7 @@ impl BrowserServer {
                     "videoUrl": if data.video_path.is_some() && screen_theme.id == theme.id { format!("/video?v={}", data.background_revision) } else { String::new() },
                     "shaderIndex": crate::services::shaders::kind_index(&screen_theme.options.shader.kind),
                     "shaderFragment": screen_theme.options.shader.custom.as_ref().map(crate::core::plugins::shader::glsl),
-                    "clock": if themed && screen_theme.bg_type == "shader" { crate::services::shaders::clock() } else { 0.0 },
+                    "clock": 0.0,
                     "options": options,
                     "transition": screen_theme.transition,
                     "weight": screen_theme.font_weight,
@@ -536,12 +536,11 @@ impl BrowserServer {
                     "showNextPreview": s.show_next_preview,
                     "showComments": s.show_comments,
                     "nextText": next_text,
+                    "nativeText": false,
+                    "textLayer": None::<String>,
+                    "showTitle": s.show_title,
                 });
                 let slug = crate::core::preferences::screen_url_slug(s, &settings.screens);
-                let mut state = state;
-                state["nativeText"] = json!(!s.show_comments && !s.show_next_preview);
-                state["textLayer"] = json!(if s.show_comments || s.show_next_preview { None } else { native_text::layer(&mut data, screen_theme, raw_text, s.font_scale, settings.service().aspect_ratio) });
-                state["showTitle"] = json!(s.show_title);
                 PublishedScreen {
                     id: s.id.clone(),
                     name: s.name.clone(),

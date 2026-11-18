@@ -1,7 +1,7 @@
 use crate::ui::modals::settings::components::ButtonTone;
 use crate::ui::theme::AppTheme;
 use eframe::egui::{self, Color32, Rect, RichText, Vec2};
-use egui_phosphor::regular::{ARROW_SQUARE_OUT, COPY};
+use egui_phosphor::regular::{ARROW_SQUARE_OUT, CHECK, COPY};
 use qrcode::QrCode;
 
 const ACTIVE_QR_DIALOG_ID: &str = "active_qr_modal_state";
@@ -172,16 +172,25 @@ pub fn show_qr_dialog(
                 ui.add_space(8.0);
 
                 ui.horizontal(|ui| {
+                    let copy_id = ui.auto_id_with(("copied_qr_url", url));
+                    let now = ui.ctx().input(|i| i.time);
+                    let last_copied: Option<f64> = ui.ctx().data(|d| d.get_temp(copy_id));
+                    let is_copied = last_copied.is_some_and(|t| now - t < 2.0);
+                    if is_copied {
+                        ui.ctx().request_repaint_after(std::time::Duration::from_millis(100));
+                    }
+
                     if crate::ui::modals::settings::components::styled_button(
                         ui,
-                        Some(COPY),
-                        language.text("workspace-copy-link"),
-                        ButtonTone::Secondary,
+                        Some(if is_copied { CHECK } else { COPY }),
+                        if is_copied { language.text("workspace-copied") } else { language.text("workspace-copy-link") },
+                        if is_copied { ButtonTone::Primary } else { ButtonTone::Secondary },
                         theme,
                     )
                     .clicked()
                     {
-                        ui.ctx().copy_text(url.to_owned());
+                        crate::ui::copy_to_clipboard(ui.ctx(), url);
+                        ui.ctx().data_mut(|d| d.insert_temp(copy_id, now));
                     }
 
                     if crate::ui::modals::settings::components::styled_button(
@@ -193,7 +202,7 @@ pub fn show_qr_dialog(
                     )
                     .clicked()
                     {
-                        ui.ctx().open_url(egui::OpenUrl::new_tab(url.to_owned()));
+                        crate::ui::open_browser_url(ui.ctx(), url);
                     }
                 });
             });

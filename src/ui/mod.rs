@@ -452,3 +452,24 @@ pub fn render_container(
         }
     }
 }
+
+pub fn open_browser_url(ctx: &egui::Context, url: &str) {
+    ctx.open_url(egui::OpenUrl::new_tab(url.to_owned()));
+    #[cfg(target_os = "linux")]
+    {
+        let _ = std::process::Command::new("xdg-open").arg(url).spawn();
+    }
+    #[cfg(target_os = "macos")]
+    {
+        let _ = std::process::Command::new("open").arg(url).spawn();
+    }
+    #[cfg(target_os = "windows")]
+    {
+        let _ = std::process::Command::new("cmd").args(["/C", "start", "", url]).spawn();
+    }
+}
+
+pub fn copy_to_clipboard(ctx: &egui::Context, text: &str) {
+    ctx.copy_text(text.to_owned());
+    crate::ui::pages::design::clipboard::set_clipboard_text(text);
+}

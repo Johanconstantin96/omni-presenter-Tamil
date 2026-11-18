@@ -335,7 +335,7 @@ pub fn render_floating_screen_preview(
                         .on_hover_text(language.text("workspace-open-in-browser"))
                         .clicked()
                     {
-                        ui.ctx().open_url(egui::OpenUrl::new_tab(url.clone()));
+                        crate::ui::open_browser_url(ui.ctx(), url);
                     }
 
                     if ui
@@ -343,7 +343,7 @@ pub fn render_floating_screen_preview(
                         .on_hover_text(language.text("workspace-copy-url-to-clipboard-label"))
                         .clicked()
                     {
-                        ui.ctx().copy_text(url.clone());
+                        crate::ui::copy_to_clipboard(ui.ctx(), url);
                     }
 
                     if ui

@@ -550,7 +550,7 @@ fn connection_endpoint_card(
                             .on_hover_text(language.text("control-copy-link"))
                             .clicked()
                         {
-                            ui.ctx().copy_text(url.to_owned());
+                            crate::ui::copy_to_clipboard(ui.ctx(), url);
                         }
 
                         // Open button: Must contain language.text("control-open")
@@ -564,7 +564,7 @@ fn connection_endpoint_card(
                         .on_hover_cursor(egui::CursorIcon::PointingHand)
                         .clicked()
                         {
-                            ui.ctx().open_url(egui::OpenUrl::new_tab(url.to_owned()));
+                            crate::ui::open_browser_url(ui.ctx(), url);
                         }
                     });
                 });
@@ -601,14 +601,14 @@ fn connection_endpoint_card(
                     .on_hover_cursor(egui::CursorIcon::PointingHand)
                     .clicked()
                     {
-                        ui.ctx().open_url(egui::OpenUrl::new_tab(url.to_owned()));
+                        crate::ui::open_browser_url(ui.ctx(), url);
                     }
 
                     if styled_button(ui, Some(COPY), "", ButtonTone::Secondary, theme)
                         .on_hover_text(language.text("control-copy-link"))
                         .clicked()
                     {
-                        ui.ctx().copy_text(url.to_owned());
+                        crate::ui::copy_to_clipboard(ui.ctx(), url);
                     }
 
                     if styled_button(ui, Some(QR_CODE), "", ButtonTone::Secondary, theme)

@@ -11,6 +11,7 @@ pub fn render_web_hub_modal(ctx: &egui::Context, state: &mut ControlPanelState) 
 
     let theme = state.theme.clone();
     let language = state.settings.language;
+    let mut copied_notification = false;
 
     let frame = egui::Frame::new()
         .fill(theme.bg_panel)
@@ -160,6 +161,7 @@ pub fn render_web_hub_modal(ctx: &egui::Context, state: &mut ControlPanelState) 
                         },
                         &language,
                         &theme,
+                        &mut copied_notification,
                     );
 
                     // Card 2: Chat da Equipe
@@ -175,6 +177,7 @@ pub fn render_web_hub_modal(ctx: &egui::Context, state: &mut ControlPanelState) 
                         },
                         &language,
                         &theme,
+                        &mut copied_notification,
                     );
 
                     // Card 3: Telas Web
@@ -225,11 +228,16 @@ pub fn render_web_hub_modal(ctx: &egui::Context, state: &mut ControlPanelState) 
                                 },
                                 &language,
                                 &theme,
+                                &mut copied_notification,
                             );
                         }
                     }
                 });
         });
+
+    if copied_notification {
+        state.notify(language.text("workspace-copied"));
+    }
 
     if !open || modal.should_close() {
         state.show_web_hub_modal = false;
@@ -250,6 +258,7 @@ fn render_connection_item(
     item: &ConnectionItem<'_>,
     language: &crate::core::i18n::Language,
     theme: &AppTheme,
+    copied_notification: &mut bool,
 ) {
     egui::Frame::new()
         .fill(theme.bg_card)
@@ -304,10 +313,13 @@ fn render_connection_item(
                         ui,
                         theme,
                         language,
-                        GLOBE,
-                        language.text("discovery-title"),
-                        auto_url,
-                        &format!("{} ({})", item.title, language.text("discovery-title")),
+                        UrlRowArgs {
+                            icon: GLOBE,
+                            label: language.text("discovery-title"),
+                            url: auto_url,
+                            dialog_title: &format!("{} ({})", item.title, language.text("discovery-title")),
+                        },
+                        copied_notification,
                     );
                     ui.add_space(8.0);
                 }
@@ -317,24 +329,44 @@ fn render_connection_item(
                     ui,
                     theme,
                     language,
-                    WIFI_HIGH,
-                    language.text("discovery-ip-alternative"),
-                    &item.ip_url,
-                    &format!("{} ({})", item.title, language.text("discovery-ip-alternative")),
+                    UrlRowArgs {
+                        icon: WIFI_HIGH,
+                        label: language.text("discovery-ip-alternative"),
+                        url: &item.ip_url,
+                        dialog_title: &format!("{} ({})", item.title, language.text("discovery-ip-alternative")),
+                    },
+                    copied_notification,
                 );
             });
         });
+}
+
+struct UrlRowArgs<'a> {
+    icon: &'a str,
+    label: &'a str,
+    url: &'a str,
+    dialog_title: &'a str,
 }
 
 fn render_url_row(
     ui: &mut egui::Ui,
     theme: &AppTheme,
     language: &crate::core::i18n::Language,
-    icon: &str,
-    label: &str,
-    url: &str,
-    dialog_title: &str,
+    args: UrlRowArgs<'_>,
+    copied_notification: &mut bool,
 ) {
+    let icon = args.icon;
+    let label = args.label;
+    let url = args.url;
+    let dialog_title = args.dialog_title;
+    let now = ui.ctx().input(|i| i.time);
+    let copy_id = ui.auto_id_with(("copied_url", url));
+    let last_copied: Option<f64> = ui.ctx().data(|d| d.get_temp(copy_id));
+    let is_copied = last_copied.is_some_and(|t| now - t < 2.0);
+    if is_copied {
+        ui.ctx().request_repaint_after(std::time::Duration::from_millis(100));
+    }
+
     ui.horizontal(|ui| {
         ui.label(
             RichText::new(format!("{icon}  {label}"))
@@ -344,64 +376,81 @@ fn render_url_row(
     });
     ui.add_space(2.0);
     ui.horizontal(|ui| {
-        ui.spacing_mut().item_spacing.x = 8.0;
+        ui.spacing_mut().item_spacing.x = 6.0;
 
-        let buttons_w = 150.0;
-        let pill_w = (ui.available_width() - buttons_w).max(120.0);
+        let buttons_w = 152.0;
+        let avail_w = ui.available_width();
+        let pill_w = (avail_w - buttons_w - 6.0).max(100.0);
+
+        let pill_border = if is_copied {
+            theme.accent
+        } else {
+            theme.border_subtle
+        };
+
         let pill_resp = egui::Frame::new()
             .fill(theme.bg_pill)
             .corner_radius(6.0)
             .inner_margin(egui::vec2(10.0, 7.0))
-            .stroke(Stroke::new(1.0, theme.border_subtle))
+            .stroke(Stroke::new(1.0, pill_border))
             .show(ui, |ui| {
-                ui.set_width(pill_w);
-                ui.horizontal(|ui| {
-                    ui.add(
-                        egui::Label::new(
-                            RichText::new(url)
-                                .monospace()
-                                .size(11.5)
-                                .color(theme.text_primary),
-                        )
-                        .truncate(),
-                    );
-                });
+                let inner_w = (pill_w - 20.0).max(10.0);
+                ui.set_width(inner_w);
+                ui.set_max_width(inner_w);
+                ui.add_sized(
+                    [inner_w, 18.0],
+                    egui::Label::new(
+                        RichText::new(url)
+                            .monospace()
+                            .size(11.5)
+                            .color(if is_copied { theme.accent } else { theme.text_primary }),
+                    )
+                    .truncate(),
+                );
             });
 
         let click_area = ui.interact(pill_resp.response.rect, ui.auto_id_with(url), egui::Sense::click());
         if click_area.clicked() {
-            ui.ctx().copy_text(url.to_owned());
+            crate::ui::copy_to_clipboard(ui.ctx(), url);
+            ui.ctx().data_mut(|d| d.insert_temp(copy_id, now));
+            *copied_notification = true;
         }
         click_area
             .on_hover_cursor(egui::CursorIcon::PointingHand)
-            .on_hover_text(language.text("quick-web-hub-copy"));
+            .on_hover_text(if is_copied { language.text("workspace-copied") } else { language.text("quick-web-hub-copy") });
 
-        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            ui.spacing_mut().item_spacing.x = 6.0;
+        // Botão Copiar
+        let copy_icon = if is_copied { CHECK } else { COPY };
+        let copy_tone = if is_copied { ButtonTone::Primary } else { ButtonTone::Secondary };
+        if styled_button(ui, Some(copy_icon), "", copy_tone, theme)
+            .on_hover_text(if is_copied { language.text("workspace-copied") } else { language.text("quick-web-hub-copy") })
+            .clicked()
+        {
+            crate::ui::copy_to_clipboard(ui.ctx(), url);
+            ui.ctx().data_mut(|d| d.insert_temp(copy_id, now));
+            *copied_notification = true;
+        }
 
-            // Botão Abrir no Navegador
-            if styled_button(ui, Some(ARROW_SQUARE_OUT), language.text("quick-web-hub-open"), ButtonTone::Secondary, theme)
-                .on_hover_text(language.text("quick-web-hub-open"))
-                .clicked()
-            {
-                ui.ctx().open_url(egui::OpenUrl::new_tab(url.to_owned()));
-            }
+        // Botão QR Code
+        if styled_button(ui, Some(QR_CODE), "", ButtonTone::Secondary, theme)
+            .on_hover_text(language.text("quick-web-hub-qr"))
+            .clicked()
+        {
+            crate::ui::components::open_qr_dialog(ui.ctx(), dialog_title.to_string(), url.to_string());
+        }
 
-            // Botão QR Code
-            if styled_button(ui, Some(QR_CODE), "", ButtonTone::Secondary, theme)
-                .on_hover_text(language.text("quick-web-hub-qr"))
-                .clicked()
-            {
-                crate::ui::components::open_qr_dialog(ui.ctx(), dialog_title.to_string(), url.to_string());
-            }
-
-            // Botão Copiar
-            if styled_button(ui, Some(COPY), "", ButtonTone::Secondary, theme)
-                .on_hover_text(language.text("quick-web-hub-copy"))
-                .clicked()
-            {
-                ui.ctx().copy_text(url.to_owned());
-            }
-        });
+        // Botão Abrir no Navegador
+        if styled_button(
+            ui,
+            Some(ARROW_SQUARE_OUT),
+            language.text("quick-web-hub-open"),
+            ButtonTone::Secondary,
+            theme,
+        )
+        .on_hover_text(language.text("quick-web-hub-open"))
+        .clicked()
+        {
+            crate::ui::open_browser_url(ui.ctx(), url);
+        }
     });
 }

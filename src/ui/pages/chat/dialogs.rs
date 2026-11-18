@@ -48,7 +48,7 @@ fn access_link(ui: &mut egui::Ui, url: &str, language: Language, theme: &AppThem
             )
             .clicked()
         {
-            ui.ctx().copy_text(url.to_owned());
+            crate::ui::copy_to_clipboard(ui.ctx(), url);
         }
 
         if theme
