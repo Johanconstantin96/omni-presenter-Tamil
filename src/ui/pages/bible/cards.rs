@@ -257,8 +257,7 @@ pub(super) fn cards_body(
                     for row in (0..visible_books.len()).step_by(per_row) {
                         ui.horizontal(|ui| {
                             ui.spacing_mut().item_spacing.x = spacing;
-                            for item_idx in row..(row + per_row).min(visible_books.len()) {
-                                let index = visible_books[item_idx];
+                            for &index in &visible_books[row..(row + per_row).min(visible_books.len())] {
                                 if (state.bible.testament == 1 && index >= 39)
                                     || (state.bible.testament == 2 && index < 39)
                                 {

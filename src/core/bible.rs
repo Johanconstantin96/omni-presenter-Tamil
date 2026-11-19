@@ -268,6 +268,14 @@ impl BibleTranslation {
                             original.starts_with(&abbrev.to_lowercase().replace(' ', "")),
                         ));
                     }
+                    if index == 18 {
+                        v.push((index, "salmo".into(), original.starts_with("salmo")));
+                        v.push((index, "salmos".into(), original.starts_with("salmos")));
+                    } else if index == 21 {
+                        v.push((index, "cantares".into(), original.starts_with("cantares")));
+                        v.push((index, "cantico".into(), original.starts_with("cantico")));
+                        v.push((index, "canticos".into(), original.starts_with("canticos")));
+                    }
                 }
                 v
             })
@@ -498,13 +506,16 @@ pub fn version_code(version: &str) -> String {
 pub fn fold(text: &str) -> String {
     text.to_lowercase()
         .chars()
+        .filter(|c| !matches!(*c, '\u{0300}'..='\u{036f}'))
         .map(|c| match c {
-            'á' | 'à' | 'ã' | 'â' | 'ä' => 'a',
+            'á' | 'à' | 'ã' | 'â' | 'ä' | 'å' => 'a',
             'é' | 'ê' | 'è' | 'ë' => 'e',
             'í' | 'ì' | 'î' | 'ï' => 'i',
-            'ó' | 'ô' | 'õ' | 'ò' | 'ö' => 'o',
+            'ó' | 'ô' | 'õ' | 'ò' | 'ö' | 'ø' => 'o',
             'ú' | 'ù' | 'û' | 'ü' => 'u',
             'ç' => 'c',
+            'ñ' => 'n',
+            'ý' | 'ÿ' => 'y',
             _ => c,
         })
         .collect()

@@ -535,11 +535,15 @@ fn test_bible_search_blocks_letters_after_book_is_found() {
     // 1. Incomplete queries: user is still typing the book name
     assert!(!has_completed_book(&bible, "isa"));
     assert!(!has_completed_book(&bible, "1"));
+    assert!(!has_completed_book(&bible, "jo"));
+    assert!(!has_completed_book(&bible, "joa"));
     assert_eq!(sanitize_bible_search(&bible, "isa"), "isa");
 
     // 2. Completed book: letters should be blocked and sanitized
     assert!(has_completed_book(&bible, "Isaías "));
     assert!(has_completed_book(&bible, "Isaías sa"));
+    assert!(has_completed_book(&bible, "jo "));
+    assert!(has_completed_book(&bible, "joao "));
     assert_eq!(sanitize_bible_search(&bible, "Isaías sa"), "Isaías ");
     assert_eq!(sanitize_bible_search(&bible, "Isaías 53:5 abc"), "Isaías 53:5");
     assert_eq!(sanitize_bible_search(&bible, "1 João xyz 3:16"), "1 João 3:16");
@@ -566,6 +570,68 @@ fn test_bible_search_blocks_letters_after_book_is_found() {
     output.textures_delta.clear();
 
     assert_eq!(state.bible.search, "Isaías ");
+}
+
+#[test]
+fn test_typing_bible_books_without_accents() {
+    let lib = crate::core::bible::BibleLibrary::default();
+    let bible = lib.get("ARA").or_else(|| lib.get("KJV")).expect("Bible translation not found");
+
+    // 1. matching_books works with unaccented names and aliases
+    assert_eq!(super::search::matching_books(&bible, "genesis"), vec![0]);
+    assert_eq!(super::search::matching_books(&bible, "exodo"), vec![1]);
+    assert_eq!(super::search::matching_books(&bible, "joao"), vec![42]);
+    assert_eq!(super::search::matching_books(&bible, "isaias"), vec![22]);
+    assert_eq!(super::search::matching_books(&bible, "salmo"), vec![18]);
+    assert_eq!(super::search::matching_books(&bible, "cantares"), vec![21]);
+
+    // 2. reference parsing works without accents
+    let ref_joao = bible.reference("joao 3:16");
+    assert_eq!(ref_joao, Some((42, 3, 16, 16)));
+    let ref_salmo = bible.reference("salmo 23:1");
+    assert_eq!(ref_salmo, Some((18, 23, 1, 1)));
+    let ref_genesis = bible.reference("genesis 1:1");
+    assert_eq!(ref_genesis, Some((0, 1, 1, 1)));
+
+    // 3. typing "joao" char by char in overlay autocompletes to "João "
+    let mut state = ControlPanelState::default();
+    state.bible.show_search = true;
+    state.bible.search_focus = true;
+    let mut deck = SlideDeck::default();
+    let ctx = egui::Context::default();
+    let input = egui::RawInput {
+        screen_rect: Some(egui::Rect::from_min_size(
+            egui::Pos2::ZERO,
+            egui::vec2(1280.0, 1024.0),
+        )),
+        ..Default::default()
+    };
+    for _ in 0..2 {
+        let mut output = ctx.run_ui(input.clone(), |ui| {
+            render_bible_search_overlay(ui.ctx(), &mut state, &mut deck);
+        });
+        output.textures_delta.clear();
+    }
+    let field_id = egui::Id::unique("bible_search_overlay").with("field");
+    let mut edit = egui::TextEdit::load_state(&ctx, field_id).unwrap();
+    let end = egui::text::CCursor::new(state.bible.search.chars().count());
+    edit.cursor
+        .set_char_range(Some(egui::text::CCursorRange::one(end)));
+    edit.store(&ctx, field_id);
+
+    for ch in ["j", "o", "a"] {
+        let mut typed = input.clone();
+        typed.events.push(egui::Event::Text(ch.into()));
+        let mut output = ctx.run_ui(typed, |ui| {
+            render_bible_search_overlay(ui.ctx(), &mut state, &mut deck);
+        });
+        output.textures_delta.clear();
+        let mut output = ctx.run_ui(input.clone(), |ui| {
+            render_bible_search_overlay(ui.ctx(), &mut state, &mut deck);
+        });
+        output.textures_delta.clear();
+    }
+    assert_eq!(state.bible.search, "João ");
 }
 
 #[test]

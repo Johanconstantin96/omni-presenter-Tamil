@@ -47,12 +47,14 @@ pub(super) fn prepare_search(state: &mut ControlPanelState) {
 
 fn fold_char(c: char) -> char {
     match c {
-        'á' | 'à' | 'ã' | 'â' | 'ä' | 'Á' | 'À' | 'Ã' | 'Â' | 'Ä' => 'a',
+        'á' | 'à' | 'ã' | 'â' | 'ä' | 'å' | 'Á' | 'À' | 'Ã' | 'Â' | 'Ä' | 'Å' => 'a',
         'é' | 'ê' | 'è' | 'ë' | 'É' | 'Ê' | 'È' | 'Ë' => 'e',
         'í' | 'ì' | 'î' | 'ï' | 'Í' | 'Ì' | 'Î' | 'Ï' => 'i',
-        'ó' | 'ô' | 'õ' | 'ò' | 'ö' | 'Ó' | 'Ô' | 'Õ' | 'Ò' | 'Ö' => 'o',
+        'ó' | 'ô' | 'õ' | 'ò' | 'ö' | 'ø' | 'Ó' | 'Ô' | 'Õ' | 'Ò' | 'Ö' | 'Ø' => 'o',
         'ú' | 'ù' | 'û' | 'ü' | 'Ú' | 'Ù' | 'Û' | 'Ü' => 'u',
         'ç' | 'Ç' => 'c',
+        'ñ' | 'Ñ' => 'n',
+        'ý' | 'ÿ' | 'Ý' => 'y',
         other => other.to_ascii_lowercase(),
     }
 }
@@ -85,27 +87,39 @@ pub(super) use crate::core::bible_search::{matching_books, number_is_complete, p
 #[cfg(test)]
 pub(super) use crate::core::bible_search::QueryParse;
 
+fn search_prefixes(bible: &BibleTranslation) -> Vec<String> {
+    let mut prefixes = Vec::new();
+    for (index, book) in bible.books.iter().enumerate() {
+        prefixes.push(fold(&book.name));
+        prefixes.push(fold(&book.abbrev));
+        if index < 66 {
+            prefixes.push(fold(crate::core::bible_books::BOOK_NAMES_PT[index]));
+            prefixes.push(fold(crate::core::bible_books::BOOK_ABBREVS_PT[index]));
+            if index == 18 {
+                prefixes.push("salmo".into());
+                prefixes.push("salmos".into());
+            } else if index == 21 {
+                prefixes.push("cantares".into());
+                prefixes.push("cantico".into());
+                prefixes.push("canticos".into());
+            }
+        }
+    }
+    prefixes.retain(|p| !p.is_empty());
+    prefixes
+}
+
 pub(crate) fn has_completed_book(bible: &BibleTranslation, search: &str) -> bool {
     let folded_search = fold(search);
-    for book in &bible.books {
-        let folded_name = fold(&book.name);
-        if folded_search == folded_name {
-            return true;
-        }
-        for prefix in [&book.name, &book.abbrev] {
-            if prefix.is_empty() {
-                continue;
-            }
-            let folded_prefix = fold(prefix);
-            if folded_search.starts_with(&folded_prefix) {
-                let rest = &folded_search[folded_prefix.len()..];
-                if rest.starts_with(' ')
-                    || rest.starts_with(':')
-                    || rest.starts_with('.')
-                    || rest.starts_with(|c: char| c.is_ascii_digit())
-                {
-                    return true;
-                }
+    for prefix in search_prefixes(bible) {
+        if folded_search.starts_with(&prefix) {
+            let rest = &folded_search[prefix.len()..];
+            if rest.starts_with(' ')
+                || rest.starts_with(':')
+                || rest.starts_with('.')
+                || rest.starts_with(|c: char| c.is_ascii_digit())
+            {
+                return true;
             }
         }
     }
@@ -114,48 +128,42 @@ pub(crate) fn has_completed_book(bible: &BibleTranslation, search: &str) -> bool
 
 pub(crate) fn sanitize_bible_search(bible: &BibleTranslation, search: &str) -> String {
     let folded_search = fold(search);
-    for book in &bible.books {
-        for prefix in [&book.name, &book.abbrev] {
-            if prefix.is_empty() {
-                continue;
-            }
-            let folded_prefix = fold(prefix);
-            if folded_search.starts_with(&folded_prefix) {
-                let rest_folded = &folded_search[folded_prefix.len()..];
-                if rest_folded.starts_with(' ')
-                    || rest_folded.starts_with(':')
-                    || rest_folded.starts_with('.')
-                    || rest_folded.starts_with(|c: char| c.is_ascii_digit())
-                {
-                    let prefix_chars = folded_prefix.chars().count();
-                    let book_part: String = search.chars().take(prefix_chars).collect();
-                    let rest_part: String = search.chars().skip(prefix_chars).collect();
-                    let starts_with_space = rest_part.starts_with(' ');
-                    let mut filtered_rest: String = rest_part
-                        .chars()
-                        .filter(|c| c.is_ascii_digit() || *c == ':' || *c == '.' || *c == '-' || *c == ',' || *c == ' ')
-                        .collect();
-                    if rest_part.ends_with(char::is_alphabetic) {
-                        filtered_rest = filtered_rest.trim_end().to_string();
-                    }
-                    if starts_with_space && filtered_rest.is_empty() {
-                        filtered_rest = " ".to_string();
-                    }
-                    let mut collapsed = String::new();
-                    let mut last_space = false;
-                    for c in filtered_rest.chars() {
-                        if c == ' ' {
-                            if !last_space {
-                                collapsed.push(c);
-                                last_space = true;
-                            }
-                        } else {
-                            collapsed.push(c);
-                            last_space = false;
-                        }
-                    }
-                    return format!("{book_part}{collapsed}");
+    for prefix in search_prefixes(bible) {
+        if folded_search.starts_with(&prefix) {
+            let rest_folded = &folded_search[prefix.len()..];
+            if rest_folded.starts_with(' ')
+                || rest_folded.starts_with(':')
+                || rest_folded.starts_with('.')
+                || rest_folded.starts_with(|c: char| c.is_ascii_digit())
+            {
+                let prefix_chars = prefix.chars().count();
+                let book_part: String = search.chars().take(prefix_chars).collect();
+                let rest_part: String = search.chars().skip(prefix_chars).collect();
+                let starts_with_space = rest_part.starts_with(' ');
+                let mut filtered_rest: String = rest_part
+                    .chars()
+                    .filter(|c| c.is_ascii_digit() || *c == ':' || *c == '.' || *c == '-' || *c == ',' || *c == ' ')
+                    .collect();
+                if rest_part.ends_with(char::is_alphabetic) {
+                    filtered_rest = filtered_rest.trim_end().to_string();
                 }
+                if starts_with_space && filtered_rest.is_empty() {
+                    filtered_rest = " ".to_string();
+                }
+                let mut collapsed = String::new();
+                let mut last_space = false;
+                for c in filtered_rest.chars() {
+                    if c == ' ' {
+                        if !last_space {
+                            collapsed.push(c);
+                            last_space = true;
+                        }
+                    } else {
+                        collapsed.push(c);
+                        last_space = false;
+                    }
+                }
+                return format!("{book_part}{collapsed}");
             }
         }
     }
@@ -369,17 +377,17 @@ pub fn render_bible_search_overlay(
                             let (book_part, numbers) = split_reference(&state.bible.search);
                             let matches = matching_books(&bible, &book_part);
                             if let [book] = matches[..] {
-                                let full = fold(&bible.books[book].name).replace(' ', "");
-                                if book_part != full {
-                                    let name = bible.books[book].name.clone();
-                                    let chapters = bible.books[book].chapters.len();
-                                    autocomplete = Some(if !numbers.is_empty() {
-                                        format!("{name} {numbers}")
-                                    } else if chapters <= 1 {
-                                        format!("{name} 1:")
-                                    } else {
-                                        format!("{name} ")
-                                    });
+                                let name = bible.books[book].name.clone();
+                                let chapters = bible.books[book].chapters.len();
+                                let candidate = if !numbers.is_empty() {
+                                    format!("{name} {numbers}")
+                                } else if chapters <= 1 {
+                                    format!("{name} 1:")
+                                } else {
+                                    format!("{name} ")
+                                };
+                                if candidate != state.bible.search {
+                                    autocomplete = Some(candidate);
                                 }
                             }
                         }

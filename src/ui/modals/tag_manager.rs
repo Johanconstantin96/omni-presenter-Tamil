@@ -52,8 +52,7 @@ pub fn render_tag_manager_modal(
                         );
                     } else {
                         let total = state.settings.strophe_tags.len();
-                        for i in 0..total {
-                            let tag = &mut state.settings.strophe_tags[i];
+                        for (i, tag) in state.settings.strophe_tags.iter_mut().enumerate() {
                             ui.horizontal(|ui| {
                                 // Color picker swatch button
                                 let id_salt = format!("tag_color_{i}_{}", tag.name);
