@@ -476,6 +476,14 @@ impl BrowserServer {
                     crate::core::slides::strip_directive_commands(&crate::core::slides::strip_comments(raw_next))
                 };
 
+                let (text, next_text) = if deck.is_live_song() {
+                    (
+                        crate::core::lyric_filter::apply(&text, s.lyric_filter),
+                        crate::core::lyric_filter::apply(&next_text, s.lyric_filter),
+                    )
+                } else {
+                    (text.to_string(), next_text.to_string())
+                };
                 let is_first_song_slide = deck.is_live_song() && deck.live_index() == 0;
                 let full_title = if !deck.live_artist().is_empty() {
                     format!("{} · {}", deck.live_title(), deck.live_artist())

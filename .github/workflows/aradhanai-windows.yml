@@ -1,0 +1,41 @@
+name: Aradhanai Windows portable
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [aradhanai]
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+      - uses: dtolnay/rust-toolchain@1.98.0
+        with:
+          targets: x86_64-pc-windows-msvc
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.4
+      - name: Install locked web dependencies
+        working-directory: web
+        run: bun install --frozen-lockfile
+      - name: Build
+        run: cargo build --release --locked --target x86_64-pc-windows-msvc
+      - name: Package portable folder
+        shell: pwsh
+        run: |
+          $dir = "Aradhanai"
+          New-Item -ItemType Directory -Force -Path "$dir/Bibeln" | Out-Null
+          Copy-Item target/x86_64-pc-windows-msvc/release/omni-presenter.exe $dir/
+          Copy-Item packaging/aradhanai/START.bat $dir/
+          if (Test-Path packaging/aradhanai/Bibeln) { Copy-Item packaging/aradhanai/Bibeln/* "$dir/Bibeln/" }
+          Copy-Item LICENSE $dir/LICENSE.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Aradhanai-portable
+          path: Aradhanai

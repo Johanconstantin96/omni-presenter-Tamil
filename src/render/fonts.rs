@@ -2,6 +2,22 @@
 use eframe::egui;
 use std::sync::{Arc, OnceLock};
 
+/// Bundled Noto Sans Tamil (OFL) so Tamil script renders with any theme font.
+pub(crate) const TAMIL_FALLBACK: &str = "noto-sans-tamil";
+pub(crate) const TAMIL_FONT_BYTES: &[u8] = include_bytes!("../../assets/fonts/NotoSansTamil-Regular.ttf");
+
+/// Adds the Tamil fallback at the end of a named (theme) font family.
+pub(crate) fn add_tamil_fallback(ctx: &egui::Context, family: &str) {
+    ctx.add_font(egui::FontInsert::new(
+        TAMIL_FALLBACK,
+        egui::FontData::from_static(TAMIL_FONT_BYTES),
+        vec![egui::InsertFontFamily {
+            family: egui::FontFamily::Name(family.into()),
+            priority: egui::FontPriority::Lowest,
+        }],
+    ));
+}
+
 pub(crate) fn definitions() -> egui::FontDefinitions {
     static FONTS: OnceLock<egui::FontDefinitions> = OnceLock::new();
     FONTS
@@ -19,8 +35,15 @@ pub(crate) fn definitions() -> egui::FontDefinitions {
                     egui_phosphor::Variant::Regular.font_bytes(),
                 )),
             );
+            fonts.font_data.insert(
+                TAMIL_FALLBACK.into(),
+                Arc::new(egui::FontData::from_static(TAMIL_FONT_BYTES)),
+            );
             if let Some(keys) = fonts.families.get_mut(&egui::FontFamily::Proportional) {
-                keys.extend(["custom-icons".into(), "phosphor".into()]);
+                keys.extend(["custom-icons".into(), "phosphor".into(), TAMIL_FALLBACK.into()]);
+            }
+            if let Some(keys) = fonts.families.get_mut(&egui::FontFamily::Monospace) {
+                keys.push(TAMIL_FALLBACK.into());
             }
             if let Some(bytes) = crate::core::models::fonts::color_emoji_font_bytes() {
                 fonts.font_data.insert(

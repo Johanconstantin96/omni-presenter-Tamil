@@ -891,4 +891,30 @@ pub(super) fn render_virtual_screen_appearance(
         "workspace-remove-the-background-for-overlays-in-obs-studio-vmix-or",
         theme,
     );
+    ui.add_space(4.0);
+    lyric_filter_combo(ui, &format!("lyric_filter_{}", screen.id), &mut screen.lyric_filter, theme);
+}
+
+/// Combo box that chooses which song lines (Tamil / transliteration) an output shows.
+pub(crate) fn lyric_filter_combo(
+    ui: &mut egui::Ui,
+    id_salt: &str,
+    value: &mut crate::core::lyric_filter::LyricFilter,
+    theme: &AppTheme,
+) {
+    ui.horizontal(|ui| {
+        ui.label(
+            RichText::new(crate::ui::i18n::text(ui, "settings-lyric-filter"))
+                .size(11.5)
+                .color(theme.text_secondary),
+        )
+        .on_hover_text(crate::ui::i18n::text(ui, "settings-lyric-filter-desc"));
+        egui::ComboBox::from_id_salt(id_salt)
+            .selected_text(crate::ui::i18n::text(ui, value.label_key()))
+            .show_ui(ui, |ui| {
+                for option in crate::core::lyric_filter::LyricFilter::ALL {
+                    ui.selectable_value(value, option, crate::ui::i18n::text(ui, option.label_key()));
+                }
+            });
+    });
 }

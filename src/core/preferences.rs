@@ -456,6 +456,7 @@ pub struct VirtualScreen {
     pub show_clock: bool,
     pub show_next_preview: bool,
     pub custom_background: Option<PhysicalBackground>,
+    pub lyric_filter: crate::core::lyric_filter::LyricFilter,
 }
 
 impl Default for VirtualScreen {
@@ -472,6 +473,7 @@ impl Default for VirtualScreen {
             show_clock: false,
             show_next_preview: false,
             custom_background: None,
+            lyric_filter: Default::default(),
         }
     }
 }
@@ -628,6 +630,7 @@ pub struct AppSettings {
     pub disabled_physical_monitors: Vec<String>,
     pub physical_background: PhysicalBackground,
     pub monitor_backgrounds: std::collections::HashMap<String, PhysicalBackground>,
+    pub monitor_lyric_filters: std::collections::HashMap<String, crate::core::lyric_filter::LyricFilter>,
     pub recent_wallpapers: Vec<String>,
     pub use_wallpaper_in_presentation: bool,
     pub show_song_info: bool,
@@ -676,6 +679,7 @@ impl Default for AppSettings {
             disabled_physical_monitors: Vec::new(),
             physical_background: PhysicalBackground::default(),
             monitor_backgrounds: std::collections::HashMap::new(),
+            monitor_lyric_filters: std::collections::HashMap::new(),
             recent_wallpapers: Vec::new(),
             use_wallpaper_in_presentation: false,
             show_song_info: true,
@@ -731,6 +735,11 @@ impl PhysicalBackground {
 }
 
 impl AppSettings {
+    /// Song lyric filter used by one physical monitor.
+    pub fn lyric_filter_for_monitor(&self, name: &str) -> crate::core::lyric_filter::LyricFilter {
+        self.monitor_lyric_filters.get(name).copied().unwrap_or_default()
+    }
+
     pub fn physical_monitor_enabled(&self, name: &str) -> bool {
         !self
             .disabled_physical_monitors

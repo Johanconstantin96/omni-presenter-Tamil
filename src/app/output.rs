@@ -179,10 +179,18 @@ impl PresentationApp {
                 target_monitor.resolution.0 as f32 / target_monitor.resolution.1.max(1) as f32
             };
             let mut nav_action = false;
+            let monitor_text = if is_song {
+                crate::core::lyric_filter::apply(
+                    &clean_text,
+                    settings.lyric_filter_for_monitor(&target_monitor.name),
+                )
+            } else {
+                clean_text.to_string()
+            };
             PresentationView::show(
                 ctx,
                 PresentationContent {
-                    text: &clean_text,
+                    text: &monitor_text,
                     hidden: is_hidden,
                     theme: &live_theme,
                     design: design.as_ref(),

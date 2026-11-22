@@ -751,3 +751,8 @@ settings-geometric-crystal-facets = Crystal facets with geometric refraction
 
 
 
+settings-lyric-filter = Song lyrics
+settings-lyric-filter-desc = Which song lines this output shows. Bible passages are always shown in full.
+settings-lyric-filter-all = All lines
+settings-lyric-filter-latin-only = Transliteration only
+settings-lyric-filter-latin-compact = Transliteration, 2 lines

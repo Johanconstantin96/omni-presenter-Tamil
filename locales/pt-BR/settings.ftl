@@ -751,3 +751,8 @@ settings-geometric-crystal-facets = Facetas de cristal com refração geométric
 
 
 
+settings-lyric-filter = Letra das músicas
+settings-lyric-filter-desc = Quais linhas da música esta saída mostra. Passagens bíblicas são sempre exibidas por completo.
+settings-lyric-filter-all = Todas as linhas
+settings-lyric-filter-latin-only = Somente transliteração
+settings-lyric-filter-latin-compact = Transliteração, 2 linhas

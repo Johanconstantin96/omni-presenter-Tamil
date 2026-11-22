@@ -106,6 +106,25 @@ pub(super) fn outputs(
                         ui.add_sized([142.0, 18.0], egui::Label::new(
                             RichText::new(&monitor.display_name).size(11.0).color(theme.text_secondary)
                         ).truncate()).on_hover_text(format!("{} · {}", monitor.display_name, res_str));
+                        let mut filter = draft.lyric_filter_for_monitor(&monitor.name);
+                        let before = filter;
+                        egui::ComboBox::from_id_salt(format!("phys_lyric_filter_{}", monitor.name))
+                            .width(130.0)
+                            .selected_text(crate::ui::i18n::text(ui, filter.label_key()))
+                            .show_ui(ui, |ui| {
+                                for option in crate::core::lyric_filter::LyricFilter::ALL {
+                                    ui.selectable_value(&mut filter, option, crate::ui::i18n::text(ui, option.label_key()));
+                                }
+                            })
+                            .response
+                            .on_hover_text(crate::ui::i18n::text(ui, "settings-lyric-filter-desc"));
+                        if filter != before {
+                            if filter == crate::core::lyric_filter::LyricFilter::All {
+                                draft.monitor_lyric_filters.remove(&monitor.name);
+                            } else {
+                                draft.monitor_lyric_filters.insert(monitor.name.clone(), filter);
+                            }
+                        }
                         });
                     }
                 });

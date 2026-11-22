@@ -16,6 +16,7 @@ pub mod interaction;
 pub mod interface_theme;
 pub mod plugins;
 pub mod layout;
+pub mod lyric_filter;
 pub mod markup;
 pub mod models;
 pub mod preferences;

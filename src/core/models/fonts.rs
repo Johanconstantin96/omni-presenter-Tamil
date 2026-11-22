@@ -241,6 +241,7 @@ pub fn ensure_font_loaded_with_style(
             }],
         );
         ctx.add_font(font_insert);
+        crate::render::fonts::add_tamil_fallback(ctx, &family_key);
 
         if let Ok(mut set) = loaded_set.lock() {
             set.insert(family_key.clone());
@@ -294,6 +295,7 @@ pub fn ensure_font_loaded_in_egui(ctx: &egui::Context, font_name: &str) {
                 }],
             );
             ctx.add_font(font_insert);
+            crate::render::fonts::add_tamil_fallback(ctx, font_name);
         }
     }
 
