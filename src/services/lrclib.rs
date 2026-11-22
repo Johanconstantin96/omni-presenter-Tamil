@@ -247,10 +247,10 @@ pub fn search_lyrics(track: &str, artist: Option<&str>) -> Result<Vec<LrcLibTrac
                     if status == 200 {
                         let body = match res.into_body().read_to_string() {
                             Ok(b) => b,
-                            Err(e) => return Err((0, format!("Erro ao ler resposta: {e}"))),
+                            Err(e) => return Err((0, format!("Fehler beim Lesen der Antwort: {e}"))),
                         };
                         let tracks: Vec<LrcLibTrack> = serde_json::from_str(&body)
-                            .map_err(|e| (status, format!("Erro ao processar resposta: {e}")))?;
+                            .map_err(|e| (status, format!("Fehler beim Verarbeiten der Antwort: {e}")))?;
                         Ok(tracks)
                     } else {
                         Err((status, format!("Status HTTP {status}")))

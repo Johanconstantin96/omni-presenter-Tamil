@@ -106,11 +106,11 @@ pub fn render_font_resolution_modal(
                                 let dest = dir.join(filename);
                                 let _ = std::fs::copy(&path, &dest);
                             }
-                            pending.font_file_status = Some(format!("Fonte '{family}' carregada com sucesso!"));
+                            pending.font_file_status = Some(format!("Schrift „{family}“ erfolgreich geladen!"));
                             pending.selected_replacement = family;
                         }
                         Err(err) => {
-                            pending.font_file_status = Some(format!("Erro ao carregar fonte: {err}"));
+                            pending.font_file_status = Some(format!("Fehler beim Laden der Schrift: {err}"));
                         }
                     }
                 }
@@ -127,7 +127,7 @@ pub fn render_font_resolution_modal(
             {
                 let task = crate::services::tasks::BackgroundTask::spawn_with_repaint(ui.ctx(), || {
                     Ok(rfd::FileDialog::new()
-                        .add_filter("Fontes (*.ttf, *.otf)", &["ttf", "otf"])
+                        .add_filter("Schriften (*.ttf, *.otf)", &["ttf", "otf"])
                         .pick_file())
                 });
                 ui.ctx().data_mut(|d| d.insert_temp(font_file_task_id, task));
@@ -192,7 +192,7 @@ pub fn render_font_resolution_modal(
             ui.painter(),
             rect,
             &preview_theme,
-            "Porque Deus amou o mundo de tal maneira...",
+            "Denn also hat Gott die Welt geliebt...",
         );
 
         ui.add_space(8.0);

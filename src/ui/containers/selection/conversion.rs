@@ -116,8 +116,8 @@ fn resolution_segmented_picker(
 
     // 1. Linha do Original (Recomendado)
     let original_label = match current_dim {
-        Some(dim) => format!("★ Manter original ({dim}) (Recomendado)"),
-        None => "★ Manter original (Recomendado)".to_string(),
+        Some(dim) => format!("★ Original beibehalten ({dim}) (empfohlen)"),
+        None => "★ Original beibehalten (empfohlen)".to_string(),
     };
     let is_orig = selected == VideoResolution::Original;
     let (orig_rect, orig_resp) =
@@ -153,7 +153,7 @@ fn resolution_segmented_picker(
         },
     );
     if orig_resp
-        .on_hover_text("Manter a resolução original do arquivo de vídeo")
+        .on_hover_text("Originalauflösung der Videodatei beibehalten")
         .clicked()
     {
         changed = Some(VideoResolution::Original);
@@ -250,7 +250,7 @@ fn aspect_ratio_segmented_picker(
     ui.painter().text(
         orig_rect.center(),
         egui::Align2::CENTER_CENTER,
-        "★ Manter proporção original (Recomendado)",
+        "★ Original-Seitenverhältnis beibehalten (empfohlen)",
         egui::FontId::proportional(11.5),
         if is_orig {
             theme.accent
@@ -261,7 +261,7 @@ fn aspect_ratio_segmented_picker(
         },
     );
     if orig_resp
-        .on_hover_text("Preserva a proporção original do arquivo sem barras ou cortes")
+        .on_hover_text("Behält das Seitenverhältnis der Datei ohne Balken oder Beschnitt")
         .clicked()
     {
         changed = Some(VideoAspectRatio::Original);
@@ -271,15 +271,15 @@ fn aspect_ratio_segmented_picker(
 
     // 2. Presets de proporção
     let ratios = [
-        (VideoAspectRatio::R16x9, "16:9", "Widescreen padrão (16:9)"),
-        (VideoAspectRatio::R16x10, "16:10", "Monitores de computador (16:10)"),
-        (VideoAspectRatio::R4x3, "4:3", "Proporção tradicional (4:3)"),
+        (VideoAspectRatio::R16x9, "16:9", "Standard-Breitbild (16:9)"),
+        (VideoAspectRatio::R16x10, "16:10", "Computermonitore (16:10)"),
+        (VideoAspectRatio::R4x3, "4:3", "Klassisches Format (4:3)"),
         (
             VideoAspectRatio::R9x16,
             "9:16",
-            "Formato vertical para celulares e stories (9:16)",
+            "Hochformat für Handys und Stories (9:16)",
         ),
-        (VideoAspectRatio::R21x9, "21:9", "Ultrawide / Cinema (21:9)"),
+        (VideoAspectRatio::R21x9, "21:9", "Ultrabreit / Kino (21:9)"),
     ];
     let count = ratios.len() as f32;
     let spacing = 4.0;
@@ -340,11 +340,11 @@ fn video_codec_segmented_picker(
     let avail_w = ui.available_width();
 
     let codecs = [
-        (VideoCodec::Auto, "Auto", "Automático: usa o codec padrão recomendado para o formato (H.264 para MP4, VP9 para WebM)"),
-        (VideoCodec::H264, "H.264", "H.264 (AVC): máxima compatibilidade universal e aceleração por hardware"),
-        (VideoCodec::H265, "H.265", "H.265 (HEVC): alta eficiência de compressão para arquivos menores"),
-        (VideoCodec::Vp9, "VP9", "VP9: codec aberto moderno otimizado para WebM"),
-        (VideoCodec::Av1, "AV1", "AV1: codec de última geração com alta eficiência"),
+        (VideoCodec::Auto, "Auto", "Automatisch: empfohlener Standard-Codec des Formats (H.264 für MP4, VP9 für WebM)"),
+        (VideoCodec::H264, "H.264", "H.264 (AVC): höchste Kompatibilität und Hardwarebeschleunigung"),
+        (VideoCodec::H265, "H.265", "H.265 (HEVC): effiziente Kompression für kleinere Dateien"),
+        (VideoCodec::Vp9, "VP9", "VP9: moderner offener Codec, optimiert für WebM"),
+        (VideoCodec::Av1, "AV1", "AV1: Codec der neuesten Generation mit hoher Effizienz"),
     ];
     let count = codecs.len() as f32;
     let spacing = 4.0;
@@ -638,7 +638,7 @@ pub fn render_media_conversion(
                             if let Some(dim) = current_dim {
                                 let ar_str = current_ar.map(|a| format!(" ({a})")).unwrap_or_default();
                                 ui.label(
-                                    RichText::new(format!("• Atual: {dim}{ar_str}"))
+                                    RichText::new(format!("• Aktuell: {dim}{ar_str}"))
                                         .size(10.5)
                                         .strong()
                                         .color(theme.accent),
@@ -836,32 +836,32 @@ pub fn render_media_info_dialog(ctx: &egui::Context, state: &mut ControlPanelSta
             ui.add_space(8.0);
 
             let rows = [
-                ("Caminho", details.path.clone()),
-                ("Tamanho", details.file_size_formatted.clone()),
+                ("Pfad", details.path.clone()),
+                ("Größe", details.file_size_formatted.clone()),
                 (
-                    "Resolução",
+                    "Auflösung",
                     details
                         .dimensions_formatted
                         .clone()
                         .unwrap_or_else(|| "—".into()),
                 ),
                 (
-                    "Proporção",
+                    "Seitenverhältnis",
                     details.aspect_ratio.clone().unwrap_or_else(|| "—".into()),
                 ),
                 (
-                    "Duração",
+                    "Dauer",
                     details
                         .duration_formatted
                         .clone()
                         .unwrap_or_else(|| "—".into()),
                 ),
                 (
-                    "Codec de vídeo",
+                    "Videocodec",
                     details.video_codec.clone().unwrap_or_else(|| "—".into()),
                 ),
                 (
-                    "Codec de áudio",
+                    "Audiocodec",
                     details.audio_codec.clone().unwrap_or_else(|| "—".into()),
                 ),
                 (
@@ -875,7 +875,7 @@ pub fn render_media_info_dialog(ctx: &egui::Context, state: &mut ControlPanelSta
                 .spacing([16.0, 6.0])
                 .show(ui, |ui| {
                     for (label, val) in rows {
-                        if val != "—" || label == "Caminho" || label == "Tamanho" {
+                        if val != "—" || label == "Pfad" || label == "Größe" {
                             ui.label(
                                 RichText::new(label)
                                     .size(11.5)

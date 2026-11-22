@@ -484,7 +484,7 @@ settings-screen-and-aspect-ratio = { $icon }  Bildschirm und Seitenverhältnis
 
 settings-screen-aspect-ratio = Seitenverhältnis des Bildschirms:
 
-settings-aspect-monitor = Seitenverhältnis des ausgewählten Monitors
+settings-aspect-monitor = Automatisch – passend zu jedem Bildschirm
 
 settings-screens-and-preview = { $icon }  Bildschirme und Vorschau
 

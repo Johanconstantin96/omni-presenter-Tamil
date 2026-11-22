@@ -187,10 +187,10 @@ pub fn render_step_screens(
         ui.add_space(6.0);
 
         let aspect_list = [
-            (AspectOption::Wide16_9, "16:9 Widescreen", 16.0 / 9.0),
+            (AspectOption::Wide16_9, "16:9 Breitbild", 16.0 / 9.0),
             (AspectOption::Wide16_10, "16:10", 16.0 / 10.0),
-            (AspectOption::Standard4_3, "4:3 Clássico", 4.0 / 3.0),
-            (AspectOption::Ultra21_9, "21:9 Ultrawide", 21.0 / 9.0),
+            (AspectOption::Standard4_3, "4:3 Klassisch", 4.0 / 3.0),
+            (AspectOption::Ultra21_9, "21:9 Ultrabreit", 21.0 / 9.0),
         ];
 
         let gap = 8.0;
@@ -238,7 +238,7 @@ pub fn render_step_breaks(
                 .color(tokens.text_primary),
         );
         ui.label(
-            RichText::new("Ajuste a formatação automática e quebras de linhas nas letras e versículos.")
+            RichText::new("Automatische Formatierung und Zeilenumbrüche für Liedtexte und Bibelverse einstellen.")
                 .size(if is_compact_height { 11.5 } else { 12.0 })
                 .color(tokens.text_secondary),
         );
@@ -318,33 +318,33 @@ pub fn render_step_ready(
         };
 
         let screen_name = if monitors.is_empty() {
-            "Monitor Principal".to_string()
+            "Hauptmonitor".to_string()
         } else if let Some(first) = monitors.iter().find(|m| state.settings.physical_monitor_enabled(&m.name)) {
             first.display_name.clone()
         } else {
-            "Projeção em Janela".to_string()
+            "Projektion im Fenster".to_string()
         };
 
         let aspect_name = if state.setup_wizard.presentation_aspect_ratio <= 0.05 {
             language.text("settings-aspect-monitor")
         } else if (state.setup_wizard.presentation_aspect_ratio - 16.0 / 9.0).abs() < 0.05 {
-            "16:9 Widescreen"
+            "16:9 Breitbild"
         } else if (state.setup_wizard.presentation_aspect_ratio - 16.0 / 10.0).abs() < 0.05 {
             "16:10"
         } else if (state.setup_wizard.presentation_aspect_ratio - 4.0 / 3.0).abs() < 0.05 {
-            "4:3 Clássico"
+            "4:3 Klassisch"
         } else if (state.setup_wizard.presentation_aspect_ratio - 21.0 / 9.0).abs() < 0.05 {
-            "21:9 Ultrawide"
+            "21:9 Ultrabreit"
         } else {
-            "16:9 Widescreen"
+            "16:9 Breitbild"
         };
 
         let rows = [
-            ("🌐  Idioma da Interface", lang_name),
-            ("🖥️  Saída de Projeção", screen_name.as_str()),
-            ("📐  Proporção da Tela", aspect_name),
-            ("🔄  Quebra Automática de Linhas", if state.setup_wizard.wrap_text { "Ativada" } else { "Desativada" }),
-            ("🔍  Ajuste Automático (Auto-fit)", if state.setup_wizard.auto_fit { "Ativado" } else { "Desativado" }),
+            ("🌐  Sprache der Oberfläche", lang_name),
+            ("🖥️  Projektionsausgabe", screen_name.as_str()),
+            ("📐  Seitenverhältnis", aspect_name),
+            ("🔄  Automatischer Zeilenumbruch", if state.setup_wizard.wrap_text { "Aktiviert" } else { "Deaktiviert" }),
+            ("🔍  Automatische Schriftgröße", if state.setup_wizard.auto_fit { "Aktiviert" } else { "Deaktiviert" }),
         ];
 
         for (idx, (label, val)) in rows.iter().enumerate() {
@@ -369,7 +369,7 @@ pub fn render_step_ready(
     ui.add_space(10.0);
     ui.vertical_centered(|ui| {
         ui.label(
-            RichText::new("Dica: você pode alterar todas as opções acima a qualquer momento nas Preferências do sistema.")
+            RichText::new("Tipp: Du kannst alle Optionen oben jederzeit in den Einstellungen ändern.")
                 .size(11.5)
                 .color(tokens.text_secondary),
         );

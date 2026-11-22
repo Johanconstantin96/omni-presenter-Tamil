@@ -239,17 +239,17 @@ fn render_catalog_window(
 
     // Sort order: Portuguese first, then English, then Spanish, then alphabetical
     let mut ordered_langs: Vec<(&str, usize)> = Vec::new();
-    if let Some(&count) = lang_counts.get("Português") {
-        ordered_langs.push(("Português", count));
+    if let Some(&count) = lang_counts.get("Eigene") {
+        ordered_langs.push(("Eigene", count));
     }
-    if let Some(&count) = lang_counts.get("Inglês") {
-        ordered_langs.push(("Inglês", count));
+    if let Some(&count) = lang_counts.get("Deutsch") {
+        ordered_langs.push(("Deutsch", count));
     }
-    if let Some(&count) = lang_counts.get("Espanhol") {
-        ordered_langs.push(("Espanhol", count));
+    if let Some(&count) = lang_counts.get("Tamil") {
+        ordered_langs.push(("Tamil", count));
     }
     for (&lang, &count) in &lang_counts {
-        if lang != "Português" && lang != "Inglês" && lang != "Espanhol" {
+        if lang != "Eigene" && lang != "Deutsch" && lang != "Tamil" {
             ordered_langs.push((lang, count));
         }
     }
@@ -257,11 +257,11 @@ fn render_catalog_window(
     let selected_lang_id = ui.make_persistent_id("version_bar_selected_bible_lang");
     let mut selected_lang = ui.ctx().data_mut(|d| {
         d.get_temp::<String>(selected_lang_id)
-            .unwrap_or_else(|| "Português".to_string())
+            .unwrap_or_else(|| "Eigene".to_string())
     });
 
     if !lang_counts.contains_key(selected_lang.as_str()) {
-        selected_lang = "Português".to_string();
+        selected_lang = "Eigene".to_string();
     }
 
     let search_id = ui.make_persistent_id("bible_version_search");
@@ -359,7 +359,7 @@ fn render_catalog_window(
                             ui.horizontal(|ui| {
                                 ui.label(RichText::new(GLOBE).size(12.0).color(theme.accent));
                                 ui.label(
-                                    RichText::new(format!("Idiomas ({})", ordered_langs.len()))
+                                    RichText::new(format!("Sprachen ({})", ordered_langs.len()))
                                         .size(11.5)
                                         .strong()
                                         .color(theme.text_secondary),
@@ -415,13 +415,13 @@ fn render_catalog_window(
 
                             ui.horizontal(|ui| {
                                 ui.label(
-                                    RichText::new(format!("Traduções em {selected_lang}"))
+                                    RichText::new(format!("Übersetzungen: {selected_lang}"))
                                         .size(12.5)
                                         .strong()
                                         .color(theme.text_primary),
                                 );
                                 ui.label(
-                                    RichText::new(format!("({} disponíveis)", current_versions.len()))
+                                    RichText::new(format!("({} verfügbar)", current_versions.len()))
                                         .size(11.0)
                                         .color(theme.text_muted),
                                 );
@@ -460,7 +460,7 @@ fn render_catalog_window(
                     |ui| {
                         ui.horizontal(|ui| {
                             ui.label(
-                                RichText::new(format!("Resultados da busca ({})", filtered_catalog.len()))
+                                RichText::new(format!("Suchergebnisse ({})", filtered_catalog.len()))
                                     .size(12.0)
                                     .strong()
                                     .color(theme.accent),
@@ -484,7 +484,7 @@ fn render_catalog_window(
                                         );
                                         ui.add_space(6.0);
                                         ui.label(
-                                            RichText::new("Nenhuma tradução encontrada")
+                                            RichText::new("Keine Übersetzung gefunden")
                                                 .size(12.0)
                                                 .color(theme.text_muted),
                                         );
@@ -540,13 +540,13 @@ fn render_catalog_header(
         ui.spacing_mut().item_spacing.x = 6.0;
         ui.label(RichText::new(BOOKS).size(13.5).color(theme.accent));
         ui.label(
-            RichText::new("Traduções da Bíblia")
+            RichText::new("Bibelübersetzungen")
                 .size(13.0)
                 .strong()
                 .color(theme.text_primary),
         );
         ui.label(
-            RichText::new(format!("• {total_versions} versões em {total_langs} idiomas"))
+            RichText::new(format!("• {total_versions} Übersetzungen in {total_langs} Sprachen"))
                 .size(10.5)
                 .color(theme.text_muted),
         );
@@ -679,7 +679,7 @@ fn render_search_bar(
             .align(egui::Align2::LEFT_CENTER)
             .margin(egui::Margin::symmetric(0, 2))
             .hint_text(
-                RichText::new("Buscar tradução, sigla ou idioma (ex: ARA, NVI, KJV, Alemão)...")
+                RichText::new("Übersetzung, Kürzel oder Sprache suchen (z. B. ELB, KJV, Tamil)...")
                     .size(11.5)
                     .color(theme.text_muted),
             )
@@ -851,7 +851,7 @@ fn render_version_row(
         ui.painter().text(
             in_use_rect.center(),
             egui::Align2::CENTER_CENTER,
-            format!("{CHECK_CIRCLE} Em uso"),
+            format!("{CHECK_CIRCLE} In Verwendung"),
             FontId::proportional(10.5),
             theme.status_success_fg,
         );
@@ -880,9 +880,9 @@ fn render_version_row(
     let star_resp = star_resp
         .on_hover_cursor(egui::CursorIcon::PointingHand)
         .on_hover_text(if is_pinned {
-            "Remover atalho da barra rápida"
+            "Aus der Schnellleiste entfernen"
         } else {
-            "Fixar atalho na barra rápida"
+            "An die Schnellleiste anheften"
         });
 
     if star_resp.clicked() {
@@ -921,5 +921,5 @@ fn render_version_row(
     );
 
     resp.on_hover_cursor(egui::CursorIcon::PointingHand)
-        .on_hover_text(format!("{name} ({lang}) - Clique para usar"));
+        .on_hover_text(format!("{name} ({lang}) – Klicken zum Verwenden"));
 }

@@ -86,14 +86,14 @@ impl BibleTranslation {
                 }
 
         let data: serde_json::Value =
-            serde_json::from_slice(bytes).map_err(|e| format!("JSON inválido: {e}"))?;
+            serde_json::from_slice(bytes).map_err(|e| format!("Ungültiges JSON: {e}"))?;
         let source = data
             .get("books")
             .unwrap_or(&data)
             .as_array()
-            .ok_or("O arquivo deve conter uma lista de livros.")?;
+            .ok_or("Die Datei muss eine Liste von Büchern enthalten.")?;
         if source.is_empty() {
-            return Err("A tradução não contém livros.".into());
+            return Err("Die Übersetzung enthält keine Bücher.".into());
         }
         let id = data
             .get("id")
@@ -105,7 +105,7 @@ impl BibleTranslation {
             || id.chars().count() > 32
             || !id.chars().all(|c| c.is_alphanumeric() || c == '-' || c == '_')
         {
-            return Err("Informe uma sigla válida (até 32 letras, números, traços ou sublinhados).".into());
+            return Err("Gib ein gültiges Kürzel ein (bis 32 Buchstaben, Ziffern, Bindestriche oder Unterstriche).".into());
         }
         let name = data
             .get("name")
@@ -114,7 +114,7 @@ impl BibleTranslation {
             .trim()
             .to_owned();
         if name.is_empty() {
-            return Err("Informe o nome da tradução.".into());
+            return Err("Gib den Namen der Übersetzung ein.".into());
         }
 
         let lang = detect_bible_language(&id, &name);
@@ -141,10 +141,10 @@ impl BibleTranslation {
             let chapters = book
                 .get("chapters")
                 .and_then(|v| v.as_array())
-                .ok_or_else(|| format!("Faltam os capítulos de {}.", BOOK_NAMES[canon_idx]))?;
+                .ok_or_else(|| format!("In {} fehlen Kapitel.", BOOK_NAMES[canon_idx]))?;
             if chapters.is_empty() || chapters.len() > 150 {
                 return Err(format!(
-                    "Quantidade de capítulos inválida em {}.",
+                    "Ungültige Kapitelanzahl in {}.",
                     BOOK_NAMES[canon_idx]
                 ));
             }
@@ -152,13 +152,13 @@ impl BibleTranslation {
             for (chapter_index, chapter) in chapters.iter().enumerate() {
                 if let Some(number) = chapter.get("chapter").and_then(|v| v.as_u64())
                     && number as usize != chapter_index + 1 {
-                        return Err("Os capítulos precisam estar em ordem numérica.".into());
+                        return Err("Die Kapitel müssen in numerischer Reihenfolge sein.".into());
                     }
                 let verses = chapter
                     .get("verses")
                     .unwrap_or(chapter)
                     .as_array()
-                    .ok_or("Capítulo sem lista de versículos.")?;
+                    .ok_or("Kapitel ohne Versliste.")?;
                 let mut parsed = Vec::new();
                 for verse in verses {
                     let number = verse
@@ -167,18 +167,18 @@ impl BibleTranslation {
                         .map(|n| n as usize)
                         .unwrap_or(parsed.len() + 1);
                     if number <= parsed.len() || number > 250 {
-                        return Err("Numeração de versículos inválida ou duplicada.".into());
+                        return Err("Ungültige oder doppelte Versnummern.".into());
                     }
                     let text = verse
                         .get("text")
                         .unwrap_or(verse)
                         .as_str()
-                        .ok_or("O texto de cada versículo deve ser uma string.")?;
+                        .ok_or("Jeder Vers muss Text enthalten.")?;
                     parsed.resize(number - 1, String::new());
                     parsed.push(text.split_whitespace().collect::<Vec<_>>().join(" "));
                 }
                 if parsed.is_empty() {
-                    return Err("Há um capítulo sem versículos no arquivo.".into());
+                    return Err("Die Datei enthält ein Kapitel ohne Verse.".into());
                 }
                 parsed_chapters.push(parsed);
             }
@@ -371,7 +371,7 @@ fn bundled_name(id: &str) -> &'static str {
         "VFL" => "Versão Fácil de Ler",
         "KJV" => "King James Version",
         "RVR1960" => "Reina-Valera 1960",
-        _ => "Bíblia",
+        _ => "Bibel",
     }
 }
 
@@ -385,7 +385,7 @@ pub fn bundled_meta(id: &str) -> Option<&'static BundledBibleMeta> {
 }
 
 pub fn bible_language(id: &str) -> &'static str {
-    bundled_meta(id).map(|m| m.language).unwrap_or("Outro")
+    bundled_meta(id).map(|m| m.language).unwrap_or("Eigene")
 }
 
 pub fn is_pt_bible(id: &str) -> bool {
@@ -446,7 +446,7 @@ impl BibleLibrary {
         let name = bundled_name(&code);
         let translation = Arc::new(
             BibleTranslation::from_json(bytes, &code, name)
-                .map_err(|error| eprintln!("Bíblia {stem} indisponível: {error}"))
+                .map_err(|error| eprintln!("Bibel {stem} nicht verfügbar: {error}"))
                 .ok()?,
         );
         cache

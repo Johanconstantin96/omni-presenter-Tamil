@@ -6,7 +6,7 @@ use std::path::Path;
 
 pub fn import_image_file(path: &Path) -> Result<String, String> {
     let image = image::open(path)
-        .map_err(|e| format!("Falha ao abrir imagem: {e}"))?;
+        .map_err(|e| format!("Bild konnte nicht geöffnet werden: {e}"))?;
     let image = if image.width() > 2560 || image.height() > 2560 {
         image.thumbnail(2560, 2560)
     } else {
@@ -23,7 +23,7 @@ pub fn import_image_file(path: &Path) -> Result<String, String> {
 
 pub fn import_image_bytes(bytes: &[u8]) -> Result<String, String> {
     let image = image::load_from_memory(bytes)
-        .map_err(|e| format!("Falha ao processar dados da imagem: {e}"))?;
+        .map_err(|e| format!("Bilddaten konnten nicht verarbeitet werden: {e}"))?;
     let image = if image.width() > 2560 || image.height() > 2560 {
         image.thumbnail(2560, 2560)
     } else {
@@ -66,14 +66,14 @@ pub fn save_color_image(color_image: &egui::ColorImage) -> Result<String, String
     let width = color_image.width() as u32;
     let height = color_image.height() as u32;
     if width == 0 || height == 0 {
-        return Err("Imagem vazia".to_string());
+        return Err("Leeres Bild".to_string());
     }
     let mut rgba_bytes = Vec::with_capacity((width * height * 4) as usize);
     for pixel in &color_image.pixels {
         rgba_bytes.extend_from_slice(&pixel.to_array());
     }
     let rgba = image::RgbaImage::from_raw(width, height, rgba_bytes)
-        .ok_or_else(|| "Falha ao processar ColorImage".to_string())?;
+        .ok_or_else(|| "Bild konnte nicht verarbeitet werden".to_string())?;
     let dyn_img = image::DynamicImage::ImageRgba8(rgba);
     let dyn_img = if width > 2560 || height > 2560 {
         dyn_img.thumbnail(2560, 2560)

@@ -294,17 +294,17 @@ pub fn render_editor_tools(
         ui,
         insert_btn_id,
         Some(PLUS),
-        "Inserir",
+        "Einfügen",
         Some(CARET_DOWN),
         false,
-        "Inserir Quebras Condicionais, Comandos de Slide, Tags e Estruturas",
+        "Bedingte Umbrüche, Folienbefehle, Tags und Strukturen einfügen",
         tokens,
     );
     changed |= render_options_menu(&insert_resp, state, tokens);
 
     // 2. Quebra Suave (|)
     let pipe_id = ui.make_persistent_id("btn_insert_soft_break");
-    if component_tool_button(ui, pipe_id, "|", false, "Inserir Quebra Suave (|)", tokens).clicked() {
+    if component_tool_button(ui, pipe_id, "|", false, "Weichen Umbruch einfügen (|)", tokens).clicked() {
         changed |= insert_text_at_selection(state, " | ");
     }
 
@@ -316,9 +316,9 @@ pub fn render_editor_tools(
         "//",
         false,
         if has_selection {
-            "Comentar Linhas Selecionadas (// nota)"
+            "Ausgewählte Zeilen auskommentieren (// Notiz)"
         } else {
-            "Inserir Comentário Oculto (// nota de operador)"
+            "Versteckten Kommentar einfügen (// Bediener-Notiz)"
         },
         tokens,
     )
@@ -335,9 +335,9 @@ pub fn render_editor_tools(
     let hide_markers = state.song_editor.hide_syntax_markers;
     let eye_icon = if hide_markers { EYE_SLASH } else { EYE };
     let eye_tip = if hide_markers {
-        "Ocultar Marcadores: Ativo (//, |, [4:3] ocultados na prévia). Clique para exibir"
+        "Markierungen ausblenden: an (//, |, [4:3] in der Vorschau ausgeblendet). Klicken zum Anzeigen"
     } else {
-        "Ocultar Marcadores: Desativado. Clique para ocultar marcações //, |, [4:3] na prévia"
+        "Markierungen ausblenden: aus. Klicken, um //, |, [4:3] in der Vorschau auszublenden"
     };
     let eye_id = ui.make_persistent_id("btn_toggle_hide_markers");
     if component_tool_button(ui, eye_id, eye_icon, hide_markers, eye_tip, tokens).clicked() {
@@ -353,7 +353,7 @@ pub fn render_editor_tools(
         guide_id,
         BOOK_OPEN,
         guide_open,
-        "Guia de Sintaxe & Marcações (Ver todos os comandos suportados)",
+        "Syntax- & Markierungsleitfaden (alle unterstützten Befehle)",
         tokens,
     )
     .clicked()
@@ -378,11 +378,11 @@ pub fn render_editor_tools(
         ui.painter().text(
             rect.center(),
             egui::Align2::CENTER_CENTER,
-            "✦ SELEÇÃO",
+            "✦ AUSWAHL",
             egui::FontId::proportional(10.5),
             tokens.accent,
         );
-        let _ = resp.on_hover_text("Formatação aplicada especificamente ao texto selecionado via tags [tag: ...] e estilos inline");
+        let _ = resp.on_hover_text("Formatierung nur für den markierten Text über Tags [tag: ...] und Inline-Stile");
     } else {
         let (rect, resp) = ui.allocate_exact_size(Vec2::new(54.0, 24.0), egui::Sense::hover());
         ui.painter().rect(
@@ -399,7 +399,7 @@ pub fn render_editor_tools(
             egui::FontId::proportional(10.0),
             tokens.text_muted,
         );
-        let _ = resp.on_hover_text("Formatação aplicada à estrofe/slide atual via diretivas //comando:");
+        let _ = resp.on_hover_text("Formatierung für die aktuelle Strophe/Folie über //befehl:-Anweisungen");
     }
 
     // ==========================================
@@ -413,13 +413,13 @@ pub fn render_editor_tools(
         ui,
         font_btn_id,
         None,
-        "Fonte",
+        "Schrift",
         Some(CARET_DOWN),
         false,
         if has_selection {
-            "Mudar Fonte da Seleção ([f: Nome]...[/f])"
+            "Schrift der Auswahl ändern ([f: Name]...[/f])"
         } else {
-            "Definir Fonte do Slide (//f: Nome)"
+            "Schrift der Folie festlegen (//f: Name)"
         },
         tokens,
     );
@@ -435,9 +435,9 @@ pub fn render_editor_tools(
         Some(CARET_DOWN),
         false,
         if has_selection {
-            "Mudar Tamanho da Seleção ([t: N]...[/t])"
+            "Größe der Auswahl ändern ([t: N]...[/t])"
         } else {
-            "Definir Tamanho do Slide (//t: N)"
+            "Größe der Folie festlegen (//t: N)"
         },
         tokens,
     );
@@ -451,9 +451,9 @@ pub fn render_editor_tools(
         Color32::WHITE,
         "#FFFFFF",
         if has_selection {
-            "Mudar Cor da Seleção ([c: #HEX]...[/c])"
+            "Farbe der Auswahl ändern ([c: #HEX]...[/c])"
         } else {
-            "Definir Cor do Slide (//c: #HEX)"
+            "Farbe der Folie festlegen (//c: #HEX)"
         },
         tokens,
     );
@@ -467,9 +467,9 @@ pub fn render_editor_tools(
         Color32::from_black_alpha(130),
         "#00000082",
         if has_selection {
-            "Mudar Sombra da Seleção ([b: #HEX]...[/b])"
+            "Schatten der Auswahl ändern ([b: #HEX]...[/b])"
         } else {
-            "Definir Sombra do Slide (//b: #HEX)"
+            "Schatten der Folie festlegen (//b: #HEX)"
         },
         tokens,
     );
@@ -484,7 +484,7 @@ pub fn render_editor_tools(
         "Aa",
         Some(CARET_DOWN),
         false,
-        "Alterar Caixa de Letras (MAIÚSCULAS / Primeira Maiúscula / minúsculas)",
+        "Groß-/Kleinschreibung ändern (GROSS / Erster Buchstabe groß / klein)",
         tokens,
     );
     changed |= render_case_picker_menu(&case_resp, state, tokens, has_selection);
@@ -502,7 +502,7 @@ pub fn render_editor_tools(
         "↕ 1.38",
         Some(CARET_DOWN),
         false,
-        "Espaçamento Entre Linhas do Slide (//linha: 1.38)",
+        "Zeilenabstand der Folie (//l: 1.38)",
         tokens,
     );
     changed |= render_line_spacing_menu(&line_resp, state, tokens);
@@ -515,7 +515,7 @@ pub fn render_editor_tools(
         "↔ 1.8",
         Some(CARET_DOWN),
         false,
-        "Espaçamento Entre Letras do Slide (//letra: 1.8)",
+        "Zeichenabstand der Folie (//ls: 1.8)",
         tokens,
     );
     changed |= render_letter_spacing_menu(&letter_resp, state, tokens);
@@ -526,19 +526,19 @@ pub fn render_editor_tools(
     selection_separator(ui, tokens);
 
     let al_left_id = ui.make_persistent_id("btn_align_left");
-    if component_tool_button(ui, al_left_id, TEXT_ALIGN_LEFT, false, "Alinhar à Esquerda (//a: l)", tokens).clicked() {
+    if component_tool_button(ui, al_left_id, TEXT_ALIGN_LEFT, false, "Linksbündig (//a: l)", tokens).clicked() {
         changed |= apply_or_update_slide_directive(state, "a", "l");
     }
     let al_center_id = ui.make_persistent_id("btn_align_center");
-    if component_tool_button(ui, al_center_id, TEXT_ALIGN_CENTER, false, "Centralizar (//a: c)", tokens).clicked() {
+    if component_tool_button(ui, al_center_id, TEXT_ALIGN_CENTER, false, "Zentrieren (//a: c)", tokens).clicked() {
         changed |= apply_or_update_slide_directive(state, "a", "c");
     }
     let al_right_id = ui.make_persistent_id("btn_align_right");
-    if component_tool_button(ui, al_right_id, TEXT_ALIGN_RIGHT, false, "Alinhar à Direita (//a: r)", tokens).clicked() {
+    if component_tool_button(ui, al_right_id, TEXT_ALIGN_RIGHT, false, "Rechtsbündig (//a: r)", tokens).clicked() {
         changed |= apply_or_update_slide_directive(state, "a", "r");
     }
     let al_just_id = ui.make_persistent_id("btn_align_justify");
-    if component_tool_button(ui, al_just_id, TEXT_ALIGN_JUSTIFY, false, "Justificar (//a: j)", tokens).clicked() {
+    if component_tool_button(ui, al_just_id, TEXT_ALIGN_JUSTIFY, false, "Blocksatz (//a: j)", tokens).clicked() {
         changed |= apply_or_update_slide_directive(state, "a", "j");
     }
 
@@ -548,7 +548,7 @@ pub fn render_editor_tools(
     selection_separator(ui, tokens);
 
     let bold_id = ui.make_persistent_id("btn_style_bold");
-    if component_tool_button(ui, bold_id, TEXT_B, false, "Negrito (**texto**)", tokens).clicked() {
+    if component_tool_button(ui, bold_id, TEXT_B, false, "Fett (**Text**)", tokens).clicked() {
         if has_selection {
             changed |= wrap_selection(state, "**", "**");
         } else {
@@ -557,7 +557,7 @@ pub fn render_editor_tools(
     }
 
     let italic_id = ui.make_persistent_id("btn_style_italic");
-    if component_tool_button(ui, italic_id, TEXT_ITALIC, false, "Itálico (*texto*)", tokens).clicked() {
+    if component_tool_button(ui, italic_id, TEXT_ITALIC, false, "Kursiv (*Text*)", tokens).clicked() {
         if has_selection {
             changed |= wrap_selection(state, "*", "*");
         } else {
@@ -566,7 +566,7 @@ pub fn render_editor_tools(
     }
 
     let under_id = ui.make_persistent_id("btn_style_under");
-    if component_tool_button(ui, under_id, TEXT_UNDERLINE, false, "Sublinhado (__texto__)", tokens).clicked() {
+    if component_tool_button(ui, under_id, TEXT_UNDERLINE, false, "Unterstrichen (__Text__)", tokens).clicked() {
         if has_selection {
             changed |= wrap_selection(state, "__", "__");
         } else {
@@ -575,7 +575,7 @@ pub fn render_editor_tools(
     }
 
     let strike_id = ui.make_persistent_id("btn_style_strike");
-    if component_tool_button(ui, strike_id, TEXT_STRIKETHROUGH, false, "Tachado (~~texto~~)", tokens).clicked() {
+    if component_tool_button(ui, strike_id, TEXT_STRIKETHROUGH, false, "Durchgestrichen (~~Text~~)", tokens).clicked() {
         if has_selection {
             changed |= wrap_selection(state, "~~", "~~");
         } else {
@@ -584,7 +584,7 @@ pub fn render_editor_tools(
     }
 
     let star_id = ui.make_persistent_id("btn_style_star");
-    if component_tool_button(ui, star_id, STAR, false, "Destaque na Cor do Tema (==texto==)", tokens).clicked() {
+    if component_tool_button(ui, star_id, STAR, false, "Hervorhebung in Designfarbe (==Text==)", tokens).clicked() {
         if has_selection {
             changed |= wrap_selection(state, "==", "==");
         } else {
@@ -598,32 +598,32 @@ pub fn render_editor_tools(
     selection_separator(ui, tokens);
 
     let bullet_id = ui.make_persistent_id("btn_list_bullets");
-    if component_tool_button(ui, bullet_id, LIST_BULLETS, false, "Lista com Marcadores (• item)", tokens).clicked() {
+    if component_tool_button(ui, bullet_id, LIST_BULLETS, false, "Aufzählung (• Punkt)", tokens).clicked() {
         changed |= prefix_selected_lines(state, "• ");
     }
 
     let num_id = ui.make_persistent_id("btn_list_numbers");
-    if component_tool_button(ui, num_id, LIST_NUMBERS, false, "Lista Numerada (1. item)", tokens).clicked() {
+    if component_tool_button(ui, num_id, LIST_NUMBERS, false, "Nummerierte Liste (1. Punkt)", tokens).clicked() {
         changed |= number_selected_lines(state);
     }
 
     let outdent_id = ui.make_persistent_id("btn_indent_out");
-    if component_tool_button(ui, outdent_id, TEXT_OUTDENT, false, "Diminuir Recuo", tokens).clicked() {
+    if component_tool_button(ui, outdent_id, TEXT_OUTDENT, false, "Einzug verkleinern", tokens).clicked() {
         changed |= indent_selected_lines(state, false);
     }
 
     let indent_id = ui.make_persistent_id("btn_indent_in");
-    if component_tool_button(ui, indent_id, TEXT_INDENT, false, "Aumentar Recuo", tokens).clicked() {
+    if component_tool_button(ui, indent_id, TEXT_INDENT, false, "Einzug vergrößern", tokens).clicked() {
         changed |= indent_selected_lines(state, true);
     }
 
     let wand_id = ui.make_persistent_id("btn_magic_wand");
-    if component_tool_button(ui, wand_id, MAGIC_WAND, false, "Normalizar Espaços e Linhas Vazias", tokens).clicked() {
+    if component_tool_button(ui, wand_id, MAGIC_WAND, false, "Leerzeichen und Leerzeilen bereinigen", tokens).clicked() {
         changed |= normalize_whitespace(state);
     }
 
     let clear_id = ui.make_persistent_id("btn_clear_formatting");
-    if component_tool_button(ui, clear_id, "Ø", false, "Limpar Formatações e Tags da Seleção", tokens).clicked() {
+    if component_tool_button(ui, clear_id, "Ø", false, "Formatierung und Tags der Auswahl entfernen", tokens).clicked() {
         changed |= strip_formatting_from_selection(state);
     }
 
@@ -640,12 +640,12 @@ fn render_font_picker_menu(
     egui::Popup::menu(resp).show(|ui| {
         ui.set_min_width(220.0);
         let title = if has_selection {
-            "Fonte da Seleção ([f: Nome])"
+            "Schrift der Auswahl ([f: Name])"
         } else {
-            "Fonte do Slide (//f: Nome)"
+            "Schrift der Folie (//f: Name)"
         };
         super::menu::menu_section_title(ui, title, tokens);
-        if super::menu::menu_item(ui, "Ø", "Padrão do Tema (Remover)", tokens).clicked() {
+        if super::menu::menu_item(ui, "Ø", "Design-Standard (entfernen)", tokens).clicked() {
             if has_selection {
                 changed |= apply_font_selection(state, "");
             } else {
@@ -667,9 +667,9 @@ fn render_font_picker_menu(
             "Oswald",
         ] {
             let desc = if has_selection {
-                format!("Aplicar [f: {font}]")
+                format!("Anwenden [f: {font}]")
             } else {
-                format!("Aplicar //f: {font}")
+                format!("Anwenden //f: {font}")
             };
             if super::menu::menu_item(ui, font, &desc, tokens).clicked() {
                 if has_selection {
@@ -694,12 +694,12 @@ fn render_size_picker_menu(
     egui::Popup::menu(resp).show(|ui| {
         ui.set_min_width(190.0);
         let title = if has_selection {
-            "Tamanho da Seleção ([t: N])"
+            "Größe der Auswahl ([t: N])"
         } else {
-            "Tamanho do Slide (//t: N)"
+            "Größe der Folie (//t: N)"
         };
         super::menu::menu_section_title(ui, title, tokens);
-        if super::menu::menu_item(ui, "Ø", "Padrão do Tema (Remover)", tokens).clicked() {
+        if super::menu::menu_item(ui, "Ø", "Design-Standard (entfernen)", tokens).clicked() {
             if has_selection {
                 changed |= apply_size_selection(state, "");
             }
@@ -708,9 +708,9 @@ fn render_size_picker_menu(
         ui.separator();
         for sz in &["28", "32", "38", "46", "52", "60", "72", "84", "96"] {
             let desc = if has_selection {
-                format!("Aplicar [t: {sz}]")
+                format!("Anwenden [t: {sz}]")
             } else {
-                format!("Aplicar //t: {sz}")
+                format!("Anwenden //t: {sz}")
             };
             if super::menu::menu_item(ui, sz, &desc, tokens).clicked() {
                 if has_selection {
@@ -735,12 +735,12 @@ fn render_color_picker_menu(
     egui::Popup::menu(resp).show(|ui| {
         ui.set_width(260.0);
         let title = if has_selection {
-            "Cor da Seleção ([c: #HEX])"
+            "Farbe der Auswahl ([c: #HEX])"
         } else {
-            "Cor do Slide (//c: #HEX)"
+            "Farbe der Folie (//c: #HEX)"
         };
         super::menu::menu_section_title(ui, title, tokens);
-        if super::menu::menu_item(ui, "Ø", "Padrão do Tema (Remover)", tokens).clicked() {
+        if super::menu::menu_item(ui, "Ø", "Design-Standard (entfernen)", tokens).clicked() {
             if has_selection {
                 changed |= apply_color_selection(state, "");
             }
@@ -748,15 +748,15 @@ fn render_color_picker_menu(
         }
         ui.separator();
         let presets = [
-            ("#FFFFFF", "Branco Puro"),
-            ("#F59E0B", "Âmbar / Dourado"),
-            ("#EF4444", "Vermelho Coral"),
-            ("#06B6D4", "Ciano Claro"),
-            ("#10B981", "Verde Esmeralda"),
-            ("#8B5CF6", "Roxo Púrpura"),
-            ("#EC4899", "Rosa Vibrante"),
-            ("#F97316", "Laranja Solar"),
-            ("#94A3B8", "Cinza Prata"),
+            ("#FFFFFF", "Reinweiß"),
+            ("#F59E0B", "Bernstein / Gold"),
+            ("#EF4444", "Korallenrot"),
+            ("#06B6D4", "Hellcyan"),
+            ("#10B981", "Smaragdgrün"),
+            ("#8B5CF6", "Purpurviolett"),
+            ("#EC4899", "Leuchtendes Pink"),
+            ("#F97316", "Sonnenorange"),
+            ("#94A3B8", "Silbergrau"),
         ];
         for (hex, name) in presets {
             let color = crate::core::markup::parse_hex_color(hex).unwrap_or(tokens.text_primary);
@@ -783,12 +783,12 @@ fn render_shadow_picker_menu(
     egui::Popup::menu(resp).show(|ui| {
         ui.set_width(260.0);
         let title = if has_selection {
-            "Sombra da Seleção ([b: #HEX])"
+            "Schatten der Auswahl ([b: #HEX])"
         } else {
-            "Sombra do Slide (//b: #HEX)"
+            "Schatten der Folie (//b: #HEX)"
         };
         super::menu::menu_section_title(ui, title, tokens);
-        if super::menu::menu_item(ui, "Ø", "Sem Sombra (Remover)", tokens).clicked() {
+        if super::menu::menu_item(ui, "Ø", "Kein Schatten (entfernen)", tokens).clicked() {
             if has_selection {
                 changed |= apply_shadow_selection(state, "");
             }
@@ -796,12 +796,12 @@ fn render_shadow_picker_menu(
         }
         ui.separator();
         let presets = [
-            ("#00000082", "Sombra Padrão (51%)"),
-            ("#000000CC", "Sombra Intensa (80%)"),
-            ("#00000040", "Sombra Suave (25%)"),
-            ("#0F172A", "Sombra Azul Noturno"),
-            ("#F59E0B", "Realce Dourado"),
-            ("#EF4444", "Realce Vermelho"),
+            ("#00000082", "Standardschatten (51 %)"),
+            ("#000000CC", "Starker Schatten (80 %)"),
+            ("#00000040", "Weicher Schatten (25 %)"),
+            ("#0F172A", "Nachtblauer Schatten"),
+            ("#F59E0B", "Goldene Hervorhebung"),
+            ("#EF4444", "Rote Hervorhebung"),
         ];
         for (hex, name) in presets {
             let color = crate::core::markup::parse_hex_color(hex).unwrap_or(tokens.text_primary);
@@ -827,16 +827,16 @@ fn render_case_picker_menu(
     let mut changed = false;
     egui::Popup::menu(resp).show(|ui| {
         ui.set_min_width(210.0);
-        super::menu::menu_section_title(ui, "Caixa de Letras", tokens);
-        if super::menu::menu_item(ui, "AA", "Converter para MAIÚSCULAS", tokens).clicked() {
+        super::menu::menu_section_title(ui, "Groß-/Kleinschreibung", tokens);
+        if super::menu::menu_item(ui, "AA", "In GROSSBUCHSTABEN umwandeln", tokens).clicked() {
             changed |= transform_selection_case(state, CaseMode::Upper);
             ui.close();
         }
-        if super::menu::menu_item(ui, "Aa", "Primeira Letra Maiúscula", tokens).clicked() {
+        if super::menu::menu_item(ui, "Aa", "Erster Buchstabe groß", tokens).clicked() {
             changed |= transform_selection_case(state, CaseMode::Title);
             ui.close();
         }
-        if super::menu::menu_item(ui, "aa", "Converter para minúsculas", tokens).clicked() {
+        if super::menu::menu_item(ui, "aa", "In kleinbuchstaben umwandeln", tokens).clicked() {
             changed |= transform_selection_case(state, CaseMode::Lower);
             ui.close();
         }
@@ -852,9 +852,9 @@ fn render_line_spacing_menu(
     let mut changed = false;
     egui::Popup::menu(resp).show(|ui| {
         ui.set_min_width(220.0);
-        super::menu::menu_section_title(ui, "Espaçamento Entre Linhas (//l:)", tokens);
+        super::menu::menu_section_title(ui, "Zeilenabstand (//l:)", tokens);
         for val in &["1.0", "1.15", "1.25", "1.38", "1.50", "1.75", "2.0"] {
-            if super::menu::menu_item(ui, val, &format!("Aplicar //l: {val}"), tokens).clicked() {
+            if super::menu::menu_item(ui, val, &format!("Anwenden //l: {val}"), tokens).clicked() {
                 changed |= apply_or_update_slide_directive(state, "l", val);
                 ui.close();
             }
@@ -871,9 +871,9 @@ fn render_letter_spacing_menu(
     let mut changed = false;
     egui::Popup::menu(resp).show(|ui| {
         ui.set_min_width(220.0);
-        super::menu::menu_section_title(ui, "Espaçamento Entre Letras (//ls:)", tokens);
+        super::menu::menu_section_title(ui, "Zeichenabstand (//ls:)", tokens);
         for val in &["0.0", "0.6", "1.0", "1.8", "2.5", "4.0"] {
-            if super::menu::menu_item(ui, val, &format!("Aplicar //ls: {val}"), tokens).clicked() {
+            if super::menu::menu_item(ui, val, &format!("Anwenden //ls: {val}"), tokens).clicked() {
                 changed |= apply_or_update_slide_directive(state, "ls", val);
                 ui.close();
             }

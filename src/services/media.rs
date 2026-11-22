@@ -153,7 +153,7 @@ pub fn sync_live_media_playback(
                     let title = std::path::Path::new(&media.path)
                         .file_stem()
                         .and_then(|s| s.to_str())
-                        .unwrap_or("Vídeo")
+                        .unwrap_or("Video")
                         .to_string();
                     state.play_media(title, media.path.clone(), PlayerMediaKind::Video, is_projecting);
                 }
@@ -161,7 +161,7 @@ pub fn sync_live_media_playback(
                 let title = std::path::Path::new(&media.path)
                     .file_stem()
                     .and_then(|s| s.to_str())
-                    .unwrap_or("Vídeo")
+                    .unwrap_or("Video")
                     .to_string();
                 state.play_media(title, media.path.clone(), PlayerMediaKind::Video, is_projecting);
             }

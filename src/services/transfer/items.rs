@@ -424,7 +424,7 @@ pub fn import_package_from_bytes(
         }
     }
 
-    Err(format!("Formato de arquivo não reconhecido para '{hint_filename}'"))
+    Err(format!("Dateiformat nicht erkannt für „{hint_filename}“"))
 }
 
 fn import_playlist_package(

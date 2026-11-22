@@ -50,7 +50,7 @@ impl PresentationApp {
                 let mut item = self.web_control.resource(kind, &id)?;
                 let focused = self.control_state.selected_playlist_index.and_then(|i| self.control_state.playlist.get(i)).map(|i| i.id.clone());
                 let index = if let Some(target) = target {
-                    self.control_state.playlist.iter().position(|i| i.id == target).ok_or("Destino não encontrado.")? + usize::from(after)
+                    self.control_state.playlist.iter().position(|i| i.id == target).ok_or("Ziel nicht gefunden.")? + usize::from(after)
                 } else { self.control_state.playlist.len() };
                 item.id = crate::core::preferences::new_id("playlist");
                 self.control_state.playlist.insert(index, item);
@@ -64,13 +64,13 @@ impl PresentationApp {
                 crate::ui::pages::bible::sync_preview(&mut self.control_state, &mut self.slide_deck, true);
             }
             BibleShortcut { id, operation, target } => {
-                if self.control_state.bible.library.get(&id).is_none() { return Err("Versão bíblica não encontrada.".into()); }
+                if self.control_state.bible.library.get(&id).is_none() { return Err("Bibelübersetzung nicht gefunden.".into()); }
                 let shortcuts = &mut self.control_state.bible_shortcuts;
                 match operation.as_str() {
                     "add" => if !shortcuts.contains(&id) { shortcuts.push(id); },
                     "remove" => shortcuts.retain(|v| v != &id),
-                    "move" => { let target = target.ok_or("Destino não encontrado.")?; crate::core::interaction::move_items(shortcuts, &[id], &target, false, |v| v); },
-                    _ => return Err("Operação inválida.".into()),
+                    "move" => { let target = target.ok_or("Ziel nicht gefunden.")?; crate::core::interaction::move_items(shortcuts, &[id], &target, false, |v| v); },
+                    _ => return Err("Ungültiger Vorgang.".into()),
                 }
             }
             PlaylistSelection { id, range, additive } => self.remote_playlist_selection(id, range, additive)?,
@@ -114,14 +114,14 @@ impl PresentationApp {
                 }
                 let mut leaves = Vec::new();
                 if !collect(&layout.root, &mut leaves) || leaves.len() != 7 {
-                    return Err("Layout inválido.".into());
+                    return Err("Ungültiges Layout.".into());
                 }
                 use crate::core::layout::ContainerKind::*;
                 if [Selection, Lyrics, Stage, Preview, Themes, Playlist, Player]
                     .iter()
                     .any(|kind| leaves.iter().filter(|leaf| *leaf == kind).count() != 1)
                 {
-                    return Err("Layout inválido.".into());
+                    return Err("Ungültiges Layout.".into());
                 }
                 if bible {
                     self.control_state.bible_layout = layout;
@@ -173,13 +173,13 @@ impl PresentationApp {
                 let item = self.web_control.resource(kind, &id)?;
                 if kind == crate::services::control::ResourceKind::Song {
                     self.slide_deck.reload_from_db(&self.db);
-                    let id = id.parse::<i64>().map_err(|_| "Música não encontrada.")?;
+                    let id = id.parse::<i64>().map_err(|_| "Lied nicht gefunden.")?;
                     let index = self
                         .slide_deck
                         .library()
                         .iter()
                         .position(|song| song.id == Some(id))
-                        .ok_or("Música não encontrada.")?;
+                        .ok_or("Lied nicht gefunden.")?;
                     self.control_state.selected_song_ids.clear();
                     self.control_state.selected_song_ids.insert(id);
                     self.control_state.song_selection_anchor = Some(id);
@@ -194,7 +194,7 @@ impl PresentationApp {
             ProjectPreview { index } => {
                 if let Some(index) = index {
                     if index >= self.slide_deck.slides().len() {
-                        return Err("Estrofe não encontrada.".into());
+                        return Err("Strophe nicht gefunden.".into());
                     }
                     self.slide_deck.select_preview_slide(index);
                 }
@@ -202,13 +202,13 @@ impl PresentationApp {
             }
             PreviewSlide { index } => {
                 if index >= self.slide_deck.slides().len() {
-                    return Err("Estrofe não encontrada.".into());
+                    return Err("Strophe nicht gefunden.".into());
                 }
                 self.slide_deck.select_preview_slide(index);
             }
             LiveSlide { index } => {
                 if index >= self.slide_deck.live_slides().len() {
-                    return Err("Estrofe não encontrada.".into());
+                    return Err("Strophe nicht gefunden.".into());
                 }
                 self.slide_deck.select_live_slide(index);
                 crate::services::media::sync_live_media_playback(
@@ -227,7 +227,7 @@ impl PresentationApp {
                     "previous" => self.slide_deck.prev_slide(),
                     "first" => self.slide_deck.first_slide(),
                     "last" => self.slide_deck.last_slide(),
-                    _ => return Err("Direção inválida.".into()),
+                    _ => return Err("Ungültige Richtung.".into()),
                 }
                 crate::services::media::sync_live_media_playback(
                     &mut self.control_state,
@@ -250,7 +250,7 @@ impl PresentationApp {
                     .themes
                     .iter()
                     .position(|theme| theme.id == id)
-                    .ok_or("Tema não encontrado.")?;
+                    .ok_or("Design nicht gefunden.")?;
                 if live {
                     self.control_state.apply_theme_to_live();
                 }
@@ -266,7 +266,7 @@ impl PresentationApp {
                     .playlist
                     .iter()
                     .position(|item| item.id == id)
-                    .ok_or("Item não encontrado no repertório.")?;
+                    .ok_or("Element nicht im Ablaufplan gefunden.")?;
                 let item = self.control_state.playlist[index].clone();
                 self.activate_remote_item(&item, project)?;
                 self.control_state.selected_playlist_index = Some(index);
@@ -284,7 +284,7 @@ impl PresentationApp {
                         .iter()
                         .any(|item| item.id == target)
                 {
-                    return Err("Item não encontrado no repertório.".into());
+                    return Err("Element nicht im Ablaufplan gefunden.".into());
                 }
                 let selected = self
                     .control_state
@@ -322,7 +322,7 @@ impl PresentationApp {
                     .playlist
                     .iter_mut()
                     .find(|item| item.id == id)
-                    .ok_or("Item não encontrado.")?
+                    .ok_or("Element nicht gefunden.")?
                     .played = played;
             }
             PlaylistClear => {
@@ -352,7 +352,7 @@ impl PresentationApp {
                     .items
                     .iter()
                     .find(|item| item.id == id)
-                    .ok_or("Atalho não encontrado.")?
+                    .ok_or("Verknüpfung nicht gefunden.")?
                     .to_playlist();
                 self.activate_remote_item(&item, project)?;
                 self.control_state.quick_bar.active_id = Some(id);
@@ -375,13 +375,13 @@ impl PresentationApp {
                     .bible
                     .library
                     .get(&version)
-                    .ok_or("Versão bíblica não encontrada.")?;
+                    .ok_or("Bibelübersetzung nicht gefunden.")?;
                 let (book, chapter, start, end) = bible
                     .reference(&reference)
-                    .ok_or("Referência bíblica inválida.")?;
+                    .ok_or("Ungültige Bibelstelle.")?;
                 let passage = bible
                     .passage(book, chapter, start, end)
-                    .ok_or("Passagem indisponível.")?;
+                    .ok_or("Stelle nicht verfügbar.")?;
                 if !playlist || project {
                     self.control_state.bible_book = bible.books[book].name.clone();
                     self.control_state.bible_chapter = chapter;
@@ -430,7 +430,7 @@ impl PresentationApp {
                 playlist,
             } => {
                 if content.trim().is_empty() {
-                    return Err("Digite o texto do aviso.".into());
+                    return Err("Gib den Text der Ankündigung ein.".into());
                 }
                 self.remote_content(
                     if title.trim().is_empty() {
@@ -438,7 +438,7 @@ impl PresentationApp {
                     } else {
                         title
                     },
-                    "Texto".into(),
+                    "Text".into(),
                     content,
                     PlaylistItemKind::Text,
                     project,
@@ -454,7 +454,7 @@ impl PresentationApp {
                 tags,
             } => {
                 if title.trim().is_empty() || content.trim().is_empty() {
-                    return Err("Preencha o título e a letra.".into());
+                    return Err("Gib Titel und Liedtext ein.".into());
                 }
                 let id = if let Some(id) = id {
                     if !self
@@ -463,7 +463,7 @@ impl PresentationApp {
                         .iter()
                         .any(|song| song.id == Some(id))
                     {
-                        return Err("Música não encontrada.".into());
+                        return Err("Lied nicht gefunden.".into());
                     }
                     let existing = self.slide_deck.library().iter().find(|s| s.id == Some(id)).unwrap();
                     self.db
@@ -496,7 +496,7 @@ impl PresentationApp {
                     .iter()
                     .any(|service| service.id == id)
                 {
-                    return Err("Culto não encontrado.".into());
+                    return Err("Gottesdienst nicht gefunden.".into());
                 }
                 self.control_state.switch_service(&id);
             }
@@ -576,7 +576,7 @@ impl PresentationApp {
 
     fn remote_project_preview(&mut self) -> Result<(), String> {
         if self.slide_deck.slides().is_empty() && self.slide_deck.preview_design.is_none() {
-            return Err("Selecione um conteúdo para apresentar.".into());
+            return Err("Wähle einen Inhalt zum Zeigen.".into());
         }
         self.slide_deck.project_preview();
         if !self

@@ -139,9 +139,9 @@ pub(super) fn render(
                 // Play / Pause Button
                 let play_icon = if is_playing { PAUSE } else { PLAY };
                 let play_text = if is_tight {
-                    if is_playing { "Pausar" } else { "Prévia" }
+                    if is_playing { "Pause" } else { "Vorschau" }
                 } else if is_compact {
-                    if is_playing { "Pausar" } else { "Pré-visualizar" }
+                    if is_playing { "Pause" } else { "Vorschau ansehen" }
                 } else if is_playing {
                     crate::ui::i18n::text(ui, "design-pause")
                 } else {
@@ -285,7 +285,7 @@ pub(super) fn render(
                     ui.painter().rect_stroke(draw1, 4.5, Stroke::new(1.0, theme.accent), egui::StrokeKind::Inside);
                 }
                 let seg1_text = if is_tight {
-                    format!("{CLOCK} Linha")
+                    format!("{CLOCK} Zeitleiste")
                 } else {
                     format!("{CLOCK} {}", crate::ui::i18n::text(ui, "design-timeline"))
                 };

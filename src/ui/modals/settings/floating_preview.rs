@@ -348,12 +348,12 @@ pub fn render_floating_screen_preview(
 
                     if ui
                         .small_button(format!("{QR_CODE} QR"))
-                        .on_hover_text("Mostrar QR Code para escanear com o celular")
+                        .on_hover_text("QR-Code zum Scannen mit dem Handy anzeigen")
                         .clicked()
                     {
                         crate::ui::components::open_qr_dialog(
                             ui.ctx(),
-                            "Prévia Web",
+                            "Web-Vorschau",
                             url.clone(),
                         );
                     }

@@ -806,7 +806,7 @@ pub fn render_selection(
                         }
                     }
                 }
-                Err(e) => state.notify(format!("Erro ao exportar: {e}")),
+                Err(e) => state.notify(format!("Fehler beim Exportieren: {e}")),
             }
         }
     }

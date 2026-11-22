@@ -44,17 +44,17 @@ pub(super) fn bibles(
 
     // Sort order: Portuguese first, then English, then Spanish, then alphabetical
     let mut ordered_langs: Vec<(&'static str, usize)> = Vec::new();
-    if let Some(&count) = lang_counts.get("Português") {
-        ordered_langs.push(("Português", count));
+    if let Some(&count) = lang_counts.get("Eigene") {
+        ordered_langs.push(("Eigene", count));
     }
-    if let Some(&count) = lang_counts.get("Inglês") {
-        ordered_langs.push(("Inglês", count));
+    if let Some(&count) = lang_counts.get("Deutsch") {
+        ordered_langs.push(("Deutsch", count));
     }
-    if let Some(&count) = lang_counts.get("Espanhol") {
-        ordered_langs.push(("Espanhol", count));
+    if let Some(&count) = lang_counts.get("Tamil") {
+        ordered_langs.push(("Tamil", count));
     }
     for (&lang, &count) in &lang_counts {
-        if lang != "Português" && lang != "Inglês" && lang != "Espanhol" {
+        if lang != "Eigene" && lang != "Deutsch" && lang != "Tamil" {
             ordered_langs.push((lang, count));
         }
     }
@@ -67,11 +67,11 @@ pub(super) fn bibles(
     let selected_lang_id = ui.make_persistent_id("settings_selected_bible_lang");
     let mut selected_lang = ui.ctx().data_mut(|d| {
         d.get_temp::<String>(selected_lang_id)
-            .unwrap_or_else(|| "Português".to_string())
+            .unwrap_or_else(|| "Eigene".to_string())
     });
 
     if selected_lang != "ALL" && !lang_counts.contains_key(selected_lang.as_str()) {
-        selected_lang = "Português".to_string();
+        selected_lang = "Eigene".to_string();
     }
 
     let query_clean = crate::core::bible::fold(&search_query);
@@ -84,7 +84,7 @@ pub(super) fn bibles(
                 ui,
                 search_id,
                 &mut search_query,
-                "Buscar tradução, sigla ou idioma...",
+                "Übersetzung, Kürzel oder Sprache suchen...",
                 Some(320.0),
                 theme,
             );
@@ -94,7 +94,7 @@ pub(super) fn bibles(
 
             if !search_query.is_empty() {
                 if styled_button(ui, Some(X), "", ButtonTone::Ghost, theme)
-                    .on_hover_text("Limpar busca")
+                    .on_hover_text("Suche leeren")
                     .clicked()
                 {
                     search_query.clear();
@@ -104,7 +104,7 @@ pub(super) fn bibles(
 
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 let combo_label = if selected_lang == "ALL" {
-                    format!("Todas as línguas ({})", catalog.len())
+                    format!("Alle Sprachen ({})", catalog.len())
                 } else {
                     let count = lang_counts.get(selected_lang.as_str()).copied().unwrap_or(0);
                     format!("{selected_lang} ({count})")
@@ -117,7 +117,7 @@ pub(super) fn bibles(
                         if ui
                             .selectable_label(
                                 selected_lang == "ALL",
-                                format!("Todas as línguas ({})", catalog.len()),
+                                format!("Alle Sprachen ({})", catalog.len()),
                             )
                             .clicked()
                         {
@@ -146,15 +146,15 @@ pub(super) fn bibles(
             ui.add_space(4.0);
             ui.horizontal(|ui| {
                 ui.spacing_mut().item_spacing.x = 4.0;
-                let pt_count = lang_counts.get("Português").copied().unwrap_or(0);
-                let en_count = lang_counts.get("Inglês").copied().unwrap_or(0);
-                let es_count = lang_counts.get("Espanhol").copied().unwrap_or(0);
+                let pt_count = lang_counts.get("Eigene").copied().unwrap_or(0);
+                let en_count = lang_counts.get("Deutsch").copied().unwrap_or(0);
+                let es_count = lang_counts.get("Tamil").copied().unwrap_or(0);
 
                 for (lang_key, label) in [
-                    ("Português", format!("Português ({pt_count})")),
-                    ("Inglês", format!("Inglês ({en_count})")),
-                    ("Espanhol", format!("Espanhol ({es_count})")),
-                    ("ALL", format!("Todas ({})", catalog.len())),
+                    ("Eigene", format!("Eigene ({pt_count})")),
+                    ("Deutsch", format!("Deutsch ({en_count})")),
+                    ("Tamil", format!("Tamil ({es_count})")),
+                    ("ALL", format!("Alle ({})", catalog.len())),
                 ] {
                     let is_active = selected_lang == lang_key;
                     let tone = if is_active {
@@ -194,12 +194,12 @@ pub(super) fn bibles(
                 })
                 .collect();
             (
-                format!("Resultados da busca ({} encontrados)", results.len()),
+                format!("Suchergebnisse ({} gefunden)", results.len()),
                 results,
             )
         } else if selected_lang == "ALL" {
             (
-                format!("Todas as traduções ({})", catalog.len()),
+                format!("Alle Übersetzungen ({})", catalog.len()),
                 catalog.iter().collect(),
             )
         } else {
@@ -209,7 +209,7 @@ pub(super) fn bibles(
                 .collect();
             let count = results.len();
             (
-                format!("Traduções em {selected_lang} ({count} disponíveis)"),
+                format!("Übersetzungen: {selected_lang} ({count} verfügbar)"),
                 results,
             )
         };
@@ -232,7 +232,7 @@ pub(super) fn bibles(
                     ui.add_space(24.0);
                     ui.vertical_centered(|ui| {
                         ui.label(
-                            RichText::new("Nenhuma tradução encontrada")
+                            RichText::new("Keine Übersetzung gefunden")
                                 .size(12.0)
                                 .color(theme.text_muted),
                         );
@@ -364,9 +364,9 @@ pub(super) fn bibles(
                     let star_resp = star_resp
                         .on_hover_cursor(egui::CursorIcon::PointingHand)
                         .on_hover_text(if is_shortcut {
-                            "Remover atalho da barra rápida"
+                            "Aus der Schnellleiste entfernen"
                         } else {
-                            "Fixar atalho na barra rápida"
+                            "An die Schnellleiste anheften"
                         });
 
                     if star_resp.clicked() {
@@ -395,7 +395,7 @@ pub(super) fn bibles(
                         ui.painter().text(
                             action_rect.center(),
                             egui::Align2::CENTER_CENTER,
-                            format!("{CHECK_CIRCLE} Em uso"),
+                            format!("{CHECK_CIRCLE} In Verwendung"),
                             FontId::proportional(10.5),
                             theme.status_success_fg,
                         );

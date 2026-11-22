@@ -168,7 +168,7 @@ impl PresentationApp {
             .iter()
             .any(|p| p.id == command.profile_id)
         {
-            return Err("O perfil de origem não existe mais".into());
+            return Err("Das Quellprofil existiert nicht mehr".into());
         }
         let (title, subtitle, kind, quick_kind, content) = match &command.content {
             SharedContent::Bible {
@@ -285,7 +285,7 @@ impl PresentationApp {
                     SharedContent::Bible { reference, version, content } => {
                         let _ = self.db.add_saved_verse(reference, version, content, "");
                         self.control_state.reload_all_selection_items(&self.db);
-                        self.control_state.notify(format!("{reference} importado."));
+                        self.control_state.notify(format!("{reference} importiert."));
                     }
                 }
             }
@@ -310,7 +310,7 @@ impl PresentationApp {
                         self.control_state.settings.operator().show_dock;
                 }
             }
-            _ => return Err("Ação inválida".into()),
+            _ => return Err("Ungültige Aktion".into()),
         }
         Ok(())
     }

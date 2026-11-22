@@ -63,14 +63,14 @@ pub fn render_line_choice_card(
                     painter.text(
                         egui::pos2(center.x, center.y - 12.0),
                         egui::Align2::CENTER_CENTER,
-                        "Porque Ele vive, posso crer",
+                        "Weil Er lebt, kann ich glauben",
                         egui::FontId::proportional(12.5),
                         egui::Color32::WHITE,
                     );
                     painter.text(
                         egui::pos2(center.x, center.y + 12.0),
                         egui::Align2::CENTER_CENTER,
-                        "no amanhã!",
+                        "an das Morgen!",
                         egui::FontId::proportional(12.5),
                         egui::Color32::WHITE,
                     );
@@ -79,7 +79,7 @@ pub fn render_line_choice_card(
                     painter.text(
                         center,
                         egui::Align2::CENTER_CENTER,
-                        "Porque Ele vive, posso crer no amanhã!",
+                        "Weil Er lebt, kann ich glauben an das Morgen!",
                         egui::FontId::proportional(8.5),
                         egui::Color32::WHITE,
                     );

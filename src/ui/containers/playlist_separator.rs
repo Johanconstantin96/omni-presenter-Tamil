@@ -7,18 +7,18 @@ use eframe::egui::{self, Vec2};
 use egui_phosphor::regular::{ARROW_DOWN, ARROW_UP, DROP, PENCIL_SIMPLE, PLUS, ROWS, TRASH};
 
 pub const SEPARATOR_PALETTE: &[(&str, &str)] = &[
-    ("#3B82F6", "Azul"),
-    ("#6366F1", "Índigo"),
-    ("#8B5CF6", "Roxo"),
-    ("#EC4899", "Rosa"),
-    ("#EF4444", "Vermelho"),
-    ("#F97316", "Laranja"),
-    ("#EAB308", "Amarelo"),
-    ("#10B981", "Verde"),
-    ("#14B8A6", "Teal"),
-    ("#06B6D4", "Ciano"),
-    ("#64748B", "Ardósia"),
-    ("#374151", "Escuro"),
+    ("#3B82F6", "Blau"),
+    ("#6366F1", "Indigo"),
+    ("#8B5CF6", "Violett"),
+    ("#EC4899", "Pink"),
+    ("#EF4444", "Rot"),
+    ("#F97316", "Orange"),
+    ("#EAB308", "Gelb"),
+    ("#10B981", "Grün"),
+    ("#14B8A6", "Petrol"),
+    ("#06B6D4", "Cyan"),
+    ("#64748B", "Schiefer"),
+    ("#374151", "Dunkel"),
 ];
 
 pub fn parse_hex_color(hex: &str, fallback: egui::Color32) -> egui::Color32 {

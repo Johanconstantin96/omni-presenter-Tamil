@@ -561,11 +561,11 @@ impl StropheTagDefinition {
 
     pub fn default_tags() -> Vec<Self> {
         vec![
-            Self::new("Refrão", [14, 165, 233]),
-            Self::new("Ponte", [168, 85, 247]),
-            Self::new("Verso", [100, 116, 139]),
+            Self::new("Refrain", [14, 165, 233]),
+            Self::new("Bridge", [168, 85, 247]),
+            Self::new("Strophe", [100, 116, 139]),
             Self::new("Intro", [16, 185, 129]),
-            Self::new("Final", [249, 115, 22]),
+            Self::new("Schluss", [249, 115, 22]),
         ]
     }
 
@@ -585,19 +585,19 @@ impl StropheTagDefinition {
 
     pub fn localize_tag_name<'a>(name: &'a str, lang: crate::core::i18n::Language) -> &'a str {
         match name.trim().to_lowercase().as_str() {
-            t if t == "refrão" || t == "refrao" || t == "chorus" || t == "estribillo" => {
+            t if t == "refrão" || t == "refrao" || t == "chorus" || t == "estribillo" || t == "refrain" => {
                 lang.text("workspace-tag-chorus")
             }
             t if t == "ponte" || t == "bridge" || t == "puente" => {
                 lang.text("workspace-tag-bridge")
             }
-            t if t == "verso" || t == "verse" => {
+            t if t == "verso" || t == "verse" || t == "strophe" => {
                 lang.text("workspace-tag-verse")
             }
             t if t == "intro" => {
                 lang.text("workspace-tag-intro")
             }
-            t if t == "final" || t == "ending" => {
+            t if t == "final" || t == "ending" || t == "schluss" => {
                 lang.text("workspace-tag-ending")
             }
             _ => name,

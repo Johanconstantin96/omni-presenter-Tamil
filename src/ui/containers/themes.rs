@@ -470,7 +470,7 @@ pub fn render_themes_column(
                                 }
                             }
                         }
-                        Err(e) => state.notify(format!("Erro ao exportar: {e}")),
+                        Err(e) => state.notify(format!("Fehler beim Exportieren: {e}")),
                     }
                 }
             }

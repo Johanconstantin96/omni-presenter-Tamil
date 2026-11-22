@@ -136,9 +136,9 @@ pub(crate) fn render_slide_card(
     let hover_text = if !clean.trim().is_empty() {
         clean.trim().to_string()
     } else if is_song && index == 0 {
-        "Título".to_string()
+        "Titel".to_string()
     } else {
-        format!("Slide {}", index + 1)
+        format!("Folie {}", index + 1)
     };
     response.on_hover_text(hover_text)
 }

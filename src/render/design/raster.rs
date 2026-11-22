@@ -135,7 +135,7 @@ pub(super) fn render(scene: &DesignDocument, width: u32, now: u64) -> RgbaImage 
                     }
                 } else {
                     let mut output = RgbaImage::from_pixel(w, h, Rgba([90, 40, 55, 255]));
-                    super::text::draw(&mut output, "Imagem indisponível", layer, scale);
+                    super::text::draw(&mut output, "Bild nicht verfügbar", layer, scale);
                     output
                 }
             }

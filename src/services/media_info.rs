@@ -57,9 +57,9 @@ pub fn calculate_aspect_ratio(w: usize, h: usize) -> String {
     } else if (ratio - 4.0 / 3.0).abs() < 0.06 {
         "4:3".to_string()
     } else if (ratio - 9.0 / 16.0).abs() < 0.06 {
-        "9:16 (Vertical)".to_string()
+        "9:16 (Hochformat)".to_string()
     } else if (ratio - 21.0 / 9.0).abs() < 0.10 {
-        "21:9 (Ultrawide)".to_string()
+        "21:9 (Ultrabreit)".to_string()
     } else {
         fn gcd(mut a: usize, mut b: usize) -> usize {
             while b != 0 {
@@ -101,9 +101,9 @@ pub fn probe_media_details(path_str: &str) -> MediaDetails {
         file_size_bytes,
         file_size_formatted,
         file_type: match kind {
-            "video" => format!("Vídeo ({ext})"),
-            "audio" => format!("Áudio ({ext})"),
-            "image" => format!("Imagem ({ext})"),
+            "video" => format!("Video ({ext})"),
+            "audio" => format!("Audio ({ext})"),
+            "image" => format!("Bild ({ext})"),
             other => other.to_string(),
         },
         duration_secs: None,
@@ -208,10 +208,10 @@ mod tests {
     fn test_calculate_aspect_ratio() {
         assert_eq!(calculate_aspect_ratio(1920, 1080), "16:9");
         assert_eq!(calculate_aspect_ratio(1280, 720), "16:9");
-        assert_eq!(calculate_aspect_ratio(720, 1280), "9:16 (Vertical)");
+        assert_eq!(calculate_aspect_ratio(720, 1280), "9:16 (Hochformat)");
         assert_eq!(calculate_aspect_ratio(1920, 1200), "16:10");
         assert_eq!(calculate_aspect_ratio(1024, 768), "4:3");
-        assert_eq!(calculate_aspect_ratio(2560, 1080), "21:9 (Ultrawide)");
+        assert_eq!(calculate_aspect_ratio(2560, 1080), "21:9 (Ultrabreit)");
     }
 
     #[test]

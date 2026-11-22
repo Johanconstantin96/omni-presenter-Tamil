@@ -42,7 +42,7 @@ pub fn load_custom_font_data(bytes: &[u8]) -> Result<String, String> {
             }
         }
     }
-    loaded_family.ok_or_else(|| "Nenhuma família de fonte válida encontrada no arquivo".into())
+    loaded_family.ok_or_else(|| "Keine gültige Schriftfamilie in der Datei gefunden".into())
 }
 
 /// Carrega arquivo de fonte (.ttf, .otf) do disco

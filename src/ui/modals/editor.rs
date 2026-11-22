@@ -673,12 +673,12 @@ fn render_grid(
 
             let hide_markers = state.song_editor.hide_syntax_markers;
             let (eye_icon, eye_tip) = if hide_markers {
-                (EYE_SLASH, "Ocultar Marcadores: Ativo (Modo Leitura Limpa). Clique para exibir //, |, [4:3]")
+                (EYE_SLASH, "Markierungen ausgeblendet (Lesemodus). Klicken, um //, |, [4:3] anzuzeigen")
             } else {
-                (EYE, "Exibir Marcadores: Visíveis. Clique para ocultar //, |, [4:3] para leitura limpa")
+                (EYE, "Markierungen sichtbar. Klicken, um //, |, [4:3] für bessere Lesbarkeit auszublenden")
             };
             if ui
-                .selectable_label(hide_markers, format!("{eye_icon} Leitura Limpa"))
+                .selectable_label(hide_markers, format!("{eye_icon} Lesemodus"))
                 .on_hover_text(eye_tip)
                 .clicked()
             {

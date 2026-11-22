@@ -344,18 +344,18 @@ fn execute_inner(
                                     let filename = format!("{}.opsong", song.title);
                                     let picked = rfd::FileDialog::new()
                                         .set_file_name(&filename)
-                                        .add_filter("Música OmniPresenter (*.opsong)", &["opsong"])
+                                        .add_filter("Omni-Presenter-Lied (*.opsong)", &["opsong"])
                                         .save_file();
                                     if let Some(path) = picked {
                                         let write_res = std::fs::write(&path, bytes);
                                         if let Err(err) = write_res {
-                                            eprintln!("Erro ao salvar: {err}");
+                                            eprintln!("Fehler beim Speichern: {err}");
                                         } else {
                                             state.notify(state.settings.language.format("workspace-song-exported", &[("title", &song.title)]));
                                         }
                                     }
                                 }
-                                Err(e) => state.notify(format!("Erro ao exportar: {e}")),
+                                Err(e) => state.notify(format!("Fehler beim Exportieren: {e}")),
                             }
                         }
                     }
@@ -367,18 +367,18 @@ fn execute_inner(
                                     let filename = format!("{}.optext", text.title);
                                     let picked = rfd::FileDialog::new()
                                         .set_file_name(&filename)
-                                        .add_filter("Texto OmniPresenter (*.optext)", &["optext"])
+                                        .add_filter("Omni-Presenter-Text (*.optext)", &["optext"])
                                         .save_file();
                                     if let Some(path) = picked {
                                         let write_res = std::fs::write(&path, bytes);
                                         if let Err(err) = write_res {
-                                            eprintln!("Erro ao salvar: {err}");
+                                            eprintln!("Fehler beim Speichern: {err}");
                                         } else {
                                             state.notify(state.settings.language.format("workspace-text-exported", &[("title", &text.title)]));
                                         }
                                     }
                                 }
-                                Err(e) => state.notify(format!("Erro ao exportar: {e}")),
+                                Err(e) => state.notify(format!("Fehler beim Exportieren: {e}")),
                             }
                         }
                     }

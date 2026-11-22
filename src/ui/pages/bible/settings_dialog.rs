@@ -302,7 +302,7 @@ pub fn render_bible_settings_modal(ctx: &egui::Context, state: &mut ControlPanel
                                         .inner_margin(Margin::symmetric(10, 4))
                                         .show(ui, |ui| {
                                             ui.label(
-                                                RichText::new(format!("{} caracteres", state.settings.bible_settings.max_chars_per_slide))
+                                                RichText::new(format!("{} Zeichen", state.settings.bible_settings.max_chars_per_slide))
                                                     .size(11.0)
                                                     .strong()
                                                     .color(tokens.accent),
@@ -318,10 +318,10 @@ pub fn render_bible_settings_modal(ctx: &egui::Context, state: &mut ControlPanel
                             let btn_w = ((avail_w - 18.0) / 4.0).max(60.0);
                             ui.horizontal(|ui| {
                                 for (preset_val, preset_label) in [
-                                    (80, "80 Curto"),
-                                    (120, "120 Padrão"),
-                                    (160, "160 Amplo"),
-                                    (220, "220 Máximo"),
+                                    (80, "80 Kurz"),
+                                    (120, "120 Standard"),
+                                    (160, "160 Breit"),
+                                    (220, "220 Maximal"),
                                 ] {
                                     let is_sel = state.settings.bible_settings.max_chars_per_slide == preset_val;
                                     let bg = if is_sel { tokens.accent_soft } else { tokens.bg_pill };
@@ -349,7 +349,7 @@ pub fn render_bible_settings_modal(ctx: &egui::Context, state: &mut ControlPanel
                             // Clean native egui slider with fine adjust label
                             ui.horizontal(|ui| {
                                 ui.label(
-                                    RichText::new(format!("Ajuste fino: {} carac.", state.settings.bible_settings.max_chars_per_slide))
+                                    RichText::new(format!("Feineinstellung: {} Zeichen", state.settings.bible_settings.max_chars_per_slide))
                                         .size(10.5)
                                         .color(tokens.text_muted),
                                 );

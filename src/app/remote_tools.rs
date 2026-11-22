@@ -15,19 +15,19 @@ impl PresentationApp {
             "volume" => self.control_state.audio_player.set_volume(
                 value
                     .filter(|v| v.is_finite())
-                    .ok_or("Volume inválido.")?
+                    .ok_or("Ungültige Lautstärke.")?
                     .clamp(0.0, 1.0),
             ),
             "seek" => {
                 let value = value
                     .filter(|value| value.is_finite() && *value >= 0.0)
-                    .ok_or("Posição inválida.")?;
+                    .ok_or("Ungültige Position.")?;
                 if self.control_state.active_player_media.is_none() {
-                    return Err("O player está vazio.".into());
+                    return Err("Der Player ist leer.".into());
                 }
                 self.control_state.seek_player(value);
             }
-            _ => return Err("Controle de mídia inválido.".into()),
+            _ => return Err("Ungültige Mediensteuerung.".into()),
         }
         Ok(())
     }
@@ -43,7 +43,7 @@ impl PresentationApp {
         ]
         .contains(&operation)
         {
-            return Err("Controle de design inválido.".into());
+            return Err("Ungültige Grafik-Steuerung.".into());
         }
         let id = self
             .slide_deck
@@ -52,7 +52,7 @@ impl PresentationApp {
             .or(self.slide_deck.live_design.as_ref())
             .or(self.slide_deck.preview_design.as_ref())
             .map(|scene| scene.id.clone())
-            .ok_or("Não há design selecionado.")?;
+            .ok_or("Keine Grafik ausgewählt.")?;
         for scene in [
             &mut self.slide_deck.live_overlay,
             &mut self.slide_deck.live_design,

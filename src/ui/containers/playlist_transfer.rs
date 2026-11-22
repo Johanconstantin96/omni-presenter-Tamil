@@ -32,16 +32,16 @@ pub fn handle_playlist_export_action(
                     let filename = format!("{name}.opplaylist");
                     if let Some(path) = rfd::FileDialog::new()
                         .set_file_name(&filename)
-                        .add_filter("Lista de Reprodução (*.opplaylist)", &["opplaylist"])
+                        .add_filter("Ablaufplan (*.opplaylist)", &["opplaylist"])
                         .save_file()
                     {
                         let write_res = std::fs::write(&path, bytes);
                         if let Err(err) = write_res {
-                            eprintln!("Erro ao salvar playlist: {err}");
+                            eprintln!("Fehler beim Speichern des Ablaufplans: {err}");
                         }
                     }
                 }
-                Err(err) => eprintln!("Erro ao exportar playlist: {err}"),
+                Err(err) => eprintln!("Fehler beim Exportieren des Ablaufplans: {err}"),
             }
             Ok(())
         });

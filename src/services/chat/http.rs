@@ -544,7 +544,7 @@ pub fn serve(mut request: tiny_http::Request, chat: &ChatService) {
             ("POST", "/api/chat/uploads") => {
                 chat.heartbeat(&session)?;
                 if request.body_length().is_some_and(|len| len > MAX_UPLOAD) {
-                    return Err("Arquivo maior que 256 MiB".into());
+                    return Err("Datei ist größer als 256 MiB".into());
                 }
                 let mime = request
                     .headers()

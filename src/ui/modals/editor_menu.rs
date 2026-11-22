@@ -31,206 +31,206 @@ const MENU_ITEMS: &[MenuItemDef] = &[
     // 1. Comandos de Slide
     MenuItemDef {
         category_id: 1,
-        category_title: "Comandos de Slide (//)",
+        category_title: "Folienbefehle (//)",
         code: "//f: Nome",
-        label: "Tipografia do Slide",
+        label: "Schrift der Folie",
         action: MenuAction::Insert("\n//f: Montserrat\n"),
     },
     MenuItemDef {
         category_id: 1,
-        category_title: "Comandos de Slide (//)",
+        category_title: "Folienbefehle (//)",
         code: "//c: #HEX",
-        label: "Cor Base do Texto",
+        label: "Grundfarbe des Textes",
         action: MenuAction::Insert("\n//c: #FFD700\n"),
     },
     MenuItemDef {
         category_id: 1,
-        category_title: "Comandos de Slide (//)",
+        category_title: "Folienbefehle (//)",
         code: "//t: N",
-        label: "Tamanho da Fonte (pt)",
+        label: "Schriftgröße (pt)",
         action: MenuAction::Insert("\n//t: 46\n"),
     },
     MenuItemDef {
         category_id: 1,
-        category_title: "Comandos de Slide (//)",
+        category_title: "Folienbefehle (//)",
         code: "//b: #HEX",
-        label: "Cor da Sombra / Box do Slide",
+        label: "Schatten-/Feldfarbe der Folie",
         action: MenuAction::Insert("\n//b: #00000082\n"),
     },
     MenuItemDef {
         category_id: 1,
-        category_title: "Comandos de Slide (//)",
+        category_title: "Folienbefehle (//)",
         code: "//a: c",
-        label: "Alinhamento (c|l|r|j)",
+        label: "Ausrichtung (c|l|r|j)",
         action: MenuAction::Insert("\n//a: c\n"),
     },
     MenuItemDef {
         category_id: 1,
-        category_title: "Comandos de Slide (//)",
+        category_title: "Folienbefehle (//)",
         code: "//l: 1.38",
-        label: "Espaçamento Entre Linhas",
+        label: "Zeilenabstand",
         action: MenuAction::Insert("\n//l: 1.38\n"),
     },
     MenuItemDef {
         category_id: 1,
-        category_title: "Comandos de Slide (//)",
+        category_title: "Folienbefehle (//)",
         code: "//ls: 1.8",
-        label: "Espaçamento Entre Letras",
+        label: "Zeichenabstand",
         action: MenuAction::Insert("\n//ls: 1.8\n"),
     },
 
     // 2. Quebras de Formato
     MenuItemDef {
         category_id: 2,
-        category_title: "Quebras de Formato",
+        category_title: "Format-Umbrüche",
         code: "|",
-        label: "Quebra Suave Padrão",
+        label: "Weicher Umbruch (Standard)",
         action: MenuAction::Insert(" | "),
     },
     MenuItemDef {
         category_id: 2,
-        category_title: "Quebras de Formato",
+        category_title: "Format-Umbrüche",
         code: "|16:9|",
-        label: "Quebra Widescreen (16:9)",
+        label: "Umbruch Breitbild (16:9)",
         action: MenuAction::Insert(" |16:9| "),
     },
     MenuItemDef {
         category_id: 2,
-        category_title: "Quebras de Formato",
+        category_title: "Format-Umbrüche",
         code: "|4:3|",
-        label: "Quebra Formato Clássico (4:3)",
+        label: "Umbruch klassisches Format (4:3)",
         action: MenuAction::Insert(" |4:3| "),
     },
     MenuItemDef {
         category_id: 2,
-        category_title: "Quebras de Formato",
+        category_title: "Format-Umbrüche",
         code: "|9:16|",
-        label: "Quebra Vertical (Stories / Reels)",
+        label: "Umbruch Hochformat (Stories / Reels)",
         action: MenuAction::Insert(" |9:16| "),
     },
     MenuItemDef {
         category_id: 2,
-        category_title: "Quebras de Formato",
+        category_title: "Format-Umbrüche",
         code: "|21:9|",
-        label: "Quebra Ultrawide (21:9)",
+        label: "Umbruch Ultrabreit (21:9)",
         action: MenuAction::Insert(" |21:9| "),
     },
     MenuItemDef {
         category_id: 2,
-        category_title: "Quebras de Formato",
+        category_title: "Format-Umbrüche",
         code: "---",
-        label: "Divisão de Estrofe (Novo Slide)",
+        label: "Strophe teilen (neue Folie)",
         action: MenuAction::Insert("\n\n---\n\n"),
     },
 
     // 3. Tags na Seleção
     MenuItemDef {
         category_id: 3,
-        category_title: "Tags de Seleção ([ ])",
+        category_title: "Auswahl-Tags ([ ])",
         code: "[f: ...]",
-        label: "Fonte na Seleção",
+        label: "Schrift der Auswahl",
         action: MenuAction::ApplyFont("Montserrat"),
     },
     MenuItemDef {
         category_id: 3,
-        category_title: "Tags de Seleção ([ ])",
+        category_title: "Auswahl-Tags ([ ])",
         code: "[c: ...]",
-        label: "Cor na Seleção",
+        label: "Farbe der Auswahl",
         action: MenuAction::ApplyColor("#FFD700"),
     },
     MenuItemDef {
         category_id: 3,
-        category_title: "Tags de Seleção ([ ])",
+        category_title: "Auswahl-Tags ([ ])",
         code: "[t: ...]",
-        label: "Tamanho na Seleção",
+        label: "Größe der Auswahl",
         action: MenuAction::ApplySize("46"),
     },
     MenuItemDef {
         category_id: 3,
-        category_title: "Tags de Seleção ([ ])",
+        category_title: "Auswahl-Tags ([ ])",
         code: "[b: ...]",
-        label: "Sombra / Box na Seleção",
+        label: "Schatten / Feld der Auswahl",
         action: MenuAction::ApplyShadow("#00000082"),
     },
 
     // 4. Estrutura & Operador
     MenuItemDef {
         category_id: 4,
-        category_title: "Estrutura & Operador",
-        code: "// nota",
-        label: "Comentário Oculto de Operador",
+        category_title: "Struktur & Bediener",
+        code: "// Notiz",
+        label: "Versteckter Bediener-Kommentar",
         action: MenuAction::Insert("\n// "),
     },
     MenuItemDef {
         category_id: 4,
-        category_title: "Estrutura & Operador",
-        code: "[Verso]",
-        label: "Etiqueta de Verso",
-        action: MenuAction::Insert("\n[Verso]\n"),
+        category_title: "Struktur & Bediener",
+        code: "[Strophe]",
+        label: "Bezeichnung Strophe",
+        action: MenuAction::Insert("\n[Strophe]\n"),
     },
     MenuItemDef {
         category_id: 4,
-        category_title: "Estrutura & Operador",
-        code: "[Refrão]",
-        label: "Etiqueta de Refrão",
-        action: MenuAction::Insert("\n[Refrão]\n"),
+        category_title: "Struktur & Bediener",
+        code: "[Refrain]",
+        label: "Bezeichnung Refrain",
+        action: MenuAction::Insert("\n[Refrain]\n"),
     },
     MenuItemDef {
         category_id: 4,
-        category_title: "Estrutura & Operador",
-        code: "[Ponte]",
-        label: "Etiqueta de Ponte",
-        action: MenuAction::Insert("\n[Ponte]\n"),
+        category_title: "Struktur & Bediener",
+        code: "[Bridge]",
+        label: "Bezeichnung Bridge",
+        action: MenuAction::Insert("\n[Bridge]\n"),
     },
     MenuItemDef {
         category_id: 4,
-        category_title: "Estrutura & Operador",
-        code: "[Pré-Refrão]",
-        label: "Etiqueta de Pré-Refrão",
-        action: MenuAction::Insert("\n[Pré-Refrão]\n"),
+        category_title: "Struktur & Bediener",
+        code: "[Pre-Chorus]",
+        label: "Bezeichnung Pre-Chorus",
+        action: MenuAction::Insert("\n[Pre-Chorus]\n"),
     },
     MenuItemDef {
         category_id: 4,
-        category_title: "Estrutura & Operador",
-        code: "[Final]",
-        label: "Etiqueta de Final",
-        action: MenuAction::Insert("\n[Final]\n"),
+        category_title: "Struktur & Bediener",
+        code: "[Schluss]",
+        label: "Bezeichnung Schluss",
+        action: MenuAction::Insert("\n[Schluss]\n"),
     },
 
     // 5. Marcações de Ênfase
     MenuItemDef {
         category_id: 5,
-        category_title: "Marcações de Ênfase",
-        code: "**texto**",
-        label: "Negrito na Projeção",
+        category_title: "Hervorhebungen",
+        code: "**Text**",
+        label: "Fett in der Projektion",
         action: MenuAction::Wrap("**", "**"),
     },
     MenuItemDef {
         category_id: 5,
-        category_title: "Marcações de Ênfase",
-        code: "*texto*",
-        label: "Itálico na Projeção",
+        category_title: "Hervorhebungen",
+        code: "*Text*",
+        label: "Kursiv in der Projektion",
         action: MenuAction::Wrap("*", "*"),
     },
     MenuItemDef {
         category_id: 5,
-        category_title: "Marcações de Ênfase",
-        code: "__texto__",
-        label: "Sublinhado",
+        category_title: "Hervorhebungen",
+        code: "__Text__",
+        label: "Unterstrichen",
         action: MenuAction::Wrap("__", "__"),
     },
     MenuItemDef {
         category_id: 5,
-        category_title: "Marcações de Ênfase",
-        code: "~~texto~~",
-        label: "Tachado",
+        category_title: "Hervorhebungen",
+        code: "~~Text~~",
+        label: "Durchgestrichen",
         action: MenuAction::Wrap("~~", "~~"),
     },
     MenuItemDef {
         category_id: 5,
-        category_title: "Marcações de Ênfase",
-        code: "==texto==",
-        label: "Destaque (Cor do Tema)",
+        category_title: "Hervorhebungen",
+        code: "==Text==",
+        label: "Hervorhebung (Designfarbe)",
         action: MenuAction::Wrap("==", "=="),
     },
 ];
@@ -256,7 +256,7 @@ pub fn render_options_menu(
             ui.label(RichText::new(MAGNIFYING_GLASS).size(13.0).color(tokens.icon_muted));
             let edit_res = ui.add(
                 egui::TextEdit::singleline(&mut query)
-                    .hint_text("Buscar comando, quebra ou tag...")
+                    .hint_text("Befehl, Umbruch oder Tag suchen...")
                     .desired_width(ui.available_width() - 8.0)
                     .frame(egui::Frame::NONE)
                     .font(egui::FontId::proportional(12.0)),
@@ -270,7 +270,7 @@ pub fn render_options_menu(
         ui.separator();
 
         // Categorias em pílulas compactas
-        let categories = ["Todos", "Comandos //", "Quebras |", "Tags [ ]", "Estrutura", "Estilos"];
+        let categories = ["Todos", "Befehle //", "Umbrüche |", "Tags [ ]", "Estrutura", "Estilos"];
         ui.horizontal(|ui| {
             ui.spacing_mut().item_spacing.x = 4.0;
             for (idx, name) in categories.iter().enumerate() {
@@ -316,7 +316,7 @@ pub fn render_options_menu(
                     ui.add_space(16.0);
                     ui.vertical_centered(|ui| {
                         ui.label(
-                            RichText::new("Nenhuma opção encontrada")
+                            RichText::new("Keine Option gefunden")
                                 .size(11.5)
                                 .color(tokens.text_muted),
                         );

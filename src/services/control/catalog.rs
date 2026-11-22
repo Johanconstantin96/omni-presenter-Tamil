@@ -38,7 +38,7 @@ impl WebControl {
                         PlaylistItem {
                             id: text.id?.to_string(),
                             title: text.title,
-                            subtitle: "Texto".into(),
+                            subtitle: "Text".into(),
                             content: text.content,
                             kind: PlaylistItemKind::Text,
                             played: false,

@@ -527,13 +527,13 @@ fn render_compact_video_showcase(
                 (
                     theme.accent,
                     theme.text_on_accent,
-                    "Deixar de projetar vídeo",
+                    "Video nicht mehr zeigen",
                 )
             } else {
                 (
                     theme.bg_pill,
                     theme.text_secondary,
-                    "Projetar vídeo no ao vivo",
+                    "Video live zeigen",
                 )
             };
             let (proj_rect, proj_resp) =
@@ -606,19 +606,19 @@ fn render_video_fit_segmented_bar(
             "contain",
             ARROWS_IN,
             "Conter",
-            "Conter: preserva proporção original sem cortes",
+            "Einpassen: behält das Seitenverhältnis ohne Beschnitt",
         ),
         (
             "cover",
             ARROWS_OUT,
             "Cobrir",
-            "Cobrir: preenche a tela cortando sobras",
+            "Füllen: füllt den Bildschirm und schneidet Ränder ab",
         ),
         (
             "stretch",
             ARROWS_LEFT_RIGHT,
             "Estender",
-            "Estender: estica para preencher toda a tela",
+            "Strecken: dehnt auf den ganzen Bildschirm",
         ),
     ];
 

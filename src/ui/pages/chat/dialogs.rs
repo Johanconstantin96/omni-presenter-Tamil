@@ -55,14 +55,14 @@ fn access_link(ui: &mut egui::Ui, url: &str, language: Language, theme: &AppThem
             .icon_button(
                 ui,
                 QR_CODE,
-                "QR Code",
+                "QR-Code",
                 false,
                 Vec2::splat(24.0),
             )
-            .on_hover_text("Mostrar QR Code para escanear com a câmera")
+            .on_hover_text("QR-Code zum Scannen mit der Kamera anzeigen")
             .clicked()
         {
-            crate::ui::components::open_qr_dialog(ui.ctx(), "Chat da Equipe", url);
+            crate::ui::components::open_qr_dialog(ui.ctx(), "Team-Chat", url);
         }
     });
 }
@@ -152,7 +152,7 @@ pub(super) fn dialogs(ui: &egui::Ui, state: &mut ControlPanelState, service: &Ch
                         ui,
                         &primary_chat_url,
                         120.0,
-                        Some("Aponte a câmera do celular para entrar no chat"),
+                        Some("Richte die Handykamera auf den Code, um dem Chat beizutreten"),
                         &tokens,
                     );
                 });

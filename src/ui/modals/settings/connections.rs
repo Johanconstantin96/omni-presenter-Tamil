@@ -145,7 +145,7 @@ pub(super) fn connections(
                     ui.vertical_centered(|ui| {
                         // Title
                         ui.label(
-                            RichText::new(format!("{QR_CODE} Celular"))
+                            RichText::new(format!("{QR_CODE} Handy"))
                                 .size(11.5)
                                 .strong()
                                 .color(theme.text_secondary),
@@ -248,19 +248,19 @@ pub(super) fn connections(
                             .response
                             .interact(egui::Sense::click())
                             .on_hover_cursor(egui::CursorIcon::PointingHand)
-                            .on_hover_text("Clique para ampliar");
+                            .on_hover_text("Klicken zum Vergrößern");
 
                         if qr_click.clicked() {
                             crate::ui::components::open_qr_dialog(
                                 ui.ctx(),
-                                format!("Controle Web ({selected_qr_label})"),
+                                format!("Web-Steuerung ({selected_qr_label})"),
                                 selected_qr_url,
                             );
                         }
 
                         ui.add_space(4.0);
                         ui.label(
-                            RichText::new("Escaneie para conectar")
+                            RichText::new("Scannen zum Verbinden")
                                 .size(10.0)
                                 .color(theme.text_muted),
                         );
@@ -535,12 +535,12 @@ fn connection_endpoint_card(
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                         // QR button
                         if styled_button(ui, Some(QR_CODE), "", ButtonTone::Secondary, theme)
-                            .on_hover_text("Ampliar QR Code")
+                            .on_hover_text("QR-Code vergrößern")
                             .clicked()
                         {
                             crate::ui::components::open_qr_dialog(
                                 ui.ctx(),
-                                format!("Controle Web ({title})"),
+                                format!("Web-Steuerung ({title})"),
                                 url,
                             );
                         }
@@ -612,12 +612,12 @@ fn connection_endpoint_card(
                     }
 
                     if styled_button(ui, Some(QR_CODE), "", ButtonTone::Secondary, theme)
-                        .on_hover_text("Ampliar QR Code")
+                        .on_hover_text("QR-Code vergrößern")
                         .clicked()
                     {
                         crate::ui::components::open_qr_dialog(
                             ui.ctx(),
-                            format!("Controle Web ({title})"),
+                            format!("Web-Steuerung ({title})"),
                             url,
                         );
                     }

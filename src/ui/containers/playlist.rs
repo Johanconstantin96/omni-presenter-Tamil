@@ -915,7 +915,7 @@ pub fn activate_selected_playlist_items(
     let combined_title = if titles_joined.len() <= 45 {
         titles_joined
     } else {
-        format!("{} (+{} itens)", selected_items[0].title, selected_items.len() - 1)
+        format!("{} (+{} Elemente)", selected_items[0].title, selected_items.len() - 1)
     };
     let combined_artist = selected_items
         .first()

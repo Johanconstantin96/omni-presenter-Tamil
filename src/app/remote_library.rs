@@ -17,12 +17,12 @@ impl PresentationApp {
             .bible
             .library
             .get(id)
-            .ok_or("Versão bíblica não encontrada.")?;
+            .ok_or("Bibelübersetzung nicht gefunden.")?;
         let book = bible
             .books
             .get(book_index)
             .or(bible.books.first())
-            .ok_or("Bíblia vazia.")?;
+            .ok_or("Bibel ist leer.")?;
         state.bible_book = book.name.clone();
         state.bible_chapter = state.bible_chapter.clamp(1, book.chapters.len().max(1));
         let total = book
@@ -51,7 +51,7 @@ impl PresentationApp {
             .playlist
             .iter()
             .position(|i| i.id == id)
-            .ok_or("Item não encontrado.")?;
+            .ok_or("Element nicht gefunden.")?;
         let item = self.control_state.playlist[index].clone();
         self.activate_remote_item(&item, false)?;
         let order: Vec<_> = self
@@ -80,7 +80,7 @@ impl PresentationApp {
             .iter()
             .any(|id| !state.playlist.iter().any(|i| &i.id == id))
         {
-            return Err("Item não encontrado.".into());
+            return Err("Element nicht gefunden.".into());
         }
         let selected = state
             .selected_playlist_index
@@ -88,9 +88,9 @@ impl PresentationApp {
             .map(|i| i.id.clone());
         match operation {
             "move" => {
-                let target = target.ok_or("Destino não encontrado.")?;
+                let target = target.ok_or("Ziel nicht gefunden.")?;
                 if !state.playlist.iter().any(|i| i.id == target) {
-                    return Err("Destino não encontrado.".into());
+                    return Err("Ziel nicht gefunden.".into());
                 }
                 crate::core::interaction::move_items(
                     &mut state.playlist,
@@ -128,7 +128,7 @@ impl PresentationApp {
             "sort" => state.playlist.sort_by_key(|i| i.title.to_lowercase()),
             "reverse" => state.playlist.reverse(),
             "save" => {}
-            _ => return Err("Operação inválida.".into()),
+            _ => return Err("Ungültiger Vorgang.".into()),
         }
         state.selected_playlist_index = state
             .playlist

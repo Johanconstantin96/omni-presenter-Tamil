@@ -551,25 +551,25 @@ impl ControlPanelState {
     }
 
     pub fn media_conversion_info_tooltip(&self) -> String {
-        let mut info = String::from("Convertendo mídia em segundo plano");
+        let mut info = String::from("Medien werden im Hintergrund umgewandelt");
         if let Some(prog) = &self.media_conversion_progress {
             if let Ok(g) = prog.lock() {
                 if !g.current_filename.is_empty() {
-                    info.push_str(&format!("\n• Arquivo: {} ({}/{})", g.current_filename, g.current_file, g.total_files));
+                    info.push_str(&format!("\n• Datei: {} ({}/{})", g.current_filename, g.current_file, g.total_files));
                 }
                 if let Some(d) = &g.details {
                     if let Some(dim) = &d.dimensions_formatted {
                         let ar = d.aspect_ratio.as_deref().unwrap_or("");
-                        info.push_str(&format!("\n• Resolução: {dim} ({ar})"));
+                        info.push_str(&format!("\n• Auflösung: {dim} ({ar})"));
                     }
                     if let Some(dur) = &d.duration_formatted {
-                        info.push_str(&format!("\n• Duração: {dur}"));
+                        info.push_str(&format!("\n• Dauer: {dur}"));
                     }
                     if let Some(codec) = &d.video_codec {
                         info.push_str(&format!("\n• Codec: {codec}"));
                     }
                 }
-                info.push_str(&format!("\n• Progresso: {:.0}%", (g.percent * 100.0).clamp(0.0, 100.0)));
+                info.push_str(&format!("\n• Fortschritt: {:.0} %", (g.percent * 100.0).clamp(0.0, 100.0)));
             }
         }
         info

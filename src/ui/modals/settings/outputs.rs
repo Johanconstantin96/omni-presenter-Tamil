@@ -421,7 +421,7 @@ pub(super) fn outputs(
                                     ));
                                 crate::ui::components::open_qr_dialog(
                                     ui.ctx(),
-                                    format!("Telão: {}", screen.name),
+                                    format!("Bildschirm: {}", screen.name),
                                     url,
                                 );
                             }
@@ -830,12 +830,12 @@ pub(super) fn outputs(
                             ButtonTone::Secondary,
                             theme,
                         )
-                        .on_hover_text("Mostrar QR Code para abrir este telão no celular ou tablet")
+                        .on_hover_text("QR-Code anzeigen, um diesen Bildschirm auf Handy oder Tablet zu öffnen")
                         .clicked()
                         {
                             crate::ui::components::open_qr_dialog(
                                 ui.ctx(),
-                                format!("Telão: {}", screen.name),
+                                format!("Bildschirm: {}", screen.name),
                                 url.clone(),
                             );
                         }

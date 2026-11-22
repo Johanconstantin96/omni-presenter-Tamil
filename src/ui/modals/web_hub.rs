@@ -101,7 +101,7 @@ pub fn render_web_hub_modal(ctx: &egui::Context, state: &mut ControlPanelState) 
                             };
                             ui.label(RichText::new(status_text).size(12.5).strong().color(theme.text_primary));
                             ui.label(
-                                RichText::new(format!("Endereço na rede: http://{running_host}:{port}"))
+                                RichText::new(format!("Netzwerkadresse: http://{running_host}:{port}"))
                                     .size(11.5)
                                     .color(theme.text_secondary),
                             );
@@ -215,7 +215,7 @@ pub fn render_web_hub_modal(ctx: &egui::Context, state: &mut ControlPanelState) 
                             let slug = crate::core::preferences::screen_url_slug(screen, &state.settings.screens);
                             let screen_auto = auto_base.as_ref().map(|b| format!("{b}/screen/{slug}"));
                             let screen_ip = crate::services::web::http_url(running_host, port, &format!("/screen/{slug}"));
-                            let title = format!("Tela Web: {}", screen.name);
+                            let title = format!("Web-Bildschirm: {}", screen.name);
                             render_connection_item(
                                 ui,
                                 &ConnectionItem {

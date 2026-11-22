@@ -16,7 +16,7 @@ pub fn render_syntax_guide_modal(
     }
 
     let mut open = true;
-    egui::Window::new("Guia de Sintaxe & Opções do Editor")
+    egui::Window::new("Syntax-Leitfaden & Editor-Optionen")
         .open(&mut open)
         .collapsible(false)
         .resizable(false)
@@ -26,7 +26,7 @@ pub fn render_syntax_guide_modal(
             ui.spacing_mut().item_spacing = Vec2::new(8.0, 8.0);
 
             ui.label(
-                RichText::new("Recursos e Marcações do OmniPresenter")
+                RichText::new("Funktionen und Markierungen in Omni Presenter")
                     .size(13.0)
                     .strong()
                     .color(tokens.accent),
@@ -36,46 +36,46 @@ pub fn render_syntax_guide_modal(
             egui::ScrollArea::vertical()
                 .max_height(360.0)
                 .show(ui, |ui| {
-                    guide_section(ui, "Comandos de Estilo na Projeção", tokens);
-                    guide_item(ui, "//t: N (ou //tamanho:, //s:)", "Comando de Tamanho", "Define o tamanho da fonte do slide.", state, "\n//t: 46\n", tokens);
-                    guide_item(ui, "//f: Nome (ou //fonte:)", "Comando de Fonte", "Define a tipografia da estrofe ou slide.", state, "\n//f: Montserrat\n", tokens);
-                    guide_item(ui, "//c: #HEX (ou //cor:)", "Comando de Cor", "Define a cor do texto da estrofe ou slide.", state, "\n//c: #FFD700\n", tokens);
-                    guide_item(ui, "//b: #HEX (ou //sombra:)", "Comando de Sombra / Box", "Define a sombra do texto no slide.", state, "\n//b: #00000082\n", tokens);
-                    guide_item(ui, "//a: c|l|r|j (ou //alinhar:)", "Comando de Alinhamento", "Define alinhamento (centro, esquerda, direita, justificado).", state, "\n//a: c\n", tokens);
-                    guide_item(ui, "//l: 1.38 (ou //linha:)", "Comando de Espaçamento", "Define espaçamento entre linhas do slide.", state, "\n//l: 1.38\n", tokens);
-                    guide_item(ui, "//ls: 1.8 (ou //letra:)", "Espaçamento de Letras", "Define espaçamento entre caracteres.", state, "\n//ls: 1.8\n", tokens);
-                    guide_item(ui, "[t: N]...[/t]", "Tamanho da Seleção", "Altera tamanho apenas do trecho selecionado (também [tamanho:] ou [s:]).", state, "[t: 46]texto[/t]", tokens);
-                    guide_item(ui, "[f: Nome]...[/f]", "Fonte da Seleção", "Altera a fonte apenas do trecho selecionado.", state, "[f: Montserrat]texto[/f]", tokens);
-                    guide_item(ui, "[c: #HEX]...[/c]", "Cor da Seleção", "Altera a cor apenas do trecho selecionado.", state, "[c: #FFD700]texto[/c]", tokens);
-                    guide_item(ui, "[b: #HEX]...[/b]", "Sombra da Seleção", "Altera sombra apenas do trecho selecionado.", state, "[b: #00000082]texto[/b]", tokens);
+                    guide_section(ui, "Stilbefehle für die Projektion", tokens);
+                    guide_item(ui, "//t: N (oder //size:, //s:)", "Größenbefehl", "Legt die Schriftgröße der Folie fest.", state, "\n//t: 46\n", tokens);
+                    guide_item(ui, "//f: Name (oder //font:)", "Schriftbefehl", "Legt die Schrift der Strophe oder Folie fest.", state, "\n//f: Montserrat\n", tokens);
+                    guide_item(ui, "//c: #HEX (oder //color:)", "Farbbefehl", "Legt die Textfarbe der Strophe oder Folie fest.", state, "\n//c: #FFD700\n", tokens);
+                    guide_item(ui, "//b: #HEX (oder //shadow:)", "Schatten-/Feldbefehl", "Legt den Textschatten der Folie fest.", state, "\n//b: #00000082\n", tokens);
+                    guide_item(ui, "//a: c|l|r|j (oder //align:)", "Ausrichtungsbefehl", "Legt die Ausrichtung fest (Mitte, links, rechts, Blocksatz).", state, "\n//a: c\n", tokens);
+                    guide_item(ui, "//l: 1.38 (oder //line:)", "Abstandsbefehl", "Legt den Zeilenabstand der Folie fest.", state, "\n//l: 1.38\n", tokens);
+                    guide_item(ui, "//ls: 1.8 (oder //letter:)", "Zeichenabstand", "Legt den Abstand zwischen Zeichen fest.", state, "\n//ls: 1.8\n", tokens);
+                    guide_item(ui, "[t: N]...[/t]", "Größe der Auswahl", "Ändert nur die Größe des markierten Textes (auch [size:] oder [s:]).", state, "[t: 46]Text[/t]", tokens);
+                    guide_item(ui, "[f: Name]...[/f]", "Schrift der Auswahl", "Ändert nur die Schrift des markierten Textes.", state, "[f: Montserrat]Text[/f]", tokens);
+                    guide_item(ui, "[c: #HEX]...[/c]", "Farbe der Auswahl", "Ändert nur die Farbe des markierten Textes.", state, "[c: #FFD700]Text[/c]", tokens);
+                    guide_item(ui, "[b: #HEX]...[/b]", "Schatten der Auswahl", "Ändert nur den Schatten des markierten Textes.", state, "[b: #00000082]Text[/b]", tokens);
 
                     ui.add_space(4.0);
-                    guide_section(ui, "Quebras de Linha & Divisão de Slide", tokens);
-                    guide_item(ui, "|", "Quebra Suave Padrão", "Quebra a linha suavemente na projeção.", state, " | ", tokens);
-                    guide_item(ui, "|16:9|, |4:3|, |9:16|, |21:9|", "Quebras Específicas por Formato", "Quebra apenas na proporção correspondente.", state, " |16:9| ", tokens);
-                    guide_item(ui, "---", "Divisão Manual de Estrofe", "Cria um novo slide imediatamente.", state, "\n\n---\n\n", tokens);
+                    guide_section(ui, "Zeilenumbrüche & Folienteilung", tokens);
+                    guide_item(ui, "|", "Weicher Umbruch (Standard)", "Bricht die Zeile in der Projektion weich um.", state, " | ", tokens);
+                    guide_item(ui, "|16:9|, |4:3|, |9:16|, |21:9|", "Umbrüche je Format", "Bricht nur beim passenden Seitenverhältnis um.", state, " |16:9| ", tokens);
+                    guide_item(ui, "---", "Strophe manuell teilen", "Erstellt sofort eine neue Folie.", state, "\n\n---\n\n", tokens);
 
                     ui.add_space(4.0);
-                    guide_section(ui, "Comentários & Anotações de Operador", tokens);
-                    guide_item(ui, "// texto", "Linha de Comentário", "Invisível na projeção. Para avisos da equipe.", state, "\n// Nota: ", tokens);
+                    guide_section(ui, "Kommentare & Bediener-Notizen", tokens);
+                    guide_item(ui, "// Text", "Kommentarzeile", "In der Projektion unsichtbar. Für Hinweise im Team.", state, "\n// Notiz: ", tokens);
 
                     ui.add_space(4.0);
-                    guide_section(ui, "Estrutura & Nomes de Estrofe", tokens);
-                    guide_item(ui, "[Verso], [Refrão], [Ponte]", "Identificadores de Seção", "Cria etiquetas automáticas de estrofe.", state, "\n[Refrão]\n", tokens);
+                    guide_section(ui, "Struktur & Strophennamen", tokens);
+                    guide_item(ui, "[Strophe], [Refrain], [Bridge]", "Abschnittsbezeichnungen", "Erstellt automatisch Strophenbezeichnungen.", state, "\n[Refrain]\n", tokens);
 
                     ui.add_space(4.0);
-                    guide_section(ui, "Formatação & Destaque de Texto", tokens);
-                    guide_item(ui, "**palavra**", "Negrito", "Aplica peso forte na palavra.", state, "**destaque**", tokens);
-                    guide_item(ui, "*palavra*", "Itálico", "Aplica estilo itálico na palavra.", state, "*destaque*", tokens);
-                    guide_item(ui, "__palavra__", "Sublinhado", "Aplica sublinhado no trecho.", state, "__destaque__", tokens);
-                    guide_item(ui, "~~palavra~~", "Tachado", "Aplica tachado no trecho.", state, "~~destaque~~", tokens);
+                    guide_section(ui, "Formatierung & Hervorhebung", tokens);
+                    guide_item(ui, "**Wort**", "Fett", "Setzt das Wort fett.", state, "**Betonung**", tokens);
+                    guide_item(ui, "*Wort*", "Kursiv", "Setzt das Wort kursiv.", state, "*Betonung*", tokens);
+                    guide_item(ui, "__Wort__", "Unterstrichen", "Unterstreicht den Abschnitt.", state, "__Betonung__", tokens);
+                    guide_item(ui, "~~Wort~~", "Durchgestrichen", "Streicht den Abschnitt durch.", state, "~~Betonung~~", tokens);
                 });
 
             ui.separator();
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 if ui
                     .add(
-                        egui::Button::new(RichText::new("Fechar").size(11.5))
+                        egui::Button::new(RichText::new("Schließen").size(11.5))
                             .fill(tokens.bg_pill)
                             .stroke(Stroke::new(1.0, tokens.border_default))
                             .corner_radius(6.0),

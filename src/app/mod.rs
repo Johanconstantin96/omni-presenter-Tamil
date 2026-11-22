@@ -261,7 +261,7 @@ impl PresentationApp {
                 }
             }
             Err(err) => {
-                self.control_state.notify(format!("Erro ao importar: {err}"));
+                self.control_state.notify(format!("Fehler beim Importieren: {err}"));
             }
         }
     }

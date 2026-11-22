@@ -73,11 +73,11 @@ pub fn resolve_video_stream(url_or_path: &str) -> String {
 pub fn fetch_web_video_title(url: &str) -> Result<String, String> {
     let url = url.trim();
     if !is_valid_web_url(url) {
-        return Err("URL inválida. Forneça um link válido começando com http:// ou https://".into());
+        return Err("Ungültige URL. Gib einen Link ein, der mit http:// oder https:// beginnt".into());
     }
 
     let ytdlp = find_ytdlp_binary().ok_or_else(|| {
-        "yt-dlp não foi encontrado no sistema. Por favor, instale o yt-dlp.".to_string()
+        "yt-dlp wurde nicht gefunden. Bitte installiere yt-dlp.".to_string()
     })?;
 
     let output = Command::new(&ytdlp)
@@ -88,7 +88,7 @@ pub fn fetch_web_video_title(url: &str) -> Result<String, String> {
             url,
         ])
         .output()
-        .map_err(|e| format!("Erro ao executar yt-dlp: {e}"))?;
+        .map_err(|e| format!("Fehler beim Ausführen von yt-dlp: {e}"))?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
@@ -98,7 +98,7 @@ pub fn fetch_web_video_title(url: &str) -> Result<String, String> {
             .map(|line| line.trim_start_matches("ERROR:").trim())
             .unwrap_or_else(|| stderr.trim());
         return Err(if error_msg.is_empty() {
-            format!("yt-dlp falhou com código {:?}", output.status.code())
+            format!("yt-dlp ist mit Code {:?} fehlgeschlagen", output.status.code())
         } else {
             error_msg.to_string()
         });
@@ -107,7 +107,7 @@ pub fn fetch_web_video_title(url: &str) -> Result<String, String> {
     let stdout = String::from_utf8_lossy(&output.stdout);
     let title = stdout.lines().map(str::trim).find(|l| !l.is_empty()).unwrap_or("").to_string();
     if title.is_empty() {
-        Ok("Vídeo Web".into())
+        Ok("Web-Video".into())
     } else {
         Ok(title)
     }
@@ -139,16 +139,16 @@ pub fn download_web_video(
 ) -> Result<(String, PathBuf), String> {
     let url = url.trim();
     if !is_valid_web_url(url) {
-        return Err("URL inválida. Forneça um link válido começando com http:// ou https://".into());
+        return Err("Ungültige URL. Gib einen Link ein, der mit http:// oder https:// beginnt".into());
     }
 
     let ytdlp = find_ytdlp_binary().ok_or_else(|| {
-        "yt-dlp não foi encontrado no sistema. Por favor, instale o yt-dlp.".to_string()
+        "yt-dlp wurde nicht gefunden. Bitte installiere yt-dlp.".to_string()
     })?;
 
     let output_dir = Path::new("web_media");
     std::fs::create_dir_all(output_dir)
-        .map_err(|e| format!("Não foi possível criar a pasta web_media: {e}"))?;
+        .map_err(|e| format!("Ordner web_media konnte nicht erstellt werden: {e}"))?;
 
     let output_template = "web_media/%(title).80s [%(id)s].%(ext)s";
 
@@ -169,7 +169,7 @@ pub fn download_web_video(
             url,
         ])
         .output()
-        .map_err(|e| format!("Erro ao executar yt-dlp: {e}"))?;
+        .map_err(|e| format!("Fehler beim Ausführen von yt-dlp: {e}"))?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
@@ -179,7 +179,7 @@ pub fn download_web_video(
             .map(|line| line.trim_start_matches("ERROR:").trim())
             .unwrap_or_else(|| stderr.trim());
         return Err(if error_msg.is_empty() {
-            format!("yt-dlp falhou com código de saída {:?}", output.status.code())
+            format!("yt-dlp ist mit Exit-Code {:?} fehlgeschlagen", output.status.code())
         } else {
             error_msg.to_string()
         });
@@ -203,10 +203,10 @@ pub fn download_web_video(
     }
 
     let path = downloaded_path
-        .ok_or_else(|| "yt-dlp concluiu sem retornar o caminho do arquivo baixado.".to_string())?;
+        .ok_or_else(|| "yt-dlp hat keinen Pfad zur heruntergeladenen Datei geliefert.".to_string())?;
 
     if !path.exists() {
-        return Err(format!("Arquivo baixado não foi encontrado em {:?}", path));
+        return Err(format!("Heruntergeladene Datei nicht gefunden unter {:?}", path));
     }
 
     let final_title = title_override
@@ -217,7 +217,7 @@ pub fn download_web_video(
         .unwrap_or_else(|| {
             path.file_stem()
                 .map(|s| s.to_string_lossy().to_string())
-                .unwrap_or_else(|| "Vídeo Web".into())
+                .unwrap_or_else(|| "Web-Video".into())
         });
 
     Ok((final_title, path))

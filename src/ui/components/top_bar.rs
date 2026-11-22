@@ -649,9 +649,9 @@ fn screens_pill(
     );
 
     let tooltip = if running {
-        format!("{screen_count} telas web · Clique para Conexões Web")
+        format!("{screen_count} Web-Bildschirme · Klicken für Web-Verbindungen")
     } else {
-        "Web desativado · Clique para Conexões Web".to_string()
+        "Web deaktiviert · Klicken für Web-Verbindungen".to_string()
     };
 
     response
