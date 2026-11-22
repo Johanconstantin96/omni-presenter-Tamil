@@ -123,26 +123,31 @@ fn localize_select_opt<'a>(
             Language::English => "Horizontal",
             Language::Spanish => "Horizontal",
             Language::Portuguese => "Horizontal",
+            Language::German => "Horizontal",
         },
         "vertical" => match language {
             Language::English => "Vertical",
             Language::Spanish => "Vertical",
             Language::Portuguese => "Vertical",
+            Language::German => "Vertikal",
         },
         "cards" => match language {
             Language::English => "Cards",
             Language::Spanish => "Tarjetas",
             Language::Portuguese => "Cartões",
+            Language::German => "Karten",
         },
         "clean" => match language {
             Language::English => "Minimalist",
             Language::Spanish => "Minimalista",
             Language::Portuguese => "Minimalista",
+            Language::German => "Minimalistisch",
         },
         "versus" => match language {
             Language::English => "Versus (VS)",
             Language::Spanish => "Duelo (VS)",
             Language::Portuguese => "Duelo (VS)",
+            Language::German => "Duell (VS)",
         },
         _ => opt,
     }

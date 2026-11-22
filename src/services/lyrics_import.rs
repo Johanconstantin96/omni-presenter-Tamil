@@ -14,6 +14,7 @@ pub fn example(language: crate::core::i18n::Language) -> &'static str {
         crate::core::i18n::Language::Portuguese => EXAMPLE_PT,
         crate::core::i18n::Language::English => EXAMPLE_EN,
         crate::core::i18n::Language::Spanish => EXAMPLE_ES,
+        crate::core::i18n::Language::German => EXAMPLE_EN,
     }
 }
 
@@ -22,6 +23,7 @@ pub fn example_filename(language: crate::core::i18n::Language) -> &'static str {
         crate::core::i18n::Language::Portuguese => "exemplo-importacao-letras.txt",
         crate::core::i18n::Language::English => "lyrics-import-example.txt",
         crate::core::i18n::Language::Spanish => "ejemplo-importacion-letras.txt",
+        crate::core::i18n::Language::German => "liedtext-import-beispiel.txt",
     }
 }
 

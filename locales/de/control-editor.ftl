@@ -1,0 +1,16 @@
+control-bold = Fett
+control-italic = Kursiv
+control-underline = Unterstrichen
+control-emphasis = Hervorhebung
+control-conditional-break = Bedingter Umbruch
+control-new-strophe = Strophe hinzufügen
+control-text-color = Textfarbe
+control-folder = Ordner
+control-tags = Schlagwörter
+control-discard-song = Ungespeicherte Änderungen an diesem Lied verwerfen?
+control-duplicate = Duplizieren
+control-confirm-clear-playlist = Ablaufplan dieses Gottesdienstes leeren? Das kann nicht rückgängig gemacht werden.
+control-all-languages = Alle Sprachen
+control-language = Sprache
+control-mark-all-played = Alle als gespielt markieren
+control-mark-all-unplayed = Alle als nicht gespielt markieren

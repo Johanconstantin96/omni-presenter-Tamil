@@ -13,23 +13,26 @@ use std::collections::BTreeMap;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Language {
-    #[default]
     #[serde(rename = "en")]
     English,
     #[serde(rename = "pt-BR")]
     Portuguese,
     #[serde(rename = "es")]
     Spanish,
+    #[default]
+    #[serde(rename = "de")]
+    German,
 }
 
 impl Language {
-    pub const ALL: [Self; 3] = [Self::English, Self::Portuguese, Self::Spanish];
+    pub const ALL: [Self; 4] = [Self::German, Self::English, Self::Portuguese, Self::Spanish];
 
     pub fn from_code(code: &str) -> Self {
         let negotiated = catalog::registry().negotiate(code).metadata.id.as_str();
         match negotiated {
             "pt-BR" => Self::Portuguese,
             "es" => Self::Spanish,
+            "de" => Self::German,
             _ => Self::English,
         }
     }
@@ -38,6 +41,7 @@ impl Language {
             Self::English => "en",
             Self::Portuguese => "pt-BR",
             Self::Spanish => "es",
+            Self::German => "de",
         }
     }
     pub fn flag(self) -> &'static str {
@@ -45,6 +49,7 @@ impl Language {
             Self::Portuguese => "🇧🇷",
             Self::English => "🇺🇸",
             Self::Spanish => "🇪🇸",
+            Self::German => "🇩🇪",
         }
     }
     pub fn name(self) -> &'static str { &catalog::registry().negotiate(self.code()).metadata.native_name }

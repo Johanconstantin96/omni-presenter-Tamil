@@ -30,8 +30,8 @@ NEUTRAL = {"", " ", "X", "Y", "W", "H", "R", "G", "B", "A", "H:", "W:", "X:", "Y
 
 def catalogs():
     locales_dir = ROOT / "locales"
-    codes = ["en", "pt-BR", "es"]
-    merged = [{}, {}, {}]
+    codes = ["en", "pt-BR", "es", "de"]
+    merged = [{} for _ in codes]
     for index, code in enumerate(codes):
         folder = locales_dir / code
         if not folder.is_dir():
@@ -195,7 +195,7 @@ def main():
         if errors:
             print("\n".join(errors))
             return 1
-        print(f"Catalogs: {len(texts[0])} entries, complete in en / pt-BR / es.")
+        print(f"Catalogs: {len(texts[0])} entries, complete in en / pt-BR / es / de.")
     if args.area:
         inventory = collections.defaultdict(list)
         for path in source_files(args.area):

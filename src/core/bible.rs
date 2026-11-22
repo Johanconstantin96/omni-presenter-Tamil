@@ -329,6 +329,7 @@ pub fn default_for_language(language: crate::core::i18n::Language) -> &'static s
         crate::core::i18n::Language::Portuguese => "ARA",
         crate::core::i18n::Language::English => "KJV",
         crate::core::i18n::Language::Spanish => "RVR1960",
+        crate::core::i18n::Language::German => "KJV",
     }
 }
 

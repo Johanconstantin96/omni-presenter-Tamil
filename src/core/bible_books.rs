@@ -233,6 +233,144 @@ pub const BOOK_ABBREVS_ES: [&str; 66] = [
     "2p", "1jn", "2jn", "3jn", "jud", "ap",
 ];
 
+pub const BOOK_NAMES_DE: [&str; 66] = [
+    "1. Mose",
+    "2. Mose",
+    "3. Mose",
+    "4. Mose",
+    "5. Mose",
+    "Josua",
+    "Richter",
+    "Rut",
+    "1. Samuel",
+    "2. Samuel",
+    "1. Könige",
+    "2. Könige",
+    "1. Chronik",
+    "2. Chronik",
+    "Esra",
+    "Nehemia",
+    "Ester",
+    "Hiob",
+    "Psalm",
+    "Sprüche",
+    "Prediger",
+    "Hohelied",
+    "Jesaja",
+    "Jeremia",
+    "Klagelieder",
+    "Hesekiel",
+    "Daniel",
+    "Hosea",
+    "Joel",
+    "Amos",
+    "Obadja",
+    "Jona",
+    "Micha",
+    "Nahum",
+    "Habakuk",
+    "Zefanja",
+    "Haggai",
+    "Sacharja",
+    "Maleachi",
+    "Matthäus",
+    "Markus",
+    "Lukas",
+    "Johannes",
+    "Apostelgeschichte",
+    "Römer",
+    "1. Korinther",
+    "2. Korinther",
+    "Galater",
+    "Epheser",
+    "Philipper",
+    "Kolosser",
+    "1. Thessalonicher",
+    "2. Thessalonicher",
+    "1. Timotheus",
+    "2. Timotheus",
+    "Titus",
+    "Philemon",
+    "Hebräer",
+    "Jakobus",
+    "1. Petrus",
+    "2. Petrus",
+    "1. Johannes",
+    "2. Johannes",
+    "3. Johannes",
+    "Judas",
+    "Offenbarung",
+];
+
+pub const BOOK_ABBREVS_DE: [&str; 66] = [
+    "1mo",
+    "2mo",
+    "3mo",
+    "4mo",
+    "5mo",
+    "jos",
+    "ri",
+    "rut",
+    "1sam",
+    "2sam",
+    "1kön",
+    "2kön",
+    "1chr",
+    "2chr",
+    "esr",
+    "neh",
+    "est",
+    "hi",
+    "ps",
+    "spr",
+    "pred",
+    "hl",
+    "jes",
+    "jer",
+    "kla",
+    "hes",
+    "dan",
+    "hos",
+    "joel",
+    "am",
+    "ob",
+    "jona",
+    "mi",
+    "nah",
+    "hab",
+    "zef",
+    "hag",
+    "sach",
+    "mal",
+    "mt",
+    "mk",
+    "lk",
+    "joh",
+    "apg",
+    "röm",
+    "1kor",
+    "2kor",
+    "gal",
+    "eph",
+    "phil",
+    "kol",
+    "1thess",
+    "2thess",
+    "1tim",
+    "2tim",
+    "tit",
+    "phlm",
+    "hebr",
+    "jak",
+    "1petr",
+    "2petr",
+    "1joh",
+    "2joh",
+    "3joh",
+    "jud",
+    "offb",
+];
+
 pub const BOOK_ABBREVS: [&str; 66] = BOOK_ABBREVS_PT;
 
 pub fn book_names_for_language(language: Language) -> &'static [&'static str; 66] {
@@ -240,6 +378,7 @@ pub fn book_names_for_language(language: Language) -> &'static [&'static str; 66
         Language::Portuguese => &BOOK_NAMES_PT,
         Language::English => &BOOK_NAMES_EN,
         Language::Spanish => &BOOK_NAMES_ES,
+        Language::German => &BOOK_NAMES_DE,
     }
 }
 
@@ -248,6 +387,7 @@ pub fn book_abbrevs_for_language(language: Language) -> &'static [&'static str; 
         Language::Portuguese => &BOOK_ABBREVS_PT,
         Language::English => &BOOK_ABBREVS_EN,
         Language::Spanish => &BOOK_ABBREVS_ES,
+        Language::German => &BOOK_ABBREVS_DE,
     }
 }
 
@@ -327,6 +467,14 @@ pub fn detect_bible_language(id: &str, sample_text: &str) -> Language {
         || lower_id == "asv"
     {
         return Language::English;
+    }
+    if lower_id.starts_with("de_")
+        || lower_id.starts_with("de-")
+        || lower_id.ends_with("_de")
+        || lower_id.starts_with("elb")
+        || lower_id.starts_with("lut")
+    {
+        return Language::German;
     }
     if lower_id.starts_with("es_")
         || lower_id.starts_with("es-")

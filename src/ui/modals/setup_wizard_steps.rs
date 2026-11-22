@@ -314,6 +314,7 @@ pub fn render_step_ready(
             Language::Portuguese => "Português 🇧🇷",
             Language::English => "English 🇺🇸",
             Language::Spanish => "Español 🇪🇸",
+            Language::German => "Deutsch 🇩🇪",
         };
 
         let screen_name = if monitors.is_empty() {
