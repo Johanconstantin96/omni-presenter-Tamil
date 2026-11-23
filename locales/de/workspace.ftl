@@ -1038,3 +1038,5 @@ workspace-text-exported = Text „{ $title }“ erfolgreich exportiert!
 workspace-design-exported = Grafik „{ $name }“ erfolgreich exportiert!
 workspace-theme-exported = Design „{ $name }“ erfolgreich exportiert!
 workspace-playlist-export-started = Ablaufplan wird exportiert…
+theme-aradhanai-black = Schwarz
+theme-aradhanai-white = Weiß

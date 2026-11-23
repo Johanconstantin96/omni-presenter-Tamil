@@ -86,6 +86,14 @@ impl PresentationApp {
 
         control_state.reload_all_selection_items(&db);
 
+        // Aradhanai: schwarzer und weißer Hintergrund immer vorhanden.
+        if let Ok(existing) = db.get_all_themes() {
+            for theme in crate::core::models::PresentationTheme::aradhanai_plain_themes() {
+                if !existing.iter().any(|t| t.id == theme.id) {
+                    let _ = db.save_theme(&theme);
+                }
+            }
+        }
         if let Ok(db_themes) = db.get_all_themes()
             && !db_themes.is_empty() {
                 control_state.themes = db_themes;

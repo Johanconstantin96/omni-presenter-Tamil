@@ -278,6 +278,36 @@ impl Default for PresentationTheme {
 }
 
 impl PresentationTheme {
+    /// Aradhanai: schlichte Hintergründe „Schwarz“ (weiße Schrift) und
+    /// „Weiß“ (schwarze Schrift), Schrift Hind Madurai SemiBold.
+    pub fn aradhanai_plain_themes() -> Vec<Self> {
+        let plain = |id: &str, name: &str, bg: Color32, text: Color32, sort: i32| Self {
+            id: id.to_owned(),
+            name: name.to_owned(),
+            bg_type: "gradient".to_owned(),
+            bg_top: bg,
+            bg_bottom: bg,
+            font_family: "Hind Madurai".to_owned(),
+            font_size: 46.0,
+            font_weight: 600,
+            font_bold: true,
+            text_color: text,
+            text_case: "original".to_owned(),
+            letter_spacing: 0.0,
+            shadow_enabled: false,
+            shadow_color: Color32::TRANSPARENT,
+            shadow_blur: 0.0,
+            shadow_offset_y: 0.0,
+            is_gradient: false,
+            sort_order: sort,
+            ..Default::default()
+        };
+        vec![
+            plain("aradhanai_black", "theme-aradhanai-black", Color32::BLACK, Color32::WHITE, -2),
+            plain("aradhanai_white", "theme-aradhanai-white", Color32::WHITE, Color32::BLACK, -1),
+        ]
+    }
+
     /// Conjunto de temas padrão ricos prontos para projeção
     pub fn default_themes() -> Vec<Self> {
         vec![
