@@ -7,6 +7,12 @@ pub enum ProjectionWindowMode {
 }
 
 pub fn projection_window_mode() -> ProjectionWindowMode {
+    // Aradhanai: Unter Windows echtes Vollbild auf dem Zielmonitor. Das freie
+    // Overlay-Fenster wurde bei unterschiedlicher Skalierung (Laptop 150 %,
+    // TV 100 %) zu klein und falsch platziert.
+    #[cfg(target_os = "windows")]
+    return ProjectionWindowMode::Fullscreen;
+    #[allow(unreachable_code)]
     #[cfg(target_os = "linux")]
     if std::env::var_os("DISPLAY").is_none_or(|display| display.is_empty()) {
         return ProjectionWindowMode::Fullscreen;

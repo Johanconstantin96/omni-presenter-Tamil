@@ -862,21 +862,11 @@ impl AppSettings {
                     p.layout = LayoutTree::default_4_columns();
                 }
             }
-            if !p.layout.root.contains(ContainerKind::Player) {
-                if p.layout.root.contains(ContainerKind::Lyrics) {
-                    p.layout
-                        .dock(ContainerKind::Player, ContainerKind::Lyrics, DropZone::Top);
-                } else if p.layout.root.contains(ContainerKind::Themes) {
-                    p.layout
-                        .dock(ContainerKind::Player, ContainerKind::Themes, DropZone::Top);
-                } else if p.layout.root.contains(ContainerKind::Stage) {
-                    p.layout.dock(
-                        ContainerKind::Player,
-                        ContainerKind::Stage,
-                        DropZone::Bottom,
-                    );
-                }
-            }
+            // Aradhanai: Player-Bereich wird nicht gebraucht und entfernt.
+            while matches!(p.layout.root, crate::core::layout::LayoutNode::Split { .. })
+                && p.layout.root.contains(ContainerKind::Player)
+                && p.layout.root.remove_leaf(ContainerKind::Player)
+            {}
             if !p.bible_layout.root.contains(ContainerKind::Preview) {
                 if p.bible_layout.root.contains(ContainerKind::Stage) {
                     p.bible_layout.dock(
@@ -888,27 +878,11 @@ impl AppSettings {
                     p.bible_layout = LayoutTree::bible_workspace();
                 }
             }
-            if !p.bible_layout.root.contains(ContainerKind::Player) {
-                if p.bible_layout.root.contains(ContainerKind::Lyrics) {
-                    p.bible_layout.dock(
-                        ContainerKind::Player,
-                        ContainerKind::Lyrics,
-                        DropZone::Top,
-                    );
-                } else if p.bible_layout.root.contains(ContainerKind::Themes) {
-                    p.bible_layout.dock(
-                        ContainerKind::Player,
-                        ContainerKind::Themes,
-                        DropZone::Top,
-                    );
-                } else if p.bible_layout.root.contains(ContainerKind::Stage) {
-                    p.bible_layout.dock(
-                        ContainerKind::Player,
-                        ContainerKind::Stage,
-                        DropZone::Bottom,
-                    );
-                }
-            }
+            // Aradhanai: Player-Bereich wird nicht gebraucht und entfernt.
+            while matches!(p.bible_layout.root, crate::core::layout::LayoutNode::Split { .. })
+                && p.bible_layout.root.contains(ContainerKind::Player)
+                && p.bible_layout.root.remove_leaf(ContainerKind::Player)
+            {}
             if !p.chat_layout.root.contains(ContainerKind::ChatChannels)
                 || !p.chat_layout.root.contains(ContainerKind::ChatMessages)
             {

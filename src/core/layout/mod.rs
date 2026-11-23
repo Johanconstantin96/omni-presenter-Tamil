@@ -271,12 +271,7 @@ impl LayoutTree {
                 second: Box::new(LayoutNode::Split {
                     direction: SplitDirection::Horizontal,
                     fraction: 0.38,
-                    first: Box::new(LayoutNode::Split {
-                        direction: SplitDirection::Vertical,
-                        fraction: 0.30,
-                        first: Box::new(LayoutNode::Leaf(ContainerKind::Player)),
-                        second: Box::new(LayoutNode::Leaf(ContainerKind::Lyrics)),
-                    }),
+                    first: Box::new(LayoutNode::Leaf(ContainerKind::Lyrics)),
                     second: Box::new(LayoutNode::Split {
                         direction: SplitDirection::Horizontal,
                         fraction: 0.63,
@@ -307,12 +302,7 @@ impl LayoutTree {
                 second: Box::new(LayoutNode::Split {
                     direction: SplitDirection::Horizontal,
                     fraction: 0.38,
-                    first: Box::new(LayoutNode::Split {
-                        direction: SplitDirection::Vertical,
-                        fraction: 0.30,
-                        first: Box::new(LayoutNode::Leaf(ContainerKind::Player)),
-                        second: Box::new(LayoutNode::Leaf(ContainerKind::Lyrics)),
-                    }),
+                    first: Box::new(LayoutNode::Leaf(ContainerKind::Lyrics)),
                     second: Box::new(LayoutNode::Split {
                         direction: SplitDirection::Horizontal,
                         fraction: 0.54,
