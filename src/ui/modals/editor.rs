@@ -263,48 +263,66 @@ fn render_toolbar(
     let mut changed = false;
     let mut history_action = false;
 
-    ui.horizontal(|ui| {
-        let actions_w = 196.0;
-        let tools_w = (ui.available_width() - actions_w).max(240.0);
+    // Feste Bereiche: links die (umbrechende) Werkzeugleiste, rechts Speichern/Abbrechen.
+    // Eigene Child-UIs statt verschachtelter Layouts, damit die Knöpfe rechts
+    // immer anklickbar bleiben, egal wie viele Zeilen die Leiste braucht.
+    let full = ui.max_rect();
+    let actions_w = 196.0;
+    let gap = 8.0;
+    let tools_rect = egui::Rect::from_min_max(
+        full.min,
+        egui::pos2((full.max.x - actions_w - gap).max(full.min.x + 240.0), full.min.y + 1000.0),
+    );
+    let actions_rect = egui::Rect::from_min_max(
+        egui::pos2(full.max.x - actions_w, full.min.y),
+        egui::pos2(full.max.x, full.min.y + TOOLBAR_HEIGHT),
+    );
 
-        let tools = ui.allocate_ui_with_layout(
-            Vec2::new(tools_w, 28.0),
-            egui::Layout::left_to_right(egui::Align::Center).with_main_wrap(true),
-            |ui| {
-                ui.set_max_width(tools_w);
-                            ui.spacing_mut().item_spacing = Vec2::new(4.0, 6.0);
-                            ui.spacing_mut().interact_size.y = 28.0;
+    let mut tools_ui = ui.new_child(
+        egui::UiBuilder::new()
+            .max_rect(tools_rect)
+            .layout(egui::Layout::left_to_right(egui::Align::Center).with_main_wrap(true)),
+    );
+    {
+        let ui = &mut tools_ui;
+        ui.spacing_mut().item_spacing = Vec2::new(4.0, 6.0);
+        ui.spacing_mut().interact_size.y = 28.0;
+        ui.add_space(0.0);
 
-                            let undo_ok = !state.song_editor.history.is_empty();
-                            if tool_button(ui, ARROW_U_UP_LEFT, false, "workspace-undo", tokens, undo_ok)
-                                && let Some(prev) = state.song_editor.history.pop() {
-                                    state.song_editor.future.push(snapshot(state, work));
-                                    restore(state, prev, work);
-                                    history_action = true;
-                                }
-                            let redo_ok = !state.song_editor.future.is_empty();
-                            if tool_button(ui, ARROW_U_UP_RIGHT, false, "workspace-redo", tokens, redo_ok)
-                                && let Some(next) = state.song_editor.future.pop() {
-                                    state.song_editor.history.push(snapshot(state, work));
-                                    restore(state, next, work);
-                                    history_action = true;
-                                }
-
-                            changed |= selection::render_editor_tools(ui, state, tokens);
-            },
-        );
-        *used_height = tools.response.rect.height() + 8.0;
-
-        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            ui.spacing_mut().item_spacing.x = 8.0;
-            if primary_button(ui, FLOPPY_DISK, crate::ui::i18n::text(ui, "common-save-item"), tokens).clicked() {
-                *should_save = true;
+        let undo_ok = !state.song_editor.history.is_empty();
+        if tool_button(ui, ARROW_U_UP_LEFT, false, "workspace-undo", tokens, undo_ok)
+            && let Some(prev) = state.song_editor.history.pop() {
+                state.song_editor.future.push(snapshot(state, work));
+                restore(state, prev, work);
+                history_action = true;
             }
-            if ghost_button(ui, crate::ui::i18n::text(ui, "common-cancel"), tokens).clicked() {
-                *should_cancel = true;
+        let redo_ok = !state.song_editor.future.is_empty();
+        if tool_button(ui, ARROW_U_UP_RIGHT, false, "workspace-redo", tokens, redo_ok)
+            && let Some(next) = state.song_editor.future.pop() {
+                state.song_editor.history.push(snapshot(state, work));
+                restore(state, next, work);
+                history_action = true;
             }
-        });
-    });
+
+        changed |= selection::render_editor_tools(ui, state, tokens);
+    }
+    *used_height = tools_ui.min_rect().height() + 8.0;
+
+    let mut actions_ui = ui.new_child(
+        egui::UiBuilder::new()
+            .max_rect(actions_rect)
+            .layout(egui::Layout::right_to_left(egui::Align::Center)),
+    );
+    {
+        let ui = &mut actions_ui;
+        ui.spacing_mut().item_spacing.x = 8.0;
+        if primary_button(ui, FLOPPY_DISK, crate::ui::i18n::text(ui, "common-save-item"), tokens).clicked() {
+            *should_save = true;
+        }
+        if ghost_button(ui, crate::ui::i18n::text(ui, "common-cancel"), tokens).clicked() {
+            *should_cancel = true;
+        }
+    }
 
     if changed && !history_action {
         push_history(state, before);

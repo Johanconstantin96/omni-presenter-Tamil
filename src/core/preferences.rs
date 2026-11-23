@@ -53,7 +53,7 @@ impl Default for OperatorProfile {
     fn default() -> Self {
         Self {
             id: "operator_default".into(),
-            name: "Operador principal".into(),
+            name: "Hauptbediener".into(),
             dark_mode: false,
             theme_mode: crate::core::interface_theme::ThemeMode::System,
             interface_theme_id: "classic".into(),
@@ -463,7 +463,7 @@ impl Default for VirtualScreen {
     fn default() -> Self {
         Self {
             id: "auditorio".into(),
-            name: "Auditório".into(),
+            name: "Gemeindesaal".into(),
             enabled: true,
             lyrics_only: false,
             show_title: false,
@@ -762,6 +762,17 @@ impl AppSettings {
         self.chat_enabled = true;
         if self.operators.is_empty() {
             self.operators.push(OperatorProfile::default());
+        }
+        // Alte portugiesische Standardnamen aus früheren Versionen eindeutschen.
+        for op in &mut self.operators {
+            if op.name == "Operador principal" {
+                op.name = "Hauptbediener".into();
+            }
+        }
+        for screen in &mut self.screens {
+            if screen.name == "Auditório" {
+                screen.name = "Gemeindesaal".into();
+            }
         }
         if self.services.is_empty() {
             self.services.push(ServiceProfile::default());
