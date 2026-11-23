@@ -56,3 +56,8 @@ x11rb = "0.14.0"
 
 [profile.dev.package."*"]
 opt-level = 2
+
+# Aradhanai: epaint mit Fix für Tamil-Cluster (mehr Glyphen als Zeichen),
+# damit Cursor, Rücktaste und Entf im Editor wieder an der richtigen Stelle arbeiten.
+[patch.crates-io]
+epaint = { path = "vendor/epaint" }

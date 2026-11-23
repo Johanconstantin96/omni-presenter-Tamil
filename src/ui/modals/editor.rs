@@ -96,8 +96,16 @@ pub fn render_editor_modal(
             );
 
             let inner = panel_rect.shrink(12.0);
+            // Die Werkzeugleiste bricht bei schmalen Fenstern in mehrere Zeilen um;
+            // ihre Höhe aus dem letzten Frame bestimmt den Platz darunter.
+            let toolbar_height_id = ui.make_persistent_id("song_editor_toolbar_height");
+            let toolbar_height = ui
+                .ctx()
+                .data(|d| d.get_temp::<f32>(toolbar_height_id))
+                .unwrap_or(TOOLBAR_HEIGHT)
+                .max(TOOLBAR_HEIGHT);
             let toolbar_rect =
-                egui::Rect::from_min_size(inner.min, Vec2::new(inner.width(), TOOLBAR_HEIGHT));
+                egui::Rect::from_min_size(inner.min, Vec2::new(inner.width(), toolbar_height));
             ui.painter().line_segment(
                 [
                     egui::pos2(inner.min.x, toolbar_rect.max.y + 8.0),
@@ -126,6 +134,7 @@ pub fn render_editor_modal(
 
             {
                 let mut tui = ui.new_child(egui::UiBuilder::new().max_rect(toolbar_rect));
+                let mut used_height = TOOLBAR_HEIGHT;
                 let changed = render_toolbar(
                     &mut tui,
                     state,
@@ -133,7 +142,14 @@ pub fn render_editor_modal(
                     &tokens,
                     &mut should_save,
                     &mut should_cancel,
+                    &mut used_height,
                 );
+                let used_height = used_height.max(TOOLBAR_HEIGHT);
+                if (used_height - toolbar_height).abs() > 0.5 {
+                    ui.ctx()
+                        .data_mut(|d| d.insert_temp(toolbar_height_id, used_height));
+                    ui.ctx().request_repaint();
+                }
                 if changed {
                     state.song_editor.theme_dirty = true;
                 }
@@ -241,24 +257,23 @@ fn render_toolbar(
     tokens: &AppTheme,
     should_save: &mut bool,
     should_cancel: &mut bool,
+    used_height: &mut f32,
 ) -> bool {
     let before = snapshot(state, work);
     let mut changed = false;
     let mut history_action = false;
 
-    ui.horizontal_centered(|ui| {
+    ui.horizontal(|ui| {
         let actions_w = 196.0;
         let tools_w = (ui.available_width() - actions_w).max(240.0);
 
-        ui.allocate_ui_with_layout(
-            Vec2::new(tools_w, TOOLBAR_HEIGHT),
-            egui::Layout::left_to_right(egui::Align::Center),
+        let tools = ui.allocate_ui_with_layout(
+            Vec2::new(tools_w, 28.0),
+            egui::Layout::left_to_right(egui::Align::Center).with_main_wrap(true),
             |ui| {
-                egui::ScrollArea::horizontal()
-                    .id_salt("song_editor_toolbar_scroll")
-                    .show(ui, |ui| {
-                        ui.horizontal_centered(|ui| {
-                            ui.spacing_mut().item_spacing.x = 4.0;
+                ui.set_max_width(tools_w);
+                            ui.spacing_mut().item_spacing = Vec2::new(4.0, 6.0);
+                            ui.spacing_mut().interact_size.y = 28.0;
 
                             let undo_ok = !state.song_editor.history.is_empty();
                             if tool_button(ui, ARROW_U_UP_LEFT, false, "workspace-undo", tokens, undo_ok)
@@ -276,10 +291,9 @@ fn render_toolbar(
                                 }
 
                             changed |= selection::render_editor_tools(ui, state, tokens);
-                        });
-                    });
             },
         );
+        *used_height = tools.response.rect.height() + 8.0;
 
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             ui.spacing_mut().item_spacing.x = 8.0;

@@ -164,6 +164,13 @@ const MENU_ITEMS: &[MenuItemDef] = &[
     MenuItemDef {
         category_id: 4,
         category_title: "Struktur & Bediener",
+        code: "Sprachtrenner",
+        label: "Leerzeile auf derselben Folie (z. B. zwischen Tamil und Tanglish)",
+        action: MenuAction::Insert("\n\u{200D}\n"),
+    },
+    MenuItemDef {
+        category_id: 4,
+        category_title: "Struktur & Bediener",
         code: "[Strophe]",
         label: "Bezeichnung Strophe",
         action: MenuAction::Insert("\n[Strophe]\n"),
@@ -270,7 +277,7 @@ pub fn render_options_menu(
         ui.separator();
 
         // Categorias em pílulas compactas
-        let categories = ["Todos", "Befehle //", "Umbrüche |", "Tags [ ]", "Estrutura", "Estilos"];
+        let categories = ["Alle", "Befehle //", "Umbrüche |", "Tags [ ]", "Struktur", "Stile"];
         ui.horizontal(|ui| {
             ui.spacing_mut().item_spacing.x = 4.0;
             for (idx, name) in categories.iter().enumerate() {

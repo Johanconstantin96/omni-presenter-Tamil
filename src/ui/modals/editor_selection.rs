@@ -6,7 +6,7 @@ use crate::core::state::ControlPanelState;
 use crate::ui::theme::AppTheme;
 use eframe::egui::{self, Color32, Stroke, StrokeKind, Vec2};
 use egui_phosphor::regular::{
-    BOOK_OPEN, CARET_DOWN, EYE, EYE_SLASH, LIST_BULLETS, LIST_NUMBERS,
+    ARROW_ELBOW_DOWN_LEFT, BOOK_OPEN, CARET_DOWN, EYE, EYE_SLASH, LIST_BULLETS, LIST_NUMBERS,
     MAGIC_WAND, PLUS, STAR, TEXT_ALIGN_CENTER, TEXT_ALIGN_JUSTIFY,
     TEXT_ALIGN_LEFT, TEXT_ALIGN_RIGHT, TEXT_B, TEXT_INDENT, TEXT_ITALIC,
     TEXT_OUTDENT, TEXT_STRIKETHROUGH, TEXT_UNDERLINE,
@@ -306,6 +306,22 @@ pub fn render_editor_tools(
     let pipe_id = ui.make_persistent_id("btn_insert_soft_break");
     if component_tool_button(ui, pipe_id, "|", false, "Weichen Umbruch einfügen (|)", tokens).clicked() {
         changed |= insert_text_at_selection(state, " | ");
+    }
+
+    // Sprachtrenner: unsichtbare Leerzeile (U+200D) – trennt Tamil und Tanglish,
+    // ohne eine neue Folie zu beginnen (eine echte Leerzeile würde das tun).
+    let spacer_id = ui.make_persistent_id("btn_insert_language_spacer");
+    if component_tool_button(
+        ui,
+        spacer_id,
+        ARROW_ELBOW_DOWN_LEFT,
+        false,
+        "Sprachtrenner: Leerzeile auf derselben Folie einfügen (wie das unsichtbare Zeichen in VideoPsalm)",
+        tokens,
+    )
+    .clicked()
+    {
+        changed |= insert_text_at_selection(state, "\n\u{200D}\n");
     }
 
     // 3. Comentário Oculto de Operador (//)

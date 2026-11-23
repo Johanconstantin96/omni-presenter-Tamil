@@ -36,6 +36,16 @@ pub fn is_tamil_line(line: &str) -> bool {
     line.chars().any(|c| ('\u{0B80}'..='\u{0BFF}').contains(&c))
 }
 
+/// True for a line that shows nothing: only whitespace and invisible characters
+/// such as the zero-width joiner (U+200D). Such a line is used as a spacer that
+/// keeps two language blocks on the same slide (a real blank line would start a
+/// new slide).
+pub fn is_spacer_line(line: &str) -> bool {
+    line.chars().all(|c| {
+        c.is_whitespace() || matches!(c, '\u{200B}' | '\u{200C}' | '\u{200D}' | '\u{2060}' | '\u{FEFF}')
+    })
+}
+
 /// Lines that carry formatting or commands rather than lyrics.
 fn is_command_line(line: &str) -> bool {
     let t = line.trim_start();
@@ -56,7 +66,7 @@ pub fn apply(text: &str, filter: LyricFilter) -> String {
     for line in text.lines() {
         if is_command_line(line) {
             kept.push(line);
-        } else if line.trim().is_empty() {
+        } else if is_spacer_line(line) {
             continue;
         } else if !is_tamil_line(line) {
             kept.push(line);
@@ -131,6 +141,14 @@ mod tests {
     fn command_lines_are_kept_and_not_paired() {
         let text = "//size: 40\nஇயேசுவே\nYesuve\nUmmai";
         assert_eq!(apply(text, LyricFilter::LatinCompact), "//size: 40\nYesuve Ummai");
+    }
+
+    #[test]
+    fn zwj_spacer_lines_are_dropped_in_filtered_modes() {
+        let text = "இயேசுவே\nஉம்மை\n\u{200D}\nYesuve\nUmmai";
+        assert_eq!(apply(text, LyricFilter::LatinOnly), "Yesuve\nUmmai");
+        assert_eq!(apply(text, LyricFilter::LatinCompact), "Yesuve Ummai");
+        assert_eq!(apply(text, LyricFilter::All), text);
     }
 
     #[test]
