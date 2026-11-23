@@ -418,3 +418,5 @@ control-outputs-title = Output transmission
 control-outputs-none = No outputs set up
 control-outputs-all-on = All on
 control-outputs-all-off = All off
+control-logo = Logo
+control-logo-hint = Show or hide the logo top right on all outputs. Right-click: choose another logo.

@@ -170,6 +170,7 @@ impl PresentationApp {
         let live_artist = out_deck.live_artist().to_owned();
         let live_index = out_deck.live_index();
         let wallpaper_designs = out_deck.designs.clone();
+        let logo_path = if settings.logo_visible { settings.resolved_logo_path() } else { None };
         for target_monitor in &targets {
             let monitor_bg = settings.wallpaper_for_monitor(&target_monitor.name);
             let wallpaper_design = match monitor_bg {
@@ -213,6 +214,7 @@ impl PresentationApp {
                     artist: &live_artist,
                     slide_index: live_index,
                     is_song,
+                    logo: logo_path.as_deref(),
                 },
                 Some(target_monitor),
                 &self.control_state.settings,

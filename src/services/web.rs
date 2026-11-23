@@ -80,6 +80,9 @@ struct Published {
     video_path: Option<std::path::PathBuf>,
     font: Vec<u8>,
     font_revision: u64,
+    logo: Vec<u8>,
+    logo_path: String,
+    logo_revision: u64,
 }
 
 impl Published {
@@ -380,6 +383,12 @@ impl BrowserServer {
             String::new()
         };
         let mut data = self.data.write().unwrap();
+        let logo_path = if settings.logo_visible { settings.resolved_logo_path().unwrap_or_default() } else { String::new() };
+        if data.logo_path != logo_path {
+            data.logo = if logo_path.is_empty() { Vec::new() } else { std::fs::read(&logo_path).unwrap_or_default() };
+            data.logo_path = logo_path;
+            data.logo_revision += 1;
+        }
         let font_key = format!(
             "{}:{}:{}",
             theme.font_family, theme.font_weight, theme.font_italic
@@ -515,6 +524,7 @@ impl BrowserServer {
                     "color": css_color(screen_theme.text_color),
                     "font": screen_theme.font_family,
                     "fontUrl": format!("/font?v={}", data.font_revision),
+                    "logoUrl": if active && !paused && !data.logo.is_empty() { format!("/logo?v={}", data.logo_revision) } else { String::new() },
                     "backgroundType": if !themed { "color" } else { &screen_theme.bg_type },
                     "videoUrl": if data.video_path.is_some() && screen_theme.id == theme.id { format!("/video?v={}", data.background_revision) } else { String::new() },
                     "shaderIndex": crate::services::shaders::kind_index(&screen_theme.options.shader.kind),
@@ -642,6 +652,10 @@ fn route(path: &str, data: &Published) -> (u16, &'static str, Vec<u8>) {
         "/viewer.js" => return (200, "application/javascript; charset=utf-8", include_bytes!("../../assets/web/viewer/viewer.js").to_vec()),
         "/shader.glsl" => return (200, "text/plain; charset=utf-8", include_bytes!("../../assets/shaders/background.glsl").to_vec()),
         "/font" if !data.font.is_empty() => return (200, "font/ttf", data.font.clone()),
+        "/logo" if !data.logo.is_empty() => {
+            let mime = if data.logo_path.to_lowercase().ends_with(".png") { "image/png" } else { "image/jpeg" };
+            return (200, mime, data.logo.clone());
+        }
         "/font-tamil" => return (200, "font/ttf", crate::render::fonts::TAMIL_FONT_BYTES.to_vec()),
         _ => {}
     }

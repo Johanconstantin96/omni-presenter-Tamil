@@ -123,6 +123,7 @@ export interface ViewerState {
   background?: string;
   title?: string;
   showClock?: boolean;
+  logoUrl?: string;
   lineHeight?: string;
   weight?: string | number;
   italic?: boolean;
@@ -539,6 +540,16 @@ function render(s: ViewerState): void {
   box.style.display = s.hidden || !s.text ? "none" : "flex";
   title.textContent = s.title || "";
   title.hidden = !s.showTitle;
+  const logo = document.getElementById("logo") as HTMLImageElement | null;
+  if (logo) {
+    const url = s.hidden ? "" : (s.logoUrl || "");
+    if (!url) {
+      logo.hidden = true;
+    } else {
+      if (logo.getAttribute("src") !== url) logo.setAttribute("src", url);
+      logo.hidden = false;
+    }
+  }
   if (stageClock) {
     stageClock.hidden = !s.showClock;
     if (s.showClock) updateClock();

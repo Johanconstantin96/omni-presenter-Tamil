@@ -36,6 +36,8 @@ pub struct PresentationContent<'a> {
     pub artist: &'a str,
     pub slide_index: usize,
     pub is_song: bool,
+    /// Logo oben rechts (Pfad), wenn eingeblendet.
+    pub logo: Option<&'a str>,
 }
 
 impl PresentationView {
@@ -63,6 +65,7 @@ impl PresentationView {
             artist: _,
             slide_index: _,
             is_song: _,
+            logo,
         } = content;
         let viewport_id = viewport_id(target_monitor.map(|m| m.name.as_str()).unwrap_or("default"));
         let monitor_bg = target_monitor
@@ -286,6 +289,10 @@ impl PresentationView {
                             );
                         }
                     }
+                    if opacity > 0.0 && !is_hidden
+                        && let Some(path) = logo {
+                            paint_logo(&presentation, output_rect, path);
+                        }
                 });
         });
     }
@@ -316,6 +323,31 @@ fn paint_design_background(
             // "transparent" / no background: do not paint presentation theme
         }
     }
+}
+
+/// Logo oben rechts: 16 % der Bildhöhe, 3 % Abstand zum Rand.
+pub fn paint_logo(painter: &egui::Painter, rect: egui::Rect, path: &str) {
+    let Some(tex) = crate::render::theme::get_or_load_texture(painter.ctx(), path) else {
+        painter.ctx().request_repaint_after(std::time::Duration::from_millis(100));
+        return;
+    };
+    let [w, h] = tex.size();
+    if w == 0 || h == 0 {
+        return;
+    }
+    let height = rect.height() * 0.16;
+    let width = height * w as f32 / h as f32;
+    let margin = rect.height() * 0.03;
+    let logo_rect = egui::Rect::from_min_size(
+        egui::pos2(rect.right() - margin - width, rect.top() + margin),
+        egui::vec2(width, height),
+    );
+    painter.image(
+        tex.id(),
+        logo_rect,
+        egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
+        Color32::WHITE,
+    );
 }
 
 pub fn paint_wallpaper(

@@ -418,3 +418,5 @@ control-outputs-title = Übertragung je Ausgang
 control-outputs-none = Keine Ausgänge eingerichtet
 control-outputs-all-on = Alle an
 control-outputs-all-off = Alle aus
+control-logo = Logo
+control-logo-hint = Logo oben rechts auf allen Ausgängen ein- oder ausblenden. Rechtsklick: anderes Logo wählen.

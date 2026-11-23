@@ -638,6 +638,10 @@ pub struct AppSettings {
     /// Wird nicht gespeichert: nach dem Neustart sind wieder alle Ausgänge an.
     #[serde(skip)]
     pub paused_outputs: Vec<String>,
+    /// Kirchenlogo (Pfad, relativ zum Programmordner wenn möglich) und ob es
+    /// gerade oben rechts auf allen Ausgängen eingeblendet ist.
+    pub logo_path: String,
+    pub logo_visible: bool,
     pub physical_background: PhysicalBackground,
     pub monitor_backgrounds: std::collections::HashMap<String, PhysicalBackground>,
     pub monitor_lyric_filters: std::collections::HashMap<String, crate::core::lyric_filter::LyricFilter>,
@@ -688,6 +692,8 @@ impl Default for AppSettings {
             physical_transition_ms: 350,
             disabled_physical_monitors: Vec::new(),
             paused_outputs: Vec::new(),
+            logo_path: String::new(),
+            logo_visible: false,
             physical_background: PhysicalBackground::default(),
             monitor_backgrounds: std::collections::HashMap::new(),
             monitor_lyric_filters: std::collections::HashMap::new(),
@@ -764,6 +770,17 @@ impl AppSettings {
 
     pub fn screen_output_key(id: &str) -> String {
         format!("screen:{id}")
+    }
+
+    /// Pfad zum Logo, falls gesetzt und vorhanden. Ist keins gesetzt, wird im
+    /// Programmordner nach einer PNG mit „logo“ im Namen gesucht.
+    pub fn resolved_logo_path(&self) -> Option<String> {
+        if !self.logo_path.trim().is_empty() {
+            return std::path::Path::new(&self.logo_path)
+                .exists()
+                .then(|| self.logo_path.clone());
+        }
+        find_logo_in_folder(std::path::Path::new("."))
     }
 
     pub fn output_paused(&self, key: &str) -> bool {
@@ -987,4 +1004,21 @@ impl AppSettings {
             self.recent_wallpapers.truncate(10);
         }
     }
+}
+
+/// Sucht im Ordner nach einer Bilddatei mit „logo“ im Namen (PNG bevorzugt).
+pub fn find_logo_in_folder(dir: &std::path::Path) -> Option<String> {
+    let mut found: Vec<String> = std::fs::read_dir(dir)
+        .ok()?
+        .flatten()
+        .filter_map(|entry| {
+            let name = entry.file_name().to_string_lossy().to_string();
+            let lower = name.to_lowercase();
+            (lower.contains("logo")
+                && (lower.ends_with(".png") || lower.ends_with(".jpg") || lower.ends_with(".jpeg")))
+            .then_some(name)
+        })
+        .collect();
+    found.sort_by_key(|n| (!n.to_lowercase().ends_with(".png"), n.clone()));
+    found.into_iter().next()
 }

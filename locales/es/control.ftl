@@ -418,3 +418,5 @@ control-outputs-title = Transmisión por salida
 control-outputs-none = No hay salidas configuradas
 control-outputs-all-on = Todas activas
 control-outputs-all-off = Todas apagadas
+control-logo = Logo
+control-logo-hint = Mostrar u ocultar el logo arriba a la derecha. Clic derecho: elegir otro logo.

@@ -4,7 +4,7 @@ use crate::core::state::ControlPanelState;
 use crate::ui::theme::AppTheme;
 use eframe::egui::{self, Color32, FontId, Margin, RichText, Stroke, StrokeKind, Vec2};
 use egui_phosphor::regular::{
-    BROADCAST, MONITOR, SNOWFLAKE,
+    IMAGE_SQUARE, BROADCAST, MONITOR, SNOWFLAKE,
     ARROW_SQUARE_OUT, CHECK, EYE, EYE_SLASH, GEAR, MAGNIFYING_GLASS, PALETTE, PLAY, STAR,
     TELEVISION_SIMPLE, X,
 };
@@ -811,6 +811,37 @@ pub fn render_presentation_dock(
 
             // Ausgänge einzeln an/aus (Beamer, Bühne/Stageview, Livestream).
             output_switches(ui, state, &tokens, &language);
+
+            // Logo oben rechts auf allen Ausgängen ein-/ausblenden.
+            let logo_on = state.settings.logo_visible;
+            let logo_button = dock_button(
+                ui,
+                &tokens,
+                Some(IMAGE_SQUARE),
+                language.text("control-logo"),
+                if logo_on { Tone::Accent } else { Tone::Neutral },
+                logo_on,
+            )
+            .on_hover_text(language.text("control-logo-hint"));
+            let pick_new = logo_button.secondary_clicked();
+            if logo_button.clicked() || pick_new {
+                if pick_new || state.settings.resolved_logo_path().is_none() {
+                    if let Some(path) = rfd::FileDialog::new()
+                        .add_filter("Bild", &["png", "jpg", "jpeg"])
+                        .pick_file()
+                    {
+                        // Im Programmordner relativ speichern, damit es portabel bleibt.
+                        let cwd = std::env::current_dir().ok();
+                        let stored = cwd
+                            .and_then(|dir| path.strip_prefix(dir).ok().map(|p| p.to_string_lossy().to_string()))
+                            .unwrap_or_else(|| path.to_string_lossy().to_string());
+                        state.settings.logo_path = stored;
+                        state.settings.logo_visible = true;
+                    }
+                } else {
+                    state.settings.logo_visible = !state.settings.logo_visible;
+                }
+            }
 
             // Bildschirm einfrieren (Schneeflocke wie in VideoPsalm), Taste F.
             let frozen = state.frozen_output.is_some();
