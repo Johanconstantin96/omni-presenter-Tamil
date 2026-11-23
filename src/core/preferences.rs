@@ -17,6 +17,8 @@ pub fn new_id(prefix: &str) -> String {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct OperatorProfile {
+    /// Aradhanai: Version des Standard-Layouts; bei Änderung wird einmalig neu gesetzt.
+    pub aradhanai_layout_version: u32,
     pub id: String,
     pub name: String,
     pub dark_mode: bool,
@@ -52,6 +54,7 @@ fn default_dock_height() -> f32 {
 impl Default for OperatorProfile {
     fn default() -> Self {
         Self {
+            aradhanai_layout_version: 1,
             id: "operator_default".into(),
             name: "Hauptbediener".into(),
             dark_mode: false,
@@ -844,6 +847,10 @@ impl AppSettings {
         self.server_port = self.server_port.max(1);
         self.physical_transition_ms = self.physical_transition_ms.min(2000);
         for p in &mut self.operators {
+            if p.aradhanai_layout_version < 1 {
+                p.layout = LayoutTree::default_4_columns();
+                p.aradhanai_layout_version = 1;
+            }
             p.scale = p.scale.clamp(80, 150);
             p.show_dock = true;
             p.keyboard_shortcuts = true;

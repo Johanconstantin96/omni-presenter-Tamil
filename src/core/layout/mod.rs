@@ -293,31 +293,34 @@ impl LayoutTree {
         }
     }
 
+    /// Aradhanai-Layout nach VideoPsalm-Vorbild:
+    /// links oben Ablaufplan, links unten alle Lieder, Mitte Liedtext,
+    /// rechts Vorschau und Live-Ausgabe, darunter klein die Designs.
     pub fn default_4_columns() -> Self {
         Self {
             root: LayoutNode::Split {
                 direction: SplitDirection::Horizontal,
                 fraction: 0.22,
-                first: Box::new(LayoutNode::Leaf(ContainerKind::Selection)),
+                first: Box::new(LayoutNode::Split {
+                    direction: SplitDirection::Vertical,
+                    fraction: 0.35,
+                    first: Box::new(LayoutNode::Leaf(ContainerKind::Playlist)),
+                    second: Box::new(LayoutNode::Leaf(ContainerKind::Selection)),
+                }),
                 second: Box::new(LayoutNode::Split {
                     direction: SplitDirection::Horizontal,
-                    fraction: 0.38,
+                    fraction: 0.55,
                     first: Box::new(LayoutNode::Leaf(ContainerKind::Lyrics)),
                     second: Box::new(LayoutNode::Split {
-                        direction: SplitDirection::Horizontal,
-                        fraction: 0.54,
+                        direction: SplitDirection::Vertical,
+                        fraction: 0.78,
                         first: Box::new(LayoutNode::Split {
                             direction: SplitDirection::Vertical,
-                            fraction: 0.68,
-                            first: Box::new(LayoutNode::Split {
-                                direction: SplitDirection::Vertical,
-                                fraction: 0.50,
-                                first: Box::new(LayoutNode::Leaf(ContainerKind::Stage)),
-                                second: Box::new(LayoutNode::Leaf(ContainerKind::Preview)),
-                            }),
-                            second: Box::new(LayoutNode::Leaf(ContainerKind::Themes)),
+                            fraction: 0.5,
+                            first: Box::new(LayoutNode::Leaf(ContainerKind::Preview)),
+                            second: Box::new(LayoutNode::Leaf(ContainerKind::Stage)),
                         }),
-                        second: Box::new(LayoutNode::Leaf(ContainerKind::Playlist)),
+                        second: Box::new(LayoutNode::Leaf(ContainerKind::Themes)),
                     }),
                 }),
             },
