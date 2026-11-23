@@ -126,18 +126,8 @@ pub fn render_icon_sidebar(ui: &mut egui::Ui, state: &mut ControlPanelState) {
             }
         }
 
-        ui.add_space(8.0);
-        if sidebar_button(
-            ui,
-            ICON_DESIGN,
-            state.active_sidebar_page == SidebarPage::Design,
-            language.text("nav-design"),
-            theme,
-        )
-        .clicked()
-        {
-            state.active_sidebar_page = SidebarPage::Design;
-        }
+        // Aradhanai: Design-Studio-Knopf entfernt (wird nicht gebraucht).
+        let _ = ICON_DESIGN;
 
         ui.with_layout(egui::Layout::bottom_up(egui::Align::Center), |ui| {
             ui.add_space(8.0);

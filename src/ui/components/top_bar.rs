@@ -313,9 +313,9 @@ pub fn render_top_bar(
                     if state.active_sidebar_page==crate::core::state::SidebarPage::Design {state.active_sidebar_page=crate::core::state::SidebarPage::Home;}
                 }
 
-            if screens_pill(ui, &tokens, screen_count, state.settings_ui.server_running) {
-                state.show_web_hub_modal = true;
-            }
+            // Aradhanai: Live-Steuerung als kleine Symbole statt Web-Bildschirm-Anzeige.
+            let _ = screen_count;
+            super::presentation_dock::live_icon_controls(ui, state, slide_deck);
 
             if operator_pill(ui, &tokens, operator_avatar.as_deref(), &operator_name) {
                 state.show_profile_picker_modal = true;
@@ -592,6 +592,7 @@ fn pill(
     );
 }
 
+#[allow(dead_code)]
 fn screens_pill(
     ui: &mut egui::Ui,
     tokens: &AppTheme,

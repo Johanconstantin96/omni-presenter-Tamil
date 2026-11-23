@@ -542,7 +542,7 @@ function render(s: ViewerState): void {
   title.hidden = !s.showTitle;
   const logo = document.getElementById("logo") as HTMLImageElement | null;
   if (logo) {
-    const url = s.hidden ? "" : (s.logoUrl || "");
+    const url = s.logoUrl || "";
     if (!url) {
       logo.hidden = true;
     } else {

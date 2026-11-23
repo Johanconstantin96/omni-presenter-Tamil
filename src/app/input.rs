@@ -39,7 +39,6 @@ impl PresentationApp {
                 if self.control_state.settings.chat_enabled {
                     pages.push(SidebarPage::Chat);
                 }
-                pages.push(SidebarPage::Design);
 
                 let current_pos = pages
                     .iter()

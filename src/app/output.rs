@@ -214,7 +214,11 @@ impl PresentationApp {
                     artist: &live_artist,
                     slide_index: live_index,
                     is_song,
-                    logo: logo_path.as_deref(),
+                    logo: logo_path.as_deref().filter(|_| {
+                        !settings.output_paused(
+                            &crate::core::preferences::AppSettings::monitor_output_key(&target_monitor.name),
+                        )
+                    }),
                 },
                 Some(target_monitor),
                 &self.control_state.settings,

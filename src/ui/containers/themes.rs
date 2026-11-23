@@ -33,15 +33,8 @@ pub fn render_themes_column(
             let avail_w = (ui.available_width() - 4.0).max(60.0);
 
             // Quando diminuir a largura, reduz gradualmente até ficar em 1 coluna só
-            let cols = if avail_w >= 420.0 {
-                4
-            } else if avail_w >= 300.0 {
-                3
-            } else if avail_w >= 180.0 {
-                2
-            } else {
-                1
-            };
+            // Aradhanai: kompakte Vorschaubilder (~90 px breit), viele pro Zeile.
+            let cols = ((avail_w / 90.0).floor() as usize).clamp(1, 10);
 
             let gap = 6.0;
             let (card_w, card_h) = if cols == 1 {

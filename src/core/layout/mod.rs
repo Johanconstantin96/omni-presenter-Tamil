@@ -313,7 +313,7 @@ impl LayoutTree {
                     first: Box::new(LayoutNode::Leaf(ContainerKind::Lyrics)),
                     second: Box::new(LayoutNode::Split {
                         direction: SplitDirection::Vertical,
-                        fraction: 0.78,
+                        fraction: 0.85,
                         first: Box::new(LayoutNode::Split {
                             direction: SplitDirection::Vertical,
                             fraction: 0.5,

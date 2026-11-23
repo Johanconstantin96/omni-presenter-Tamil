@@ -21,7 +21,7 @@ pub struct LyricsProjectionSettings {
 impl Default for LyricsProjectionSettings {
     fn default() -> Self {
         Self {
-            show_title_slide: true,
+            show_title_slide: false,
             show_title: true,
             show_artist: true,
             title_slide_uppercase: false,
@@ -151,7 +151,7 @@ mod tests {
     #[test]
     fn test_projection_settings_defaults() {
         let settings = ProjectionSettings::default();
-        assert!(settings.lyrics.show_title_slide);
+        assert!(!settings.lyrics.show_title_slide);
         assert!(settings.lyrics.show_title);
         assert!(settings.lyrics.show_artist);
         assert!(settings.lyrics.blank_slide_at_end);

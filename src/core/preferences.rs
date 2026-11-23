@@ -56,7 +56,7 @@ fn default_dock_height() -> f32 {
 impl Default for OperatorProfile {
     fn default() -> Self {
         Self {
-            aradhanai_layout_version: 1,
+            aradhanai_layout_version: 2,
             id: "operator_default".into(),
             name: "Hauptbediener".into(),
             dark_mode: false,
@@ -642,6 +642,10 @@ pub struct AppSettings {
     /// gerade oben rechts auf allen Ausgängen eingeblendet ist.
     pub logo_path: String,
     pub logo_visible: bool,
+    /// Aradhanai: Version der einmaligen Einstellungs-Umstellungen (Feld-Default 0
+    /// für ältere Datenbanken).
+    #[serde(default)]
+    pub aradhanai_settings_version: u32,
     pub physical_background: PhysicalBackground,
     pub monitor_backgrounds: std::collections::HashMap<String, PhysicalBackground>,
     pub monitor_lyric_filters: std::collections::HashMap<String, crate::core::lyric_filter::LyricFilter>,
@@ -694,6 +698,7 @@ impl Default for AppSettings {
             paused_outputs: Vec::new(),
             logo_path: String::new(),
             logo_visible: false,
+            aradhanai_settings_version: 1,
             physical_background: PhysicalBackground::default(),
             monitor_backgrounds: std::collections::HashMap::new(),
             monitor_lyric_filters: std::collections::HashMap::new(),
@@ -807,7 +812,13 @@ impl AppSettings {
     pub fn normalize(&mut self) {
         crate::core::plugins::bundled::migrate(&mut self.plugins);
         self.bible_enabled = true;
-        self.chat_enabled = true;
+        // Aradhanai: Teamchat wird nicht gebraucht.
+        self.chat_enabled = false;
+        if self.aradhanai_settings_version < 1 {
+            // Liedtitel nicht als eigene Folie.
+            self.projection.lyrics.show_title_slide = false;
+            self.aradhanai_settings_version = 1;
+        }
         if self.operators.is_empty() {
             self.operators.push(OperatorProfile::default());
         }
@@ -866,9 +877,9 @@ impl AppSettings {
         self.server_port = self.server_port.max(1);
         self.physical_transition_ms = self.physical_transition_ms.min(2000);
         for p in &mut self.operators {
-            if p.aradhanai_layout_version < 1 {
+            if p.aradhanai_layout_version < 2 {
                 p.layout = LayoutTree::default_4_columns();
-                p.aradhanai_layout_version = 1;
+                p.aradhanai_layout_version = 2;
             }
             p.scale = p.scale.clamp(80, 150);
             p.show_dock = true;

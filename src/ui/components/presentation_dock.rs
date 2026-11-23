@@ -5,7 +5,7 @@ use crate::ui::theme::AppTheme;
 use eframe::egui::{self, Color32, FontId, Margin, RichText, Stroke, StrokeKind, Vec2};
 use egui_phosphor::regular::{
     IMAGE_SQUARE, BROADCAST, MONITOR, SNOWFLAKE,
-    ARROW_SQUARE_OUT, CHECK, EYE, EYE_SLASH, GEAR, MAGNIFYING_GLASS, PALETTE, PLAY, STAR,
+    CHECK, EYE, EYE_SLASH, GEAR, MAGNIFYING_GLASS, PALETTE, PLAY, STAR,
     TELEVISION_SIMPLE, X,
 };
 
@@ -184,6 +184,7 @@ pub(crate) fn preview_mode_control(
     changed
 }
 
+#[allow(dead_code)]
 pub(crate) fn live_theme_control(
     ui: &mut egui::Ui,
     tokens: &AppTheme,
@@ -518,35 +519,7 @@ pub fn render_presentation_dock(
                 state.show_presentation_dock = false;
             }
 
-            let is_preview_open = *is_preview_modal_open;
-            if dock_button(
-                ui,
-                &tokens,
-                Some(ARROW_SQUARE_OUT),
-                language.text("control-inspect-slides"),
-                Tone::Accent,
-                is_preview_open,
-            )
-            .on_hover_text(language.text("control-floating-control-hint"))
-            .clicked()
-            {
-                *is_preview_modal_open = !*is_preview_modal_open;
-            }
-
-            ui.add_space(4.0);
-            live_theme_control(ui, &tokens, language, state, Some(slide_deck));
-
-            ui.add_space(4.0);
-            if preview_mode_control(ui, &tokens, language, &mut state.dock_preview_bg) {
-                state.capture_profiles();
-                ui.ctx().request_repaint();
-            }
-            ui.add_space(4.0);
-            ui.label(
-                egui::RichText::new(language.text("control-preview-label"))
-                    .size(11.0)
-                    .color(tokens.text_muted),
-            );
+            let _ = is_preview_modal_open;
             ui.add_space(10.0);
             presentation_timer_badge(
                 ui,
@@ -809,74 +782,65 @@ pub fn render_presentation_dock(
                 slide_deck.toggle_hide_content();
             }
 
-            // Ausgänge einzeln an/aus (Beamer, Bühne/Stageview, Livestream).
-            output_switches(ui, state, &tokens, &language);
-
-            // Logo oben rechts auf allen Ausgängen ein-/ausblenden.
-            let logo_on = state.settings.logo_visible;
-            let logo_button = dock_button(
-                ui,
-                &tokens,
-                Some(IMAGE_SQUARE),
-                language.text("control-logo"),
-                if logo_on { Tone::Accent } else { Tone::Neutral },
-                logo_on,
-            )
-            .on_hover_text(language.text("control-logo-hint"));
-            let pick_new = logo_button.secondary_clicked();
-            if logo_button.clicked() || pick_new {
-                if pick_new || state.settings.resolved_logo_path().is_none() {
-                    if let Some(path) = rfd::FileDialog::new()
-                        .add_filter("Bild", &["png", "jpg", "jpeg"])
-                        .pick_file()
-                    {
-                        // Im Programmordner relativ speichern, damit es portabel bleibt.
-                        let cwd = std::env::current_dir().ok();
-                        let stored = cwd
-                            .and_then(|dir| path.strip_prefix(dir).ok().map(|p| p.to_string_lossy().to_string()))
-                            .unwrap_or_else(|| path.to_string_lossy().to_string());
-                        state.settings.logo_path = stored;
-                        state.settings.logo_visible = true;
-                    }
-                } else {
-                    state.settings.logo_visible = !state.settings.logo_visible;
-                }
-            }
-
-            // Bildschirm einfrieren (Schneeflocke wie in VideoPsalm), Taste F.
-            let frozen = state.frozen_output.is_some();
-            if dock_button(
-                ui,
-                &tokens,
-                Some(SNOWFLAKE),
-                if frozen {
-                    language.text("control-unfreeze")
-                } else {
-                    language.text("control-freeze")
-                },
-                if frozen { Tone::Accent } else { Tone::Neutral },
-                frozen,
-            )
-            .on_hover_text(language.text("control-freeze-hint"))
-            .clicked()
-            {
-                crate::services::media::toggle_freeze(state, slide_deck);
-            }
         });
     });
     ui.expand_to_include_rect(ui.max_rect());
 }
 
-/// Menü „Ausgänge“: jede Übertragung einzeln pausieren oder fortsetzen.
-/// Pausiert zeigt der Ausgang nur noch seinen Hintergrund; das Fenster bzw.
-/// die OBS-Quelle bleibt offen.
-fn output_switches(
+/// Kleine Symbol-Knöpfe oben rechts: Text ausblenden (Hintergrund + Logo
+/// bleiben), Logo, Einfrieren und Ausgänge je Bildschirm.
+pub(crate) fn live_icon_controls(
     ui: &mut egui::Ui,
     state: &mut ControlPanelState,
-    tokens: &crate::ui::theme::AppTheme,
-    language: &Language,
+    slide_deck: &mut SlideDeck,
 ) {
     use crate::core::preferences::AppSettings;
+    let tokens = state.theme.clone();
+    let language = state.settings.language;
+    let size = Vec2::new(28.0, 26.0);
+
+    // Rechts-nach-links-Layout: zuerst gezeichnet = ganz rechts.
+    // 1) Ausgänge
+    let paused_any = !state.settings.paused_outputs.is_empty();
+    let outputs_btn = tokens.icon_button(ui, BROADCAST, language.text("control-outputs-hint"), paused_any, size);
+    // 2) Einfrieren
+    let frozen = state.frozen_output.is_some();
+    if tokens
+        .icon_button(ui, SNOWFLAKE, language.text("control-freeze-hint"), frozen, size)
+        .clicked()
+    {
+        crate::services::media::toggle_freeze(state, slide_deck);
+    }
+    // 3) Logo
+    let logo_btn = tokens.icon_button(ui, IMAGE_SQUARE, language.text("control-logo-hint"), state.settings.logo_visible, size);
+    let pick_new = logo_btn.secondary_clicked();
+    if logo_btn.clicked() || pick_new {
+        if pick_new || state.settings.resolved_logo_path().is_none() {
+            if let Some(path) = rfd::FileDialog::new()
+                .add_filter("Bild", &["png", "jpg", "jpeg"])
+                .pick_file()
+            {
+                let cwd = std::env::current_dir().ok();
+                let stored = cwd
+                    .and_then(|dir| path.strip_prefix(dir).ok().map(|p| p.to_string_lossy().to_string()))
+                    .unwrap_or_else(|| path.to_string_lossy().to_string());
+                state.settings.logo_path = stored;
+                state.settings.logo_visible = true;
+            }
+        } else {
+            state.settings.logo_visible = !state.settings.logo_visible;
+        }
+    }
+    // 4) Nur Hintergrund (Text weg, Logo bleibt)
+    let hidden = slide_deck.is_content_hidden();
+    if tokens
+        .icon_button(ui, if hidden { EYE } else { EYE_SLASH }, language.text("control-hide-screen-hint"), hidden, size)
+        .clicked()
+    {
+        slide_deck.toggle_hide_content();
+    }
+
+    // Ausgänge-Menü
     let mut entries: Vec<(String, String)> = Vec::new();
     for (name, display) in &state.detected_monitors {
         if state.settings.physical_monitor_enabled(name) {
@@ -887,26 +851,8 @@ fn output_switches(
     for screen in state.settings.screens.iter().filter(|s| s.enabled) {
         entries.push((AppSettings::screen_output_key(&screen.id), format!("{} {}", BROADCAST, screen.name)));
     }
-    let paused = entries
-        .iter()
-        .filter(|(key, _)| state.settings.output_paused(key))
-        .count();
-    let label = if paused == 0 {
-        language.text("control-outputs").to_string()
-    } else {
-        format!("{} ({paused} {})", language.text("control-outputs"), language.text("control-outputs-off"))
-    };
-    let button = dock_button(
-        ui,
-        tokens,
-        Some(BROADCAST),
-        &label,
-        if paused > 0 { Tone::Warning } else { Tone::Neutral },
-        paused > 0,
-    )
-    .on_hover_text(language.text("control-outputs-hint"));
-    let popup_id = ui.make_persistent_id("dock_output_switches");
-    if button.clicked() {
+    let popup_id = ui.make_persistent_id("top_output_switches");
+    if outputs_btn.clicked() {
         ui.ctx().data_mut(|d| {
             let open = d.get_temp::<bool>(popup_id).unwrap_or(false);
             d.insert_temp(popup_id, !open);
@@ -916,11 +862,10 @@ fn output_switches(
     if !open {
         return;
     }
-    let mut changed = false;
     let area = egui::Area::new(popup_id.with("area"))
         .order(egui::Order::Foreground)
-        .pivot(egui::Align2::RIGHT_BOTTOM)
-        .fixed_pos(egui::pos2(button.rect.right(), button.rect.top() - 6.0))
+        .pivot(egui::Align2::RIGHT_TOP)
+        .fixed_pos(egui::pos2(outputs_btn.rect.right(), outputs_btn.rect.bottom() + 6.0))
         .show(ui.ctx(), |ui| {
             egui::Frame::new()
                 .fill(tokens.bg_card)
@@ -938,28 +883,23 @@ fn output_switches(
                         let mut on = !state.settings.output_paused(key);
                         if ui.checkbox(&mut on, name.as_str()).changed() {
                             state.settings.toggle_output_paused(key);
-                            changed = true;
                         }
                     }
                     ui.add_space(4.0);
                     ui.horizontal(|ui| {
                         if ui.button(language.text("control-outputs-all-on")).clicked() {
                             state.settings.paused_outputs.clear();
-                            changed = true;
                         }
                         if ui.button(language.text("control-outputs-all-off")).clicked() {
                             state.settings.paused_outputs = entries.iter().map(|(k, _)| k.clone()).collect();
-                            changed = true;
                         }
                     });
                 });
         });
-    let _ = changed;
-    // Schließen bei Klick außerhalb.
     let clicked_outside = ui.input(|i| i.pointer.primary_clicked())
         && ui
             .input(|i| i.pointer.interact_pos())
-            .is_some_and(|p| !area.response.rect.contains(p) && !button.rect.contains(p));
+            .is_some_and(|p| !area.response.rect.contains(p) && !outputs_btn.rect.contains(p));
     if clicked_outside {
         ui.ctx().data_mut(|d| d.insert_temp(popup_id, false));
     }
