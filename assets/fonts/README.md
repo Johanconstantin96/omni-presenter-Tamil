@@ -8,6 +8,7 @@
 
 Noto Emoji is from [Google Fonts](https://github.com/google/fonts/tree/main/ofl/notoemoji). Preserve its license when redistributing or replacing the font. Other presentation fonts may be resolved from the host system, so matching fonts should be installed on machines that need consistent output.
 
-`NotoSansTamil-Regular.ttf` is a static Regular instance of Noto Sans Tamil from
-[google/fonts](https://github.com/google/fonts/tree/main/ofl/notosanstamil), licensed under the SIL Open Font License 1.1 (see `OFL.txt`).
-It is used as a fallback so Tamil script renders with any theme font.
+
+`HindMadurai-*.ttf` are from [google/fonts](https://github.com/google/fonts/tree/main/ofl/hindmadurai) (Indian Type Foundry),
+licensed under the SIL Open Font License 1.1 (see `OFL-HindMadurai.txt`). SemiBold is the Tamil fallback for every theme font
+and for browser screens; all weights appear in the font picker as "Hind Madurai".

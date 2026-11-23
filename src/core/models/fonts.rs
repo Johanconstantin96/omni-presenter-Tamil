@@ -126,6 +126,9 @@ pub fn get_system_fonts() -> &'static SystemFonts {
     SYSTEM_FONTS.get_or_init(|| {
         let mut db = fontdb::Database::new();
         db.load_system_fonts();
+        for face in crate::render::fonts::HIND_MADURAI_FACES {
+            db.load_font_data(face.to_vec());
+        }
 
         let mut families_set = HashSet::new();
         for face in db.faces() {

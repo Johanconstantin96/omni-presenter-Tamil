@@ -335,7 +335,26 @@ function transition(oldLayer: HTMLElement | null, s: ViewerState): void {
     .catch(() => oldLayer.remove());
 }
 
+// Tamil lines always use the bundled Hind Madurai SemiBold.
+const TAMIL_FAMILY = '"omni-tamil"';
+let tamilLoaded = false;
+async function loadTamilFont(s: ViewerState): Promise<void> {
+  if (tamilLoaded) return;
+  tamilLoaded = true;
+  const url = s.fontUrl ? s.fontUrl.replace(/\/font\?.*$/, "/font-tamil") : "/font-tamil";
+  try {
+    const face = await new FontFace("omni-tamil", `url(${JSON.stringify(url)})`, {
+      weight: "100 900",
+    }).load();
+    document.fonts.add(face);
+    fit();
+  } catch {
+    tamilLoaded = false;
+  }
+}
+
 async function loadFont(s: ViewerState): Promise<void> {
+  void loadTamilFont(s);
   if (!s.fontUrl || s.fontUrl === fontUrl) return;
   fontUrl = s.fontUrl;
   const ticket = ++pendingFont;
@@ -348,10 +367,11 @@ async function loadFont(s: ViewerState): Promise<void> {
     if (ticket !== pendingFont) return;
     document.fonts.add(face);
     lyrics.style.fontFamily =
-      JSON.stringify(face.family) + ",Arial,sans-serif";
+      JSON.stringify(face.family) + "," + TAMIL_FAMILY + ",Arial,sans-serif";
     fit();
   } catch {
-    lyrics.style.fontFamily = JSON.stringify(s.font) + ",Arial,sans-serif";
+    lyrics.style.fontFamily =
+      JSON.stringify(s.font) + "," + TAMIL_FAMILY + ",Arial,sans-serif";
   }
 }
 
@@ -389,7 +409,7 @@ function appendFormattedRuns(parent: HTMLElement, text: string): void {
     } else if (match[8]) {
       const span = document.createElement("span");
       span.style.fontFamily =
-        JSON.stringify(match[9].trim()) + ",Arial,sans-serif";
+        JSON.stringify(match[9].trim()) + "," + TAMIL_FAMILY + ",Arial,sans-serif";
       appendFormattedRuns(span, match[10]);
       parent.append(span);
     } else if (match[11]) {

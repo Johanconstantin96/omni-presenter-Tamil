@@ -2,9 +2,18 @@
 use eframe::egui;
 use std::sync::{Arc, OnceLock};
 
-/// Bundled Noto Sans Tamil (OFL) so Tamil script renders with any theme font.
-pub(crate) const TAMIL_FALLBACK: &str = "noto-sans-tamil";
-pub(crate) const TAMIL_FONT_BYTES: &[u8] = include_bytes!("../../assets/fonts/NotoSansTamil-Regular.ttf");
+/// Bundled Hind Madurai SemiBold (OFL), the church's Tamil font, so Tamil
+/// script renders with any theme font.
+pub(crate) const TAMIL_FALLBACK: &str = "hind-madurai-semibold";
+pub(crate) const TAMIL_FONT_BYTES: &[u8] = include_bytes!("../../assets/fonts/HindMadurai-SemiBold.ttf");
+
+/// All bundled Hind Madurai weights, offered in the font picker as "Hind Madurai".
+pub(crate) const HIND_MADURAI_FACES: [&[u8]; 4] = [
+    include_bytes!("../../assets/fonts/HindMadurai-Regular.ttf"),
+    include_bytes!("../../assets/fonts/HindMadurai-Medium.ttf"),
+    include_bytes!("../../assets/fonts/HindMadurai-SemiBold.ttf"),
+    include_bytes!("../../assets/fonts/HindMadurai-Bold.ttf"),
+];
 
 /// Adds the Tamil fallback at the end of a named (theme) font family.
 pub(crate) fn add_tamil_fallback(ctx: &egui::Context, family: &str) {
