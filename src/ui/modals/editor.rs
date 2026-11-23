@@ -271,7 +271,8 @@ fn render_toolbar(
     let gap = 8.0;
     let tools_rect = egui::Rect::from_min_max(
         full.min,
-        egui::pos2((full.max.x - actions_w - gap).max(full.min.x + 240.0), full.min.y + 1000.0),
+        // Eine Zeile hoch: bei Umbruch wächst die Leiste nach unten weiter.
+        egui::pos2((full.max.x - actions_w - gap).max(full.min.x + 240.0), full.min.y + 28.0),
     );
     let actions_rect = egui::Rect::from_min_max(
         egui::pos2(full.max.x - actions_w, full.min.y),
@@ -316,10 +317,21 @@ fn render_toolbar(
     {
         let ui = &mut actions_ui;
         ui.spacing_mut().item_spacing.x = 8.0;
-        if primary_button(ui, FLOPPY_DISK, crate::ui::i18n::text(ui, "common-save-item"), tokens).clicked() {
+        // Klick zusätzlich direkt über die Zeigerposition prüfen: auf Windows kam der
+        // Klick auf diese beiden Knöpfe sonst nicht immer an (getestet am 23.11.).
+        let clicked_on = |ui: &egui::Ui, r: &egui::Response| {
+            r.clicked()
+                || ui.input(|i| {
+                    i.pointer.primary_clicked()
+                        && i.pointer.interact_pos().is_some_and(|p| r.rect.contains(p))
+                })
+        };
+        let save = primary_button(ui, FLOPPY_DISK, crate::ui::i18n::text(ui, "common-save-item"), tokens);
+        if clicked_on(ui, &save) {
             *should_save = true;
         }
-        if ghost_button(ui, crate::ui::i18n::text(ui, "common-cancel"), tokens).clicked() {
+        let cancel = ghost_button(ui, crate::ui::i18n::text(ui, "common-cancel"), tokens);
+        if !*should_save && clicked_on(ui, &cancel) {
             *should_cancel = true;
         }
     }
