@@ -125,6 +125,18 @@ pub(super) fn outputs(
                                 draft.monitor_lyric_filters.insert(monitor.name.clone(), filter);
                             }
                         }
+                        let mut chroma = draft.is_chroma_monitor(&monitor.name);
+                        if ui
+                            .checkbox(&mut chroma, crate::ui::i18n::text(ui, "settings-chroma-key"))
+                            .on_hover_text(crate::ui::i18n::text(ui, "settings-chroma-key-desc"))
+                            .changed()
+                        {
+                            if chroma {
+                                draft.chroma_monitors.push(monitor.name.clone());
+                            } else {
+                                draft.chroma_monitors.retain(|m| m != &monitor.name);
+                            }
+                        }
                         });
                     }
                 });

@@ -752,3 +752,5 @@ settings-lyric-filter-desc = Welche Liedzeilen dieser Ausgang zeigt. Bibelstelle
 settings-lyric-filter-all = Alle Zeilen
 settings-lyric-filter-latin-only = Nur Umschrift
 settings-lyric-filter-latin-compact = Umschrift, 2 Zeilen
+settings-chroma-key = Green Key (OBS)
+settings-chroma-key-desc = Für den Livestream: grüner Hintergrund, weiße Schrift mit Kontur unten im Bild. In OBS den Filter „Chroma Key“ (Grün) auf diese Quelle legen.

@@ -755,3 +755,5 @@ settings-lyric-filter-desc = Qué líneas de la canción muestra esta salida. Lo
 settings-lyric-filter-all = Todas las líneas
 settings-lyric-filter-latin-only = Solo transliteración
 settings-lyric-filter-latin-compact = Transliteración, 2 líneas
+settings-chroma-key = Croma verde (OBS)
+settings-chroma-key-desc = Para transmisión: fondo verde, texto blanco con contorno abajo. Añade un filtro Chroma Key verde en OBS.

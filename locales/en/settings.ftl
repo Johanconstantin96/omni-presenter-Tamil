@@ -756,3 +756,5 @@ settings-lyric-filter-desc = Which song lines this output shows. Bible passages 
 settings-lyric-filter-all = All lines
 settings-lyric-filter-latin-only = Transliteration only
 settings-lyric-filter-latin-compact = Transliteration, 2 lines
+settings-chroma-key = Green key (OBS)
+settings-chroma-key-desc = For livestream: green background, white outlined text at the bottom. Add a green Chroma Key filter in OBS.

@@ -642,6 +642,9 @@ pub struct AppSettings {
     /// gerade oben rechts auf allen Ausgängen eingeblendet ist.
     pub logo_path: String,
     pub logo_visible: bool,
+    /// Bildschirme mit Green Key für OBS (Livestream): grüner Hintergrund,
+    /// weiße Schrift mit Kontur unten im Bild, ohne Designs.
+    pub chroma_monitors: Vec<String>,
     /// Aradhanai: Version der einmaligen Einstellungs-Umstellungen (Feld-Default 0
     /// für ältere Datenbanken).
     #[serde(default)]
@@ -698,6 +701,7 @@ impl Default for AppSettings {
             paused_outputs: Vec::new(),
             logo_path: String::new(),
             logo_visible: false,
+            chroma_monitors: Vec::new(),
             aradhanai_settings_version: 1,
             physical_background: PhysicalBackground::default(),
             monitor_backgrounds: std::collections::HashMap::new(),
@@ -970,7 +974,14 @@ impl AppSettings {
         }
     }
 
+    pub fn is_chroma_monitor(&self, monitor_name: &str) -> bool {
+        !monitor_name.is_empty() && self.chroma_monitors.iter().any(|m| m == monitor_name)
+    }
+
     pub fn wallpaper_for_monitor(&self, monitor_name: &str) -> &PhysicalBackground {
+        if self.is_chroma_monitor(monitor_name) {
+            return &CHROMA_BACKGROUND;
+        }
         if !monitor_name.is_empty() {
             if let Some(bg) = self.monitor_backgrounds.get(monitor_name) {
                 return bg;
@@ -980,6 +991,9 @@ impl AppSettings {
     }
 
     pub fn effective_wallpaper(&self, monitor_name: &str) -> &PhysicalBackground {
+        if self.is_chroma_monitor(monitor_name) {
+            return &CHROMA_BACKGROUND;
+        }
         if let Some(bg) = &self.service().wallpaper {
             return bg;
         }
@@ -1032,4 +1046,33 @@ pub fn find_logo_in_folder(dir: &std::path::Path) -> Option<String> {
         .collect();
     found.sort_by_key(|n| (!n.to_lowercase().ends_with(".png"), n.clone()));
     found.into_iter().next()
+}
+
+/// Green-Key-Grün (Broadcast-Standard) für den Livestream-Ausgang.
+pub const CHROMA_GREEN: [u8; 3] = [0, 177, 64];
+pub static CHROMA_BACKGROUND: PhysicalBackground = PhysicalBackground::Color { rgb: CHROMA_GREEN };
+
+/// Design für Green-Key-Ausgänge: einfarbig grün, weiße Schrift mit schwarzer
+/// Kontur, Text im unteren Drittel (wie eine Bauchbinde im Livestream).
+pub fn chroma_theme(base: &crate::core::models::PresentationTheme) -> crate::core::models::PresentationTheme {
+    let green = eframe::egui::Color32::from_rgb(CHROMA_GREEN[0], CHROMA_GREEN[1], CHROMA_GREEN[2]);
+    let mut theme = base.clone();
+    theme.bg_type = "gradient".into();
+    theme.bg_top = green;
+    theme.bg_bottom = green;
+    theme.bg_image_path.clear();
+    theme.is_gradient = false;
+    theme.is_animated = false;
+    theme.text_color = eframe::egui::Color32::WHITE;
+    theme.outline_enabled = true;
+    theme.outline_color = eframe::egui::Color32::BLACK;
+    theme.outline_width = 3.0;
+    theme.shadow_enabled = false;
+    theme.box_bg_enabled = false;
+    theme.align_v = "bottom".into();
+    theme.box_x = 0.05;
+    theme.box_w = 0.90;
+    theme.box_y = 0.66;
+    theme.box_h = 0.30;
+    theme
 }

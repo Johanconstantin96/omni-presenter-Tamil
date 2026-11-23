@@ -186,6 +186,8 @@ impl PresentationApp {
                 target_monitor.resolution.0 as f32 / target_monitor.resolution.1.max(1) as f32
             };
             let mut nav_action = false;
+            let chroma = settings.is_chroma_monitor(&target_monitor.name);
+            let chroma_theme = chroma.then(|| crate::core::preferences::chroma_theme(&live_theme));
             let monitor_text = if is_song {
                 crate::core::lyric_filter::apply(
                     &clean_text,
@@ -202,14 +204,14 @@ impl PresentationApp {
                         || settings.output_paused(
                             &crate::core::preferences::AppSettings::monitor_output_key(&target_monitor.name),
                         ),
-                    theme: &live_theme,
-                    design: design.as_ref(),
-                    overlay: overlay.as_ref(),
+                    theme: chroma_theme.as_ref().unwrap_or(&live_theme),
+                    design: if chroma { None } else { design.as_ref() },
+                    overlay: if chroma { None } else { overlay.as_ref() },
                     themes: &self.control_state.themes,
                     aspect,
                     active,
                     opacity,
-                    wallpaper_design: wallpaper_design.as_ref(),
+                    wallpaper_design: if chroma { None } else { wallpaper_design.as_ref() },
                     title: &live_title,
                     artist: &live_artist,
                     slide_index: live_index,
