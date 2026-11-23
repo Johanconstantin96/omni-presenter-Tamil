@@ -628,6 +628,11 @@ pub struct AppSettings {
     pub suspend_projection_while_configuring: bool,
     pub physical_transition_ms: u32,
     pub disabled_physical_monitors: Vec<String>,
+    /// Ausgänge, deren Übertragung gerade pausiert ist (Fenster bleibt offen,
+    /// zeigt aber nur den Hintergrund). Schlüssel: `monitor:<Name>` oder `screen:<ID>`.
+    /// Wird nicht gespeichert: nach dem Neustart sind wieder alle Ausgänge an.
+    #[serde(skip)]
+    pub paused_outputs: Vec<String>,
     pub physical_background: PhysicalBackground,
     pub monitor_backgrounds: std::collections::HashMap<String, PhysicalBackground>,
     pub monitor_lyric_filters: std::collections::HashMap<String, crate::core::lyric_filter::LyricFilter>,
@@ -677,6 +682,7 @@ impl Default for AppSettings {
             suspend_projection_while_configuring: true,
             physical_transition_ms: 350,
             disabled_physical_monitors: Vec::new(),
+            paused_outputs: Vec::new(),
             physical_background: PhysicalBackground::default(),
             monitor_backgrounds: std::collections::HashMap::new(),
             monitor_lyric_filters: std::collections::HashMap::new(),
@@ -745,6 +751,26 @@ impl AppSettings {
             .disabled_physical_monitors
             .iter()
             .any(|disabled| disabled == name)
+    }
+
+    pub fn monitor_output_key(name: &str) -> String {
+        format!("monitor:{name}")
+    }
+
+    pub fn screen_output_key(id: &str) -> String {
+        format!("screen:{id}")
+    }
+
+    pub fn output_paused(&self, key: &str) -> bool {
+        self.paused_outputs.iter().any(|k| k == key)
+    }
+
+    pub fn toggle_output_paused(&mut self, key: &str) {
+        if self.output_paused(key) {
+            self.paused_outputs.retain(|k| k != key);
+        } else {
+            self.paused_outputs.push(key.to_owned());
+        }
     }
 
     pub fn toggle_physical_monitor(&mut self, name: &str) {

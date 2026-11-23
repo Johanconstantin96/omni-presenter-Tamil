@@ -462,14 +462,15 @@ impl BrowserServer {
 
                 let screen_bg = resolve_screen_bg(s, themed, screen_theme, theme, &data, all_themes);
 
-                let raw_text = if active && design.is_none() { deck.projected_text() } else { "" };
+                let paused = settings.output_paused(&crate::core::preferences::AppSettings::screen_output_key(&s.id));
+                let raw_text = if active && !paused && design.is_none() { deck.projected_text() } else { "" };
                 let text = if s.show_comments {
                     crate::core::slides::strip_directive_commands(raw_text)
                 } else {
                     crate::core::slides::strip_directive_commands(&crate::core::slides::strip_comments(raw_text))
                 };
 
-                let raw_next = if active { deck.next_projected_text() } else { "" };
+                let raw_next = if active && !paused { deck.next_projected_text() } else { "" };
                 let next_text = if s.show_comments {
                     crate::core::slides::strip_directive_commands(raw_next)
                 } else {
@@ -490,7 +491,7 @@ impl BrowserServer {
                 } else {
                     deck.live_title().to_string()
                 };
-                let web_title = if design.is_none() && active && !deck.is_content_hidden() {
+                let web_title = if design.is_none() && active && !paused && !deck.is_content_hidden() {
                     if is_first_song_slide {
                         full_title.as_str()
                     } else if s.show_title {
@@ -507,9 +508,9 @@ impl BrowserServer {
                     "title": web_title,
                     "text": text,
                     "active": active,
-                    "hidden": active && deck.is_content_hidden(),
+                    "hidden": active && (deck.is_content_hidden() || paused),
                     "background": screen_bg,
-                    "design": data.design,
+                    "design": if paused { None } else { data.design.clone() },
                     "transparent": s.lyrics_only,
                     "color": css_color(screen_theme.text_color),
                     "font": screen_theme.font_family,

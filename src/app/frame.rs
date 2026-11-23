@@ -338,6 +338,11 @@ impl PresentationApp {
                     .inner_margin(egui::Margin::symmetric(10, 8)),
             )
             .show(ui, |ui| {
+                self.control_state.detected_monitors = self
+                    .monitors
+                    .iter()
+                    .map(|m| (m.name.clone(), m.display_name.clone()))
+                    .collect();
                 crate::ui::render_presentation_dock(
                     ui,
                     &mut self.control_state,

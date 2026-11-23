@@ -197,7 +197,10 @@ impl PresentationApp {
                 ctx,
                 PresentationContent {
                     text: &monitor_text,
-                    hidden: is_hidden,
+                    hidden: is_hidden
+                        || settings.output_paused(
+                            &crate::core::preferences::AppSettings::monitor_output_key(&target_monitor.name),
+                        ),
                     theme: &live_theme,
                     design: design.as_ref(),
                     overlay: overlay.as_ref(),

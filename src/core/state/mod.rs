@@ -225,6 +225,8 @@ pub struct ControlPanelState {
     pub is_blackout: bool,
     /// Bildschirm eingefroren: die Ausgänge zeigen diesen Stand, während der
     /// Bediener im Hintergrund weiterarbeitet (wie die Schneeflocke in VideoPsalm).
+    /// Erkannte Bildschirme (Name, Anzeigename) für die Ausgangs-Schalter in der Leiste.
+    pub detected_monitors: Vec<(String, String)>,
     pub frozen_output: Option<std::sync::Arc<(crate::core::slides::SlideDeck, crate::core::models::PresentationTheme)>>,
     pub show_presentation_dock: bool,
     pub show_presentation_settings_modal: bool,
@@ -372,6 +374,7 @@ impl Default for ControlPanelState {
             web_media_modal: WebMediaModalState::default(),
             is_blackout: false,
             frozen_output: None,
+            detected_monitors: Vec::new(),
             show_presentation_dock: true,
             show_presentation_settings_modal: false,
             show_library_projection_modal: false,

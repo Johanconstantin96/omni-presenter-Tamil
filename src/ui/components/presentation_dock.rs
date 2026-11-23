@@ -4,7 +4,7 @@ use crate::core::state::ControlPanelState;
 use crate::ui::theme::AppTheme;
 use eframe::egui::{self, Color32, FontId, Margin, RichText, Stroke, StrokeKind, Vec2};
 use egui_phosphor::regular::{
-    SNOWFLAKE,
+    BROADCAST, MONITOR, SNOWFLAKE,
     ARROW_SQUARE_OUT, CHECK, EYE, EYE_SLASH, GEAR, MAGNIFYING_GLASS, PALETTE, PLAY, STAR,
     TELEVISION_SIMPLE, X,
 };
@@ -809,6 +809,9 @@ pub fn render_presentation_dock(
                 slide_deck.toggle_hide_content();
             }
 
+            // Ausgänge einzeln an/aus (Beamer, Bühne/Stageview, Livestream).
+            output_switches(ui, state, &tokens, &language);
+
             // Bildschirm einfrieren (Schneeflocke wie in VideoPsalm), Taste F.
             let frozen = state.frozen_output.is_some();
             if dock_button(
@@ -831,6 +834,104 @@ pub fn render_presentation_dock(
         });
     });
     ui.expand_to_include_rect(ui.max_rect());
+}
+
+/// Menü „Ausgänge“: jede Übertragung einzeln pausieren oder fortsetzen.
+/// Pausiert zeigt der Ausgang nur noch seinen Hintergrund; das Fenster bzw.
+/// die OBS-Quelle bleibt offen.
+fn output_switches(
+    ui: &mut egui::Ui,
+    state: &mut ControlPanelState,
+    tokens: &crate::ui::theme::AppTheme,
+    language: &Language,
+) {
+    use crate::core::preferences::AppSettings;
+    let mut entries: Vec<(String, String)> = Vec::new();
+    for (name, display) in &state.detected_monitors {
+        if state.settings.physical_monitor_enabled(name) {
+            let label = if display.is_empty() { name.clone() } else { display.clone() };
+            entries.push((AppSettings::monitor_output_key(name), format!("{} {label}", MONITOR)));
+        }
+    }
+    for screen in state.settings.screens.iter().filter(|s| s.enabled) {
+        entries.push((AppSettings::screen_output_key(&screen.id), format!("{} {}", BROADCAST, screen.name)));
+    }
+    let paused = entries
+        .iter()
+        .filter(|(key, _)| state.settings.output_paused(key))
+        .count();
+    let label = if paused == 0 {
+        language.text("control-outputs").to_string()
+    } else {
+        format!("{} ({paused} {})", language.text("control-outputs"), language.text("control-outputs-off"))
+    };
+    let button = dock_button(
+        ui,
+        tokens,
+        Some(BROADCAST),
+        &label,
+        if paused > 0 { Tone::Warning } else { Tone::Neutral },
+        paused > 0,
+    )
+    .on_hover_text(language.text("control-outputs-hint"));
+    let popup_id = ui.make_persistent_id("dock_output_switches");
+    if button.clicked() {
+        ui.ctx().data_mut(|d| {
+            let open = d.get_temp::<bool>(popup_id).unwrap_or(false);
+            d.insert_temp(popup_id, !open);
+        });
+    }
+    let open = ui.ctx().data(|d| d.get_temp::<bool>(popup_id)).unwrap_or(false);
+    if !open {
+        return;
+    }
+    let mut changed = false;
+    let area = egui::Area::new(popup_id.with("area"))
+        .order(egui::Order::Foreground)
+        .pivot(egui::Align2::RIGHT_BOTTOM)
+        .fixed_pos(egui::pos2(button.rect.right(), button.rect.top() - 6.0))
+        .show(ui.ctx(), |ui| {
+            egui::Frame::new()
+                .fill(tokens.bg_card)
+                .stroke(Stroke::new(1.0, tokens.border_default))
+                .corner_radius(8.0)
+                .inner_margin(Margin::same(10))
+                .show(ui, |ui| {
+                    ui.set_min_width(240.0);
+                    ui.label(RichText::new(language.text("control-outputs-title")).strong());
+                    ui.add_space(4.0);
+                    if entries.is_empty() {
+                        ui.label(RichText::new(language.text("control-outputs-none")).color(tokens.text_secondary));
+                    }
+                    for (key, name) in &entries {
+                        let mut on = !state.settings.output_paused(key);
+                        if ui.checkbox(&mut on, name.as_str()).changed() {
+                            state.settings.toggle_output_paused(key);
+                            changed = true;
+                        }
+                    }
+                    ui.add_space(4.0);
+                    ui.horizontal(|ui| {
+                        if ui.button(language.text("control-outputs-all-on")).clicked() {
+                            state.settings.paused_outputs.clear();
+                            changed = true;
+                        }
+                        if ui.button(language.text("control-outputs-all-off")).clicked() {
+                            state.settings.paused_outputs = entries.iter().map(|(k, _)| k.clone()).collect();
+                            changed = true;
+                        }
+                    });
+                });
+        });
+    let _ = changed;
+    // Schließen bei Klick außerhalb.
+    let clicked_outside = ui.input(|i| i.pointer.primary_clicked())
+        && ui
+            .input(|i| i.pointer.interact_pos())
+            .is_some_and(|p| !area.response.rect.contains(p) && !button.rect.contains(p));
+    if clicked_outside {
+        ui.ctx().data_mut(|d| d.insert_temp(popup_id, false));
+    }
 }
 
 #[cfg(test)]
