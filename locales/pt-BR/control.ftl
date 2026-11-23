@@ -408,3 +408,6 @@ control-zoom-medium = Médio (210px)
 control-zoom-small = Pequeno (160px)
 
 control-enter-profile-and-password = Entre com seu perfil e senha para abrir o controle.
+control-freeze = Congelar
+control-unfreeze = Descongelar
+control-freeze-hint = Congelar tela (F): as saídas mantêm a imagem atual enquanto você continua trabalhando.

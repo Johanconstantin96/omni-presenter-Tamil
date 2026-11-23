@@ -408,3 +408,6 @@ control-zoom-medium = Medium (210px)
 control-zoom-small = Small (160px)
 
 control-enter-profile-and-password = Enter your profile and password to open control.
+control-freeze = Freeze
+control-unfreeze = Unfreeze
+control-freeze-hint = Freeze screen (F): outputs keep the current picture while you keep working in the background.

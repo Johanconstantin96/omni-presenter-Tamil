@@ -220,3 +220,15 @@ pub fn audio_path(path: &str) -> Result<String, String> {
     }
     Ok(target.to_string_lossy().into_owned())
 }
+
+/// Bildschirm einfrieren bzw. wieder freigeben.
+///
+/// Eingefroren zeigen alle Ausgänge (Beamer, Bühne, Livestream) weiter den Stand
+/// vom Moment des Einfrierens. Der Bediener kann währenddessen Lieder suchen,
+/// Folien wechseln oder bearbeiten; erst beim Auftauen wird der aktuelle Stand gezeigt.
+pub fn toggle_freeze(state: &mut ControlPanelState, slide_deck: &SlideDeck) {
+    if state.frozen_output.take().is_none() {
+        let theme = live_theme(state, slide_deck);
+        state.frozen_output = Some(std::sync::Arc::new((slide_deck.clone(), theme)));
+    }
+}

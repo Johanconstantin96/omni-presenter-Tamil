@@ -65,3 +65,4 @@ command-copy-layer = Copiar camada(s)
 command-cut-layer = Recortar camada(s)
 
 command-paste-layer = Colar camada(s) ou imagem
+command-freeze = Congelar / descongelar tela

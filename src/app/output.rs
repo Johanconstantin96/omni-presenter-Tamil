@@ -100,7 +100,14 @@ impl PresentationApp {
     /// Renders the physical presentation viewport when a presentation is live.
     pub(super) fn draw_presentation_viewport(&mut self, ctx: &egui::Context) {
         let settings = self.control_state.settings.clone();
-        let live_theme = crate::services::media::live_theme(&self.control_state, &self.slide_deck);
+        // Eingefroren: Ausgänge zeigen den gespeicherten Stand statt des aktuellen.
+        let frozen = self.control_state.frozen_output.clone();
+        let out_deck: &crate::core::slides::SlideDeck =
+            frozen.as_ref().map(|f| &f.0).unwrap_or(&self.slide_deck);
+        let live_theme = match &frozen {
+            Some(f) => f.1.clone(),
+            None => crate::services::media::live_theme(&self.control_state, &self.slide_deck),
+        };
         let transparent = if let Some(service_bg) = &settings.service().wallpaper {
             matches!(service_bg, crate::core::preferences::PhysicalBackground::Transparent)
         } else {
@@ -119,8 +126,8 @@ impl PresentationApp {
                 || crate::ui::presentation_assets::ready(
                     ctx,
                     &live_theme,
-                    self.slide_deck.live_design.as_ref(),
-                    self.slide_deck.live_overlay.as_ref(),
+                    out_deck.live_design.as_ref(),
+                    out_deck.live_overlay.as_ref(),
                     &self.control_state.themes,
                 ));
         let duration = if settings.operator().reduce_motion {
@@ -152,22 +159,21 @@ impl PresentationApp {
             .cloned()
             .collect();
 
-        let is_hidden = self.slide_deck.is_content_hidden();
-        let projected_text = self.slide_deck.projected_text();
-        let clean_text = crate::core::slides::strip_comments(projected_text);
+        let is_hidden = out_deck.is_content_hidden();
+        let projected_text = out_deck.projected_text().to_owned();
+        let clean_text = crate::core::slides::strip_comments(&projected_text).to_string();
 
-        let design = self.slide_deck.live_design.clone();
-        let overlay = self.slide_deck.live_overlay.clone();
-        let is_song = self.slide_deck.is_live_song();
-        let live_title = self.slide_deck.live_title().to_owned();
-        let live_artist = self.slide_deck.live_artist().to_owned();
-        let live_index = self.slide_deck.live_index();
+        let design = out_deck.live_design.clone();
+        let overlay = out_deck.live_overlay.clone();
+        let is_song = out_deck.is_live_song();
+        let live_title = out_deck.live_title().to_owned();
+        let live_artist = out_deck.live_artist().to_owned();
+        let live_index = out_deck.live_index();
+        let wallpaper_designs = out_deck.designs.clone();
         for target_monitor in &targets {
             let monitor_bg = settings.wallpaper_for_monitor(&target_monitor.name);
             let wallpaper_design = match monitor_bg {
-                crate::core::preferences::PhysicalBackground::Design { id } => self
-                    .slide_deck
-                    .designs
+                crate::core::preferences::PhysicalBackground::Design { id } => wallpaper_designs
                     .iter()
                     .find(|d| d.id == *id)
                     .cloned(),
@@ -280,9 +286,14 @@ impl PresentationApp {
         };
         let mut output_settings = self.control_state.settings.clone();
         output_settings.service_mut().aspect_ratio = self.control_state.presentation_aspect_ratio;
+        let frozen = self.control_state.frozen_output.clone();
+        let (out_deck, output_theme) = match &frozen {
+            Some(f) if self.is_presentation_open => (&f.0, f.1.clone()),
+            _ => (&self.slide_deck, output_theme),
+        };
         server.publish(
             &output_settings,
-            &self.slide_deck,
+            out_deck,
             &output_theme,
             self.is_presentation_open,
             &self.control_state.themes,

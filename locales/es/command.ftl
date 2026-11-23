@@ -65,3 +65,4 @@ command-copy-layer = Copiar capa(s)
 command-cut-layer = Cortar capa(s)
 
 command-paste-layer = Pegar capa(s) o imagen
+command-freeze = Congelar / descongelar pantalla

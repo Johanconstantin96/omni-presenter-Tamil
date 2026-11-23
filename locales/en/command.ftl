@@ -65,3 +65,4 @@ command-copy-layer = Copy layer(s)
 command-cut-layer = Cut layer(s)
 
 command-paste-layer = Paste layer(s) or image
+command-freeze = Freeze / unfreeze screen

@@ -4,6 +4,7 @@ use crate::core::state::ControlPanelState;
 use crate::ui::theme::AppTheme;
 use eframe::egui::{self, Color32, FontId, Margin, RichText, Stroke, StrokeKind, Vec2};
 use egui_phosphor::regular::{
+    SNOWFLAKE,
     ARROW_SQUARE_OUT, CHECK, EYE, EYE_SLASH, GEAR, MAGNIFYING_GLASS, PALETTE, PLAY, STAR,
     TELEVISION_SIMPLE, X,
 };
@@ -806,6 +807,26 @@ pub fn render_presentation_dock(
             .clicked()
             {
                 slide_deck.toggle_hide_content();
+            }
+
+            // Bildschirm einfrieren (Schneeflocke wie in VideoPsalm), Taste F.
+            let frozen = state.frozen_output.is_some();
+            if dock_button(
+                ui,
+                &tokens,
+                Some(SNOWFLAKE),
+                if frozen {
+                    language.text("control-unfreeze")
+                } else {
+                    language.text("control-freeze")
+                },
+                if frozen { Tone::Accent } else { Tone::Neutral },
+                frozen,
+            )
+            .on_hover_text(language.text("control-freeze-hint"))
+            .clicked()
+            {
+                crate::services::media::toggle_freeze(state, slide_deck);
             }
         });
     });

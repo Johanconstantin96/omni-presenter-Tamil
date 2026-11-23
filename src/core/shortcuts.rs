@@ -276,6 +276,7 @@ fn default_bindings(command: Command) -> Vec<KeyBinding> {
         Command::FirstSlide => (Key::Home, false, false),
         Command::LastSlide => (Key::End, false, false),
         Command::ToggleHide => (Key::B, false, false),
+        Command::ToggleFreeze => (Key::F, false, false),
         Command::TogglePresentation => (Key::F5, false, false),
         Command::StopPresentation => (Key::Escape, false, false),
         Command::NewSong => (Key::N, true, false),

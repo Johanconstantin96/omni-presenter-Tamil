@@ -65,3 +65,4 @@ command-copy-layer = Ebene(n) kopieren
 command-cut-layer = Ebene(n) ausschneiden
 
 command-paste-layer = Ebene(n) oder Bild einfügen
+command-freeze = Bildschirm einfrieren / auftauen

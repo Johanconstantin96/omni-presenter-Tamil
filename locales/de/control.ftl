@@ -408,3 +408,6 @@ control-zoom-medium = Mittel (210 px)
 control-zoom-small = Klein (160 px)
 
 control-enter-profile-and-password = Gib dein Profil und Passwort ein, um die Steuerung zu öffnen.
+control-freeze = Einfrieren
+control-unfreeze = Auftauen
+control-freeze-hint = Bildschirm einfrieren (F): Die Ausgänge behalten das aktuelle Bild, während du im Hintergrund weiterarbeitest.

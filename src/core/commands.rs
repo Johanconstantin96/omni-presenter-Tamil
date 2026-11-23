@@ -17,6 +17,7 @@ pub enum Command {
     LastSlide,
     JumpSlide,
     ToggleHide,
+    ToggleFreeze,
     TogglePresentation,
     StopPresentation,
     NewSong,
@@ -93,6 +94,7 @@ impl Command {
             | Self::LastSlide
             | Self::JumpSlide
             | Self::ToggleHide
+            | Self::ToggleFreeze
             | Self::TogglePresentation
             | Self::StopPresentation
             | Self::ToggleDock => CommandGroup::Presentation,
@@ -115,7 +117,7 @@ impl Command {
             Self::ResetLayout => CommandGroup::Workspace,
         }
     }
-    pub const ALL: [Self; 33] = [
+    pub const ALL: [Self; 34] = [
         Self::Search,
         Self::BibleSearch,
         Self::Settings,
@@ -129,6 +131,7 @@ impl Command {
         Self::LastSlide,
         Self::JumpSlide,
         Self::ToggleHide,
+        Self::ToggleFreeze,
         Self::TogglePresentation,
         Self::StopPresentation,
         Self::NewSong,
@@ -166,6 +169,7 @@ impl Command {
             Self::LastSlide => "command-last",
             Self::JumpSlide => "command-jump-slide",
             Self::ToggleHide => "command-hide",
+            Self::ToggleFreeze => "command-freeze",
             Self::TogglePresentation => "command-present",
             Self::StopPresentation => "command-stop",
             Self::NewSong => "command-new-song",

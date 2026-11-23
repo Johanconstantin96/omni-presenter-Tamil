@@ -214,6 +214,9 @@ impl PresentationApp {
                 self.control_state.focus_dock_jump_input = true;
             }
             Command::ToggleHide => self.slide_deck.toggle_hide_content(),
+            Command::ToggleFreeze => {
+                crate::services::media::toggle_freeze(&mut self.control_state, &self.slide_deck)
+            }
             Command::TogglePresentation => {
                 self.is_presentation_open = !self.is_presentation_open;
                 if self.is_presentation_open {
