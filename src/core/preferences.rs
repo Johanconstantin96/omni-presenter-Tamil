@@ -18,6 +18,8 @@ pub fn new_id(prefix: &str) -> String {
 #[serde(default)]
 pub struct OperatorProfile {
     /// Aradhanai: Version des Standard-Layouts; bei Änderung wird einmalig neu gesetzt.
+    /// Feld-Default 0, damit ältere gespeicherte Profile die Umstellung erhalten.
+    #[serde(default)]
     pub aradhanai_layout_version: u32,
     pub id: String,
     pub name: String,
