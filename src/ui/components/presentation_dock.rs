@@ -854,6 +854,7 @@ pub(crate) fn live_icon_controls(
         }
     }
     // 4) Nur Hintergrund (Text weg, Logo bleibt)
+    // (Design-Auswahl folgt nach den Symbolen, siehe unten)
     let hidden = slide_deck.is_content_hidden();
     if tokens
         .icon_button(ui, if hidden { EYE } else { EYE_SLASH }, language.text("control-hide-screen-hint"), hidden, size)
@@ -861,6 +862,10 @@ pub(crate) fn live_icon_controls(
     {
         slide_deck.toggle_hide_content();
     }
+
+    // 5) Design-Auswahl (aufklappbar, statt dauerhaftem Designs-Bereich)
+    ui.add_space(4.0);
+    live_theme_control(ui, &tokens, language, state, Some(slide_deck));
 
     // Ausgänge-Menü
     let mut entries: Vec<(String, String)> = Vec::new();

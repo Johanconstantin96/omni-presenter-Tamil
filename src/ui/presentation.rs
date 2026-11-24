@@ -290,9 +290,9 @@ impl PresentationView {
                         }
                     }
                     // Logo bleibt auch bei ausgeblendetem Text sichtbar.
-                    if opacity > 0.0
+                    if (active || opacity > 0.0)
                         && let Some(path) = logo {
-                            paint_logo(&presentation, output_rect, path);
+                            paint_logo(ui.painter(), output_rect, path);
                         }
                 });
         });

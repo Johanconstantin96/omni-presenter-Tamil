@@ -56,7 +56,7 @@ fn default_dock_height() -> f32 {
 impl Default for OperatorProfile {
     fn default() -> Self {
         Self {
-            aradhanai_layout_version: 3,
+            aradhanai_layout_version: 4,
             id: "operator_default".into(),
             name: "Hauptbediener".into(),
             dark_mode: false,
@@ -784,12 +784,26 @@ impl AppSettings {
     /// Pfad zum Logo, falls gesetzt und vorhanden. Ist keins gesetzt, wird im
     /// Programmordner nach einer PNG mit „logo“ im Namen gesucht.
     pub fn resolved_logo_path(&self) -> Option<String> {
+        let exe_dir = std::env::current_exe()
+            .ok()
+            .and_then(|p| p.parent().map(|d| d.to_path_buf()));
         if !self.logo_path.trim().is_empty() {
-            return std::path::Path::new(&self.logo_path)
-                .exists()
-                .then(|| self.logo_path.clone());
+            let path = std::path::Path::new(&self.logo_path);
+            if path.exists() {
+                return Some(self.logo_path.clone());
+            }
+            if let Some(dir) = &exe_dir {
+                let candidate = dir.join(path);
+                if candidate.exists() {
+                    return Some(candidate.to_string_lossy().to_string());
+                }
+            }
         }
-        find_logo_in_folder(std::path::Path::new("."))
+        if let Some(name) = find_logo_in_folder(std::path::Path::new(".")) {
+            return Some(name);
+        }
+        let dir = exe_dir?;
+        find_logo_in_folder(&dir).map(|name| dir.join(name).to_string_lossy().to_string())
     }
 
     pub fn output_paused(&self, key: &str) -> bool {
@@ -881,9 +895,9 @@ impl AppSettings {
         self.server_port = self.server_port.max(1);
         self.physical_transition_ms = self.physical_transition_ms.min(2000);
         for p in &mut self.operators {
-            if p.aradhanai_layout_version < 3 {
+            if p.aradhanai_layout_version < 4 {
                 p.layout = LayoutTree::default_4_columns();
-                p.aradhanai_layout_version = 3;
+                p.aradhanai_layout_version = 4;
             }
             p.scale = p.scale.clamp(80, 150);
             p.show_dock = true;
@@ -892,6 +906,11 @@ impl AppSettings {
             if p.interface_theme_id == "midnight" {
                 p.interface_theme_id = "darker_pro".into();
             }
+            // Aradhanai: Designs-Bereich nicht dauerhaft anzeigen.
+            while matches!(p.layout.root, crate::core::layout::LayoutNode::Split { .. })
+                && p.layout.root.contains(ContainerKind::Themes)
+                && p.layout.root.remove_leaf(ContainerKind::Themes)
+            {}
             // Aradhanai: Vorschau und Live in einem Fenster – eigener
             // Vorschau-Bereich wird entfernt (spart Platz).
             while matches!(p.layout.root, crate::core::layout::LayoutNode::Split { .. })

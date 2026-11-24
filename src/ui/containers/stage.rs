@@ -91,9 +91,13 @@ pub fn render_stage_column(
                 animate,
             );
         }
-
+        paint_stage_logo(ui.painter(), live_rect, state);
     } else {
-        if hidden {
+        if hidden && *presenting {
+            // Wie auf dem Beamer: Hintergrund (und Logo) bleiben, nur der Text ist weg.
+            paint_theme_bg(ui.painter(), live_rect, &live_theme, theme.radius_lg);
+            paint_stage_logo(ui.painter(), live_rect, state);
+        } else if hidden {
             ui.painter()
                 .rect_filled(live_rect, theme.radius_lg, Color32::BLACK);
         } else {
@@ -114,8 +118,13 @@ pub fn render_stage_column(
             egui::Id::unique("stage_live_transition"),
             false,
         );
+        let label_pos = if hidden && *presenting {
+            egui::pos2(live_rect.center().x, live_rect.bottom() - 14.0)
+        } else {
+            live_rect.center()
+        };
         ui.painter().text(
-            live_rect.center(),
+            label_pos,
             egui::Align2::CENTER_CENTER,
             if hidden {
                 crate::ui::i18n::text(ui, "control-native-hidden")
@@ -383,5 +392,15 @@ mod tests {
         });
         output_preview.textures_delta.clear();
         assert!(!output_preview.shapes.is_empty());
+    }
+}
+
+/// Logo oben rechts auch in der Live-Ansicht des Bedieners zeigen.
+fn paint_stage_logo(painter: &egui::Painter, rect: egui::Rect, state: &ControlPanelState) {
+    if !state.settings.logo_visible {
+        return;
+    }
+    if let Some(path) = state.settings.resolved_logo_path() {
+        crate::ui::presentation::paint_logo(painter, rect, &path);
     }
 }
