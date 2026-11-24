@@ -321,7 +321,7 @@ pub fn render_editor_tools(
     )
     .clicked()
     {
-        changed |= insert_text_at_selection(state, "\n\u{200D}\n");
+        changed |= super::actions::insert_language_spacer(state);
     }
 
     // 3. Comentário Oculto de Operador (//)

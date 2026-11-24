@@ -339,6 +339,9 @@ pub fn render_options_menu(
 
                         if menu_item(ui, item.code, item.label, tokens).clicked() {
                             match item.action {
+                                MenuAction::Insert("\n\u{200D}\n") => {
+                                    changed |= super::actions::insert_language_spacer(state);
+                                }
                                 MenuAction::Insert(snippet) => {
                                     changed |= insert_text_at_selection(state, snippet);
                                 }

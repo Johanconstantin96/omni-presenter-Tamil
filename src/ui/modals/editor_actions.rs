@@ -514,3 +514,66 @@ pub fn normalize_whitespace(state: &mut ControlPanelState) -> bool {
 }
 
 
+
+/// Fügt den Sprachtrenner (unsichtbare Zeile mit U+200D) ein, ohne doppelte
+/// Zeilenumbrüche: Steht der Cursor schon am Zeilenanfang, wird kein Umbruch
+/// davor gesetzt; folgt direkt ein Umbruch, wird keiner danach gesetzt.
+/// Der Cursor landet am Anfang der Zeile nach dem Trenner.
+pub fn insert_language_spacer(state: &mut ControlPanelState) -> bool {
+    let (start_char, end_char) = (
+        state.song_editor.selection.0.min(state.song_editor.selection.1),
+        state.song_editor.selection.0.max(state.song_editor.selection.1),
+    );
+    let (text, pos) = language_spacer_edit(&state.song_editor.text, start_char, end_char);
+    state.song_editor.text = text;
+    state.song_editor.selection = (pos, pos);
+    true
+}
+
+fn language_spacer_edit(text: &str, start_char: usize, end_char: usize) -> (String, usize) {
+    let start_byte = char_to_byte_idx(text, start_char);
+    let end_byte = char_to_byte_idx(text, end_char);
+    let before = &text[..start_byte];
+    let after = &text[end_byte..];
+    let need_leading = !before.is_empty() && !before.ends_with('\n');
+    let next_is_newline = after.starts_with('\n');
+    let mut snippet = String::new();
+    if need_leading {
+        snippet.push('\n');
+    }
+    snippet.push('\u{200D}');
+    if !next_is_newline {
+        snippet.push('\n');
+    }
+    let new_pos = start_char + snippet.chars().count() + usize::from(next_is_newline);
+    (format!("{before}{snippet}{after}"), new_pos)
+}
+
+#[cfg(test)]
+mod spacer_tests {
+    use super::language_spacer_edit as run;
+
+    #[test]
+    fn after_text_at_end() {
+        assert_eq!(run("தமிழ்", 5, 5).0, "தமிழ்\n\u{200D}\n");
+    }
+
+    #[test]
+    fn at_start_of_empty_line_no_double_break() {
+        assert_eq!(run("தமிழ்\n", 6, 6).0, "தமிழ்\n\u{200D}\n");
+    }
+
+    #[test]
+    fn before_existing_line_break() {
+        let (t, pos) = run("தமிழ்\nYesu", 5, 5);
+        assert_eq!(t, "தமிழ்\n\u{200D}\nYesu");
+        assert_eq!(pos, 8);
+    }
+
+    #[test]
+    fn on_empty_line_between_blocks() {
+        let (t, pos) = run("தமிழ்\n\nYesu", 6, 6);
+        assert_eq!(t, "தமிழ்\n\u{200D}\nYesu");
+        assert_eq!(pos, 8);
+    }
+}
