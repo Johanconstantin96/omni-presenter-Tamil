@@ -415,7 +415,7 @@ pub fn render_editor_tools(
             egui::FontId::proportional(10.0),
             tokens.text_muted,
         );
-        let _ = resp.on_hover_text("Formatierung für die aktuelle Strophe/Folie über //befehl:-Anweisungen");
+        let _ = resp.on_hover_text("Formatierung: ohne Markierung für alle Folien des Liedes, mit Markierung nur für den markierten Text");
     }
 
     // ==========================================
@@ -433,9 +433,9 @@ pub fn render_editor_tools(
         Some(CARET_DOWN),
         false,
         if has_selection {
-            "Schrift der Auswahl ändern ([f: Name]...[/f])"
+            "Schrift des markierten Textes ändern"
         } else {
-            "Schrift der Folie festlegen (//f: Name)"
+            "Schrift für alle Folien festlegen"
         },
         tokens,
     );
@@ -451,9 +451,9 @@ pub fn render_editor_tools(
         Some(CARET_DOWN),
         false,
         if has_selection {
-            "Größe der Auswahl ändern ([t: N]...[/t])"
+            "Größe des markierten Textes ändern"
         } else {
-            "Größe der Folie festlegen (//t: N)"
+            "Größe für alle Folien festlegen"
         },
         tokens,
     );
@@ -467,9 +467,9 @@ pub fn render_editor_tools(
         Color32::WHITE,
         "#FFFFFF",
         if has_selection {
-            "Farbe der Auswahl ändern ([c: #HEX]...[/c])"
+            "Farbe des markierten Textes ändern"
         } else {
-            "Farbe der Folie festlegen (//c: #HEX)"
+            "Farbe für alle Folien festlegen"
         },
         tokens,
     );
@@ -483,9 +483,9 @@ pub fn render_editor_tools(
         Color32::from_black_alpha(130),
         "#00000082",
         if has_selection {
-            "Schatten der Auswahl ändern ([b: #HEX]...[/b])"
+            "Schatten des markierten Textes ändern"
         } else {
-            "Schatten der Folie festlegen (//b: #HEX)"
+            "Schatten für alle Folien festlegen"
         },
         tokens,
     );
@@ -518,7 +518,7 @@ pub fn render_editor_tools(
         "↕ 1.38",
         Some(CARET_DOWN),
         false,
-        "Zeilenabstand der Folie (//l: 1.38)",
+        "Zeilenabstand für alle Folien",
         tokens,
     );
     changed |= render_line_spacing_menu(&line_resp, state, tokens);
@@ -531,7 +531,7 @@ pub fn render_editor_tools(
         "↔ 1.8",
         Some(CARET_DOWN),
         false,
-        "Zeichenabstand der Folie (//ls: 1.8)",
+        "Zeichenabstand für alle Folien",
         tokens,
     );
     changed |= render_letter_spacing_menu(&letter_resp, state, tokens);
@@ -542,20 +542,20 @@ pub fn render_editor_tools(
     selection_separator(ui, tokens);
 
     let al_left_id = ui.make_persistent_id("btn_align_left");
-    if component_tool_button(ui, al_left_id, TEXT_ALIGN_LEFT, false, "Linksbündig (//a: l)", tokens).clicked() {
-        changed |= apply_or_update_slide_directive(state, "a", "l");
+    if component_tool_button(ui, al_left_id, TEXT_ALIGN_LEFT, false, "Alle Folien linksbündig", tokens).clicked() {
+        changed |= super::actions::apply_directive_all_stanzas(state, "a", "l");
     }
     let al_center_id = ui.make_persistent_id("btn_align_center");
-    if component_tool_button(ui, al_center_id, TEXT_ALIGN_CENTER, false, "Zentrieren (//a: c)", tokens).clicked() {
-        changed |= apply_or_update_slide_directive(state, "a", "c");
+    if component_tool_button(ui, al_center_id, TEXT_ALIGN_CENTER, false, "Alle Folien zentriert", tokens).clicked() {
+        changed |= super::actions::apply_directive_all_stanzas(state, "a", "c");
     }
     let al_right_id = ui.make_persistent_id("btn_align_right");
-    if component_tool_button(ui, al_right_id, TEXT_ALIGN_RIGHT, false, "Rechtsbündig (//a: r)", tokens).clicked() {
-        changed |= apply_or_update_slide_directive(state, "a", "r");
+    if component_tool_button(ui, al_right_id, TEXT_ALIGN_RIGHT, false, "Alle Folien rechtsbündig", tokens).clicked() {
+        changed |= super::actions::apply_directive_all_stanzas(state, "a", "r");
     }
     let al_just_id = ui.make_persistent_id("btn_align_justify");
-    if component_tool_button(ui, al_just_id, TEXT_ALIGN_JUSTIFY, false, "Blocksatz (//a: j)", tokens).clicked() {
-        changed |= apply_or_update_slide_directive(state, "a", "j");
+    if component_tool_button(ui, al_just_id, TEXT_ALIGN_JUSTIFY, false, "Alle Folien im Blocksatz", tokens).clicked() {
+        changed |= super::actions::apply_directive_all_stanzas(state, "a", "j");
     }
 
     // ==========================================
@@ -656,21 +656,22 @@ fn render_font_picker_menu(
     egui::Popup::menu(resp).show(|ui| {
         ui.set_min_width(220.0);
         let title = if has_selection {
-            "Schrift der Auswahl ([f: Name])"
+            "Schrift – nur markierter Text"
         } else {
-            "Schrift der Folie (//f: Name)"
+            "Schrift – alle Folien"
         };
         super::menu::menu_section_title(ui, title, tokens);
         if super::menu::menu_item(ui, "Ø", "Design-Standard (entfernen)", tokens).clicked() {
             if has_selection {
                 changed |= apply_font_selection(state, "");
             } else {
-                changed |= apply_or_update_slide_directive(state, "f", "Padrao");
+                changed |= super::actions::apply_directive_all_stanzas(state, "f", "Padrao");
             }
             ui.close();
         }
         ui.separator();
         for font in &[
+            "Hind Madurai",
             "Inter",
             "Montserrat",
             "Roboto",
@@ -683,15 +684,15 @@ fn render_font_picker_menu(
             "Oswald",
         ] {
             let desc = if has_selection {
-                format!("Anwenden [f: {font}]")
+                format!("Auf Markierung anwenden")
             } else {
-                format!("Anwenden //f: {font}")
+                format!("Auf alle Folien anwenden")
             };
             if super::menu::menu_item(ui, font, &desc, tokens).clicked() {
                 if has_selection {
                     changed |= apply_font_selection(state, font);
                 } else {
-                    changed |= apply_or_update_slide_directive(state, "f", font);
+                    changed |= super::actions::apply_directive_all_stanzas(state, "f", font);
                 }
                 ui.close();
             }
@@ -710,9 +711,9 @@ fn render_size_picker_menu(
     egui::Popup::menu(resp).show(|ui| {
         ui.set_min_width(190.0);
         let title = if has_selection {
-            "Größe der Auswahl ([t: N])"
+            "Größe – nur markierter Text"
         } else {
-            "Größe der Folie (//t: N)"
+            "Größe – alle Folien"
         };
         super::menu::menu_section_title(ui, title, tokens);
         if super::menu::menu_item(ui, "Ø", "Design-Standard (entfernen)", tokens).clicked() {
@@ -724,15 +725,15 @@ fn render_size_picker_menu(
         ui.separator();
         for sz in &["28", "32", "38", "46", "52", "60", "72", "84", "96"] {
             let desc = if has_selection {
-                format!("Anwenden [t: {sz}]")
+                format!("Auf Markierung anwenden")
             } else {
-                format!("Anwenden //t: {sz}")
+                format!("Auf alle Folien anwenden")
             };
             if super::menu::menu_item(ui, sz, &desc, tokens).clicked() {
                 if has_selection {
                     changed |= apply_size_selection(state, sz);
                 } else {
-                    changed |= apply_or_update_slide_directive(state, "t", sz);
+                    changed |= super::actions::apply_directive_all_stanzas(state, "t", sz);
                 }
                 ui.close();
             }
@@ -751,9 +752,9 @@ fn render_color_picker_menu(
     egui::Popup::menu(resp).show(|ui| {
         ui.set_width(260.0);
         let title = if has_selection {
-            "Farbe der Auswahl ([c: #HEX])"
+            "Farbe – nur markierter Text"
         } else {
-            "Farbe der Folie (//c: #HEX)"
+            "Farbe – alle Folien"
         };
         super::menu::menu_section_title(ui, title, tokens);
         if super::menu::menu_item(ui, "Ø", "Design-Standard (entfernen)", tokens).clicked() {
@@ -780,7 +781,7 @@ fn render_color_picker_menu(
                 if has_selection {
                     changed |= apply_color_selection(state, hex);
                 } else {
-                    changed |= apply_or_update_slide_directive(state, "c", hex);
+                    changed |= super::actions::apply_directive_all_stanzas(state, "c", hex);
                 }
                 ui.close();
             }
@@ -799,9 +800,9 @@ fn render_shadow_picker_menu(
     egui::Popup::menu(resp).show(|ui| {
         ui.set_width(260.0);
         let title = if has_selection {
-            "Schatten der Auswahl ([b: #HEX])"
+            "Schatten – nur markierter Text"
         } else {
-            "Schatten der Folie (//b: #HEX)"
+            "Schatten – alle Folien"
         };
         super::menu::menu_section_title(ui, title, tokens);
         if super::menu::menu_item(ui, "Ø", "Kein Schatten (entfernen)", tokens).clicked() {
@@ -825,7 +826,7 @@ fn render_shadow_picker_menu(
                 if has_selection {
                     changed |= apply_shadow_selection(state, hex);
                 } else {
-                    changed |= apply_or_update_slide_directive(state, "b", hex);
+                    changed |= super::actions::apply_directive_all_stanzas(state, "b", hex);
                 }
                 ui.close();
             }
@@ -868,10 +869,10 @@ fn render_line_spacing_menu(
     let mut changed = false;
     egui::Popup::menu(resp).show(|ui| {
         ui.set_min_width(220.0);
-        super::menu::menu_section_title(ui, "Zeilenabstand (//l:)", tokens);
+        super::menu::menu_section_title(ui, "Zeilenabstand – alle Folien", tokens);
         for val in &["1.0", "1.15", "1.25", "1.38", "1.50", "1.75", "2.0"] {
-            if super::menu::menu_item(ui, val, &format!("Anwenden //l: {val}"), tokens).clicked() {
-                changed |= apply_or_update_slide_directive(state, "l", val);
+            if super::menu::menu_item(ui, val, &format!("Auf alle Folien anwenden"), tokens).clicked() {
+                changed |= super::actions::apply_directive_all_stanzas(state, "l", val);
                 ui.close();
             }
         }
@@ -887,10 +888,10 @@ fn render_letter_spacing_menu(
     let mut changed = false;
     egui::Popup::menu(resp).show(|ui| {
         ui.set_min_width(220.0);
-        super::menu::menu_section_title(ui, "Zeichenabstand (//ls:)", tokens);
+        super::menu::menu_section_title(ui, "Zeichenabstand – alle Folien", tokens);
         for val in &["0.0", "0.6", "1.0", "1.8", "2.5", "4.0"] {
-            if super::menu::menu_item(ui, val, &format!("Anwenden //ls: {val}"), tokens).clicked() {
-                changed |= apply_or_update_slide_directive(state, "ls", val);
+            if super::menu::menu_item(ui, val, &format!("Auf alle Folien anwenden"), tokens).clicked() {
+                changed |= super::actions::apply_directive_all_stanzas(state, "ls", val);
                 ui.close();
             }
         }

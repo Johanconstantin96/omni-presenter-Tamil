@@ -702,7 +702,7 @@ impl Default for AppSettings {
             logo_path: String::new(),
             logo_visible: false,
             chroma_monitors: Vec::new(),
-            aradhanai_settings_version: 1,
+            aradhanai_settings_version: 2,
             physical_background: PhysicalBackground::default(),
             monitor_backgrounds: std::collections::HashMap::new(),
             monitor_lyric_filters: std::collections::HashMap::new(),

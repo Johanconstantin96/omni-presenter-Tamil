@@ -288,7 +288,7 @@ impl PresentationTheme {
             bg_top: bg,
             bg_bottom: bg,
             font_family: "Hind Madurai".to_owned(),
-            font_size: 46.0,
+            font_size: 80.0,
             font_weight: 600,
             font_bold: true,
             text_color: text,
@@ -300,6 +300,11 @@ impl PresentationTheme {
             shadow_offset_y: 0.0,
             is_gradient: false,
             sort_order: sort,
+            options: super::theme_options::ThemeOptions {
+                wrap_text: false,
+                auto_fit: true,
+                ..Default::default()
+            },
             ..Default::default()
         };
         vec![

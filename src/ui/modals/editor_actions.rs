@@ -577,3 +577,43 @@ mod spacer_tests {
         assert_eq!(pos, 8);
     }
 }
+
+/// Setzt eine Folien-Anweisung (Schrift, Größe, Farbe, Ausrichtung …) auf
+/// ALLEN Folien des Liedes, nicht nur auf der Strophe mit dem Cursor.
+pub fn apply_directive_all_stanzas(
+    state: &mut ControlPanelState,
+    directive: &str,
+    value: &str,
+) -> bool {
+    let original_selection = state.song_editor.selection;
+    let mut changed = false;
+    let mut index = 0;
+    loop {
+        let text = state.song_editor.text.clone();
+        // Anfangsbytes aller nicht-leeren Strophen (getrennt durch Leerzeilen).
+        let mut starts = Vec::new();
+        let mut pos = 0;
+        for chunk in text.split("\n\n") {
+            if !chunk.trim().is_empty() {
+                starts.push(pos);
+            }
+            pos += chunk.len() + 2;
+        }
+        let Some(&start_byte) = starts.get(index) else {
+            break;
+        };
+        let start_char = text[..start_byte].chars().count();
+        state.song_editor.selection = (start_char, start_char);
+        changed |= apply_or_update_slide_directive(state, directive, value);
+        index += 1;
+        if index > 500 {
+            break;
+        }
+    }
+    let len = state.song_editor.text.chars().count();
+    state.song_editor.selection = (
+        original_selection.0.min(len),
+        original_selection.1.min(len),
+    );
+    changed
+}

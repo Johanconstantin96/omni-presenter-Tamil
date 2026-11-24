@@ -593,60 +593,81 @@ pub fn render_presentation_dock(
             ui.ctx().request_repaint();
         }
 
-        egui::ScrollArea::horizontal()
-            .id_salt("bottom_presentation_carousel_scroll")
-            .auto_shrink([false, true])
-            .max_height(available_for_carousel)
-            .show(ui, |ui| {
-                ui.horizontal(|ui| {
-                    let slides = slide_deck.live_slides().to_vec();
-                    let current_idx = slide_deck.live_index();
-                    let is_hidden = slide_deck.is_content_hidden();
-                    let with_bg = state.dock_preview_bg;
-
-                    let is_song = slide_deck.is_live_song();
-                    for (index, slide_content) in slides.iter().enumerate() {
-                        let is_active = index == current_idx;
-                        let slide_media_opt = slide_deck.live_slide_media.get(index).and_then(|m| m.as_ref());
-                        let card_theme = if is_active {
-                            let mut theme = live_theme.clone();
-                            theme.options.video.paused = !is_active || !*is_presentation_open || theme.options.video.paused;
-                            theme
-                        } else if let Some(media) = slide_media_opt {
-                            let mut theme = crate::services::media::output_theme(state.live_theme(), Some(media));
-                            theme.options.video.paused = true;
-                            theme
-                        } else {
-                            live_theme.clone()
-                        };
-                        let response = render_slide_card(
-                            ui,
-                            &tokens,
-                            &card_theme,
-                            slide_content,
-                            index,
-                            is_active,
-                            is_hidden,
-                            aspect,
-                            with_bg || slide_media_opt.is_some(),
-                            card_w,
-                            is_song,
-                        );
-                        if is_active && should_scroll {
-                            response.scroll_to_me(Some(egui::Align::Center));
-                        }
-                        if response.clicked() {
-                            slide_deck.select_live_slide(index);
-                            if !*is_presentation_open {
-                                *is_presentation_open = true;
-                                state.presentation_started_at = Some(std::time::Instant::now());
-                            }
-                            crate::services::media::sync_live_media_playback(state, slide_deck, *is_presentation_open);
-                        }
-                        ui.add_space(10.0);
+        let _ = should_scroll;
+        // Aradhanai: Alle Folien gleichzeitig sichtbar (Raster ohne Scrollen),
+        // so kann man direkt jede Strophe anklicken, ohne Folien zu überspringen.
+        let slides = slide_deck.live_slides().to_vec();
+        let n = slides.len().max(1);
+        let gap = 10.0;
+        let badge = 22.0;
+        let avail_w = ui.available_width().max(100.0);
+        let mut best = (1usize, 40.0f32);
+        for rows in 1..=n.min(4) {
+            let cols = n.div_ceil(rows);
+            let by_w = (avail_w - gap * (cols as f32 - 1.0)) / cols as f32;
+            let by_h = ((available_for_carousel - gap * (rows as f32 - 1.0)) / rows as f32 - badge) * aspect;
+            let w = by_w.min(by_h).floor();
+            if w > best.1 {
+                best = (rows, w);
+            }
+        }
+        let rows = best.0;
+        let grid_card_w = best.1.clamp(40.0, card_w.max(40.0));
+        let cols = n.div_ceil(rows);
+        let current_idx = slide_deck.live_index();
+        let is_hidden = slide_deck.is_content_hidden();
+        let with_bg = state.dock_preview_bg;
+        let is_song = slide_deck.is_live_song();
+        let mut clicked_index = None;
+        for row in 0..rows {
+            ui.horizontal(|ui| {
+                ui.spacing_mut().item_spacing.x = gap;
+                for col in 0..cols {
+                    let index = row * cols + col;
+                    let Some(slide_content) = slides.get(index) else { break };
+                    let is_active = index == current_idx;
+                    let slide_media_opt = slide_deck.live_slide_media.get(index).and_then(|m| m.as_ref());
+                    let card_theme = if is_active {
+                        let mut theme = live_theme.clone();
+                        theme.options.video.paused = !*is_presentation_open || theme.options.video.paused;
+                        theme
+                    } else if let Some(media) = slide_media_opt {
+                        let mut theme = crate::services::media::output_theme(state.live_theme(), Some(media));
+                        theme.options.video.paused = true;
+                        theme
+                    } else {
+                        live_theme.clone()
+                    };
+                    let response = render_slide_card(
+                        ui,
+                        &tokens,
+                        &card_theme,
+                        slide_content,
+                        index,
+                        is_active,
+                        is_hidden,
+                        aspect,
+                        with_bg || slide_media_opt.is_some(),
+                        grid_card_w,
+                        is_song,
+                    );
+                    if response.clicked() {
+                        clicked_index = Some(index);
                     }
-                });
+                }
             });
+            if row + 1 < rows {
+                ui.add_space(gap * 0.5);
+            }
+        }
+        if let Some(index) = clicked_index {
+            slide_deck.select_live_slide(index);
+            if !*is_presentation_open {
+                *is_presentation_open = true;
+                state.presentation_started_at = Some(std::time::Instant::now());
+            }
+            crate::services::media::sync_live_media_playback(state, slide_deck, *is_presentation_open);
+        }
     }
 
     // Space before the transport bar so it sits pinned neatly at the bottom:

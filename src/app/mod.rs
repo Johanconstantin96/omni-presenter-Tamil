@@ -123,6 +123,21 @@ impl PresentationApp {
                 ));
             }
         }
+        // Aradhanai v2: Zeilen nie automatisch umbrechen, sondern Schrift so groß
+        // wie möglich an die Folie anpassen (Modus „Anpassen“), auf allen Designs.
+        if control_state.settings.aradhanai_settings_version < 2 {
+            control_state.settings.projection.lyrics.wrap_text = false;
+            control_state.settings.projection.lyrics.auto_fit = true;
+            for theme in &mut control_state.themes {
+                theme.options.wrap_text = false;
+                theme.options.auto_fit = true;
+                if theme.id.starts_with("aradhanai_") && theme.font_size <= 46.0 {
+                    theme.font_size = 80.0;
+                }
+                let _ = db.save_theme(theme);
+            }
+            control_state.settings.aradhanai_settings_version = 2;
+        }
         slide_deck.lyrics_settings = control_state.settings.projection.lyrics.clone();
         slide_deck.sync_slides();
         crate::services::plugins::sync_shader_themes(&mut control_state);

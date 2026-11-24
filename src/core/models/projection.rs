@@ -32,8 +32,8 @@ impl Default for LyricsProjectionSettings {
             auto_advance: false,
             auto_advance_seconds: 8,
             loop_song: false,
-            wrap_text: true,
-            auto_fit: false,
+            wrap_text: false,
+            auto_fit: true,
         }
     }
 }
