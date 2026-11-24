@@ -615,7 +615,7 @@ pub fn render_presentation_dock(
         let grid_card_w = best.1.clamp(40.0, card_w.max(40.0));
         let cols = n.div_ceil(rows);
         let current_idx = slide_deck.live_index();
-        let is_hidden = slide_deck.is_content_hidden();
+        let _is_hidden = slide_deck.is_content_hidden();
         let with_bg = state.dock_preview_bg;
         let is_song = slide_deck.is_live_song();
         let mut clicked_index = None;
@@ -645,7 +645,8 @@ pub fn render_presentation_dock(
                         slide_content,
                         index,
                         is_active,
-                        is_hidden,
+                        // Ausgeblendet wird nur auf dem Beamer, nicht in der Übersicht.
+                        false,
                         aspect,
                         with_bg || slide_media_opt.is_some(),
                         grid_card_w,

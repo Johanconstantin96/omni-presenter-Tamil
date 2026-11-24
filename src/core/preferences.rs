@@ -56,7 +56,7 @@ fn default_dock_height() -> f32 {
 impl Default for OperatorProfile {
     fn default() -> Self {
         Self {
-            aradhanai_layout_version: 2,
+            aradhanai_layout_version: 3,
             id: "operator_default".into(),
             name: "Hauptbediener".into(),
             dark_mode: false,
@@ -881,9 +881,9 @@ impl AppSettings {
         self.server_port = self.server_port.max(1);
         self.physical_transition_ms = self.physical_transition_ms.min(2000);
         for p in &mut self.operators {
-            if p.aradhanai_layout_version < 2 {
+            if p.aradhanai_layout_version < 3 {
                 p.layout = LayoutTree::default_4_columns();
-                p.aradhanai_layout_version = 2;
+                p.aradhanai_layout_version = 3;
             }
             p.scale = p.scale.clamp(80, 150);
             p.show_dock = true;
@@ -892,17 +892,12 @@ impl AppSettings {
             if p.interface_theme_id == "midnight" {
                 p.interface_theme_id = "darker_pro".into();
             }
-            if !p.layout.root.contains(ContainerKind::Preview) {
-                if p.layout.root.contains(ContainerKind::Stage) {
-                    p.layout.dock(
-                        ContainerKind::Preview,
-                        ContainerKind::Stage,
-                        DropZone::Bottom,
-                    );
-                } else {
-                    p.layout = LayoutTree::default_4_columns();
-                }
-            }
+            // Aradhanai: Vorschau und Live in einem Fenster – eigener
+            // Vorschau-Bereich wird entfernt (spart Platz).
+            while matches!(p.layout.root, crate::core::layout::LayoutNode::Split { .. })
+                && p.layout.root.contains(ContainerKind::Preview)
+                && p.layout.root.remove_leaf(ContainerKind::Preview)
+            {}
             // Aradhanai: Player-Bereich wird nicht gebraucht und entfernt.
             while matches!(p.layout.root, crate::core::layout::LayoutNode::Split { .. })
                 && p.layout.root.contains(ContainerKind::Player)
