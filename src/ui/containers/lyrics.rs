@@ -275,7 +275,9 @@ pub fn render_lyrics_column(
                             .corner_radius(theme.radius_lg)
                             .inner_margin(Margin::symmetric(14, 10));
 
-                        let is_song_mode = slide_deck.is_song();
+                        // Aradhanai: Titelfolie nur, wenn sie eingeschaltet ist.
+                        let is_song_mode = slide_deck.is_song()
+                            && state.settings.projection.lyrics.show_title_slide;
                         let interact = if cards {
                             let response = render_slide_card(
                                 ui,

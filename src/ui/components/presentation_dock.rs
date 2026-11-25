@@ -462,7 +462,8 @@ pub fn render_presentation_dock(
             );
         } else if total_live > 0 {
             let separator = language.text("control-of");
-            let label = if slide_deck.is_live_song() {
+            let has_title = state.settings.projection.lyrics.show_title_slide;
+            let label = if slide_deck.is_live_song() && has_title {
                 if current_live == 0 {
                     language.text("control-title-slide").to_string()
                 } else if slide_deck.live_slide_text().trim().is_empty() && current_live + 1 == total_live {
@@ -813,6 +814,9 @@ fn text_slide_card(
         .show(ui, |ui| {
             ui.set_width(width - 20.0);
             ui.set_min_height(60.0);
+            // Senkrecht stapeln (die Zeile drumherum ist waagrecht).
+            ui.vertical(|ui| {
+            ui.set_width(width - 20.0);
             ui.horizontal(|ui| {
                 ui.label(
                     RichText::new(format!("{}", index + 1))
@@ -837,6 +841,7 @@ fn text_slide_card(
                     );
                 }
             }
+            });
         });
     ui.interact(frame.response.rect, ui.make_persistent_id(("dock_text_card", index)), egui::Sense::click())
         .on_hover_cursor(egui::CursorIcon::PointingHand)
