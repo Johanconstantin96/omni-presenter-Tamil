@@ -431,7 +431,7 @@ pub fn render_presentation_dock(
 
     let tokens = state.theme.clone();
     let language = state.settings.language;
-    let live_theme = crate::services::media::live_theme(state, slide_deck);
+    let _live_theme = crate::services::media::live_theme(state, slide_deck);
     let total_live = slide_deck.total_live_slides();
     let current_live = slide_deck.live_index();
 
@@ -593,74 +593,44 @@ pub fn render_presentation_dock(
             ui.ctx().request_repaint();
         }
 
-        let _ = should_scroll;
-        // Aradhanai: Alle Folien gleichzeitig sichtbar (Raster ohne Scrollen),
-        // so kann man direkt jede Strophe anklicken, ohne Folien zu überspringen.
+        let _ = (should_scroll, card_w);
+        // Aradhanai: Folien als gut lesbare Textkarten (wie die Liste in VideoPsalm).
+        // Alle Folien im Raster, bei Bedarf senkrecht scrollbar; ein Klick zeigt
+        // genau diese Folie live, ohne Zwischenfolien.
         let slides = slide_deck.live_slides().to_vec();
         let n = slides.len().max(1);
-        let gap = 10.0;
-        let badge = 22.0;
+        let gap = 8.0;
         let avail_w = ui.available_width().max(100.0);
-        let mut best = (1usize, 40.0f32);
-        for rows in 1..=n.min(4) {
-            let cols = n.div_ceil(rows);
-            let by_w = (avail_w - gap * (cols as f32 - 1.0)) / cols as f32;
-            let by_h = ((available_for_carousel - gap * (rows as f32 - 1.0)) / rows as f32 - badge) * aspect;
-            let w = by_w.min(by_h).floor();
-            if w > best.1 {
-                best = (rows, w);
-            }
-        }
-        let rows = best.0;
-        let grid_card_w = best.1.clamp(40.0, card_w.max(40.0));
-        let cols = n.div_ceil(rows);
+        let min_card_w = 240.0;
+        let cols = ((avail_w + gap) / (min_card_w + gap)).floor().clamp(1.0, n as f32) as usize;
+        let grid_card_w = ((avail_w - gap * (cols as f32 - 1.0)) / cols as f32).floor();
         let current_idx = slide_deck.live_index();
-        let _is_hidden = slide_deck.is_content_hidden();
-        let with_bg = state.dock_preview_bg;
-        let is_song = slide_deck.is_live_song();
         let mut clicked_index = None;
-        for row in 0..rows {
-            ui.horizontal(|ui| {
-                ui.spacing_mut().item_spacing.x = gap;
-                for col in 0..cols {
-                    let index = row * cols + col;
-                    let Some(slide_content) = slides.get(index) else { break };
-                    let is_active = index == current_idx;
-                    let slide_media_opt = slide_deck.live_slide_media.get(index).and_then(|m| m.as_ref());
-                    let card_theme = if is_active {
-                        let mut theme = live_theme.clone();
-                        theme.options.video.paused = !*is_presentation_open || theme.options.video.paused;
-                        theme
-                    } else if let Some(media) = slide_media_opt {
-                        let mut theme = crate::services::media::output_theme(state.live_theme(), Some(media));
-                        theme.options.video.paused = true;
-                        theme
-                    } else {
-                        live_theme.clone()
-                    };
-                    let response = render_slide_card(
-                        ui,
-                        &tokens,
-                        &card_theme,
-                        slide_content,
-                        index,
-                        is_active,
-                        // Ausgeblendet wird nur auf dem Beamer, nicht in der Übersicht.
-                        false,
-                        aspect,
-                        with_bg || slide_media_opt.is_some(),
-                        grid_card_w,
-                        is_song,
-                    );
-                    if response.clicked() {
-                        clicked_index = Some(index);
-                    }
+        egui::ScrollArea::vertical()
+            .id_salt("dock_text_cards_scroll")
+            .auto_shrink([false, true])
+            .max_height(available_for_carousel)
+            .show(ui, |ui| {
+                for row_start in (0..slides.len()).step_by(cols) {
+                    ui.horizontal_top(|ui| {
+                        ui.spacing_mut().item_spacing.x = gap;
+                        for index in row_start..(row_start + cols).min(slides.len()) {
+                            let response = text_slide_card(
+                                ui,
+                                &tokens,
+                                &slides[index],
+                                index,
+                                index == current_idx,
+                                grid_card_w,
+                            );
+                            if response.clicked() {
+                                clicked_index = Some(index);
+                            }
+                        }
+                    });
+                    ui.add_space(gap);
                 }
             });
-            if row + 1 < rows {
-                ui.add_space(gap * 0.5);
-            }
-        }
         if let Some(index) = clicked_index {
             slide_deck.select_live_slide(index);
             if !*is_presentation_open {
@@ -807,6 +777,69 @@ pub fn render_presentation_dock(
         });
     });
     ui.expand_to_include_rect(ui.max_rect());
+}
+
+/// Lesbare Textkarte einer Folie: Nummer, Strophen-Label und der Text in
+/// normaler Schriftgröße. Aktive Folie farbig umrandet.
+fn text_slide_card(
+    ui: &mut egui::Ui,
+    tokens: &AppTheme,
+    content: &str,
+    index: usize,
+    active: bool,
+    width: f32,
+) -> egui::Response {
+    let label = crate::core::markup::extract_strophe_tag(content);
+    let body = crate::core::markup::strip_strophe_tag(content);
+    let body = crate::core::markup::strip_comments(&crate::core::markup::strip_directive_commands(&body));
+    let body = crate::core::markup::strip(&body);
+    let lines: Vec<String> = body
+        .lines()
+        .map(|l| l.trim_matches(|c: char| c.is_whitespace() || c == '\u{200D}').to_string())
+        .collect();
+    let empty = lines.iter().all(|l| l.is_empty());
+
+    let fill = if active { tokens.accent_soft } else { tokens.bg_card };
+    let stroke = if active {
+        Stroke::new(2.0, tokens.accent)
+    } else {
+        Stroke::new(1.0, tokens.border_default)
+    };
+    let frame = egui::Frame::new()
+        .fill(fill)
+        .stroke(stroke)
+        .corner_radius(8.0)
+        .inner_margin(Margin::symmetric(10, 8))
+        .show(ui, |ui| {
+            ui.set_width(width - 20.0);
+            ui.set_min_height(60.0);
+            ui.horizontal(|ui| {
+                ui.label(
+                    RichText::new(format!("{}", index + 1))
+                        .size(12.0)
+                        .strong()
+                        .color(if active { tokens.accent } else { tokens.text_muted }),
+                );
+                if let Some(tag) = &label {
+                    ui.label(RichText::new(tag).size(12.0).color(tokens.text_muted));
+                }
+            });
+            if empty {
+                ui.label(RichText::new("—").size(14.0).color(tokens.text_muted));
+            }
+            for line in &lines {
+                if line.is_empty() {
+                    ui.add_space(4.0);
+                } else {
+                    ui.add(
+                        egui::Label::new(RichText::new(line).size(14.0).color(tokens.text_primary))
+                            .wrap(),
+                    );
+                }
+            }
+        });
+    ui.interact(frame.response.rect, ui.make_persistent_id(("dock_text_card", index)), egui::Sense::click())
+        .on_hover_cursor(egui::CursorIcon::PointingHand)
 }
 
 /// Kleine Symbol-Knöpfe oben rechts: Text ausblenden (Hintergrund + Logo
