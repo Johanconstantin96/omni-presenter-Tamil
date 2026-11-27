@@ -79,7 +79,9 @@ fn native_options() -> eframe::NativeOptions {
         .with_transparent(true)
         .with_inner_size([1260.0, 760.0])
         .with_min_inner_size([980.0, 600.0])
-        .with_title("Omni Presenter");
+        // Aradhanai: immer maximiert starten.
+        .with_maximized(true)
+        .with_title("Aradhanai");
 
     if let Some(icon) = services::windowing::app_icon() {
         builder = builder.with_icon(icon);
