@@ -69,12 +69,15 @@ pub fn highlight_lyrics_job(
             let [r, g, b] = StropheTagDefinition::color_for(tags, tag_name, [100, 116, 139]);
             let tag_color = Color32::from_rgb(r, g, b);
 
+            // Als farbiger „Chip“ darstellen: „#*“ in Hintergrundfarbe (wirkt wie Innenabstand),
+            // Name fett in Weiß auf der Tag-Farbe.
             job.append(
                 "#*",
                 0.0,
                 egui::TextFormat {
-                    font_id: egui::FontId::proportional(font_size * 0.9),
-                    color: tag_color.linear_multiply(0.7),
+                    font_id: egui::FontId::proportional(font_size * 0.6),
+                    color: tag_color,
+                    background: tag_color,
                     ..Default::default()
                 },
             );
@@ -82,8 +85,9 @@ pub fn highlight_lyrics_job(
                 &trimmed_start[2..],
                 0.0,
                 egui::TextFormat {
-                    font_id: egui::FontId::new(font_size, egui::FontFamily::Name("inter_bold".into())),
-                    color: tag_color,
+                    font_id: egui::FontId::new(font_size * 0.95, egui::FontFamily::Name("inter_bold".into())),
+                    color: Color32::WHITE,
+                    background: tag_color,
                     ..Default::default()
                 },
             );

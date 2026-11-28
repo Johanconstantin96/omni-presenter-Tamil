@@ -399,6 +399,42 @@ pub fn strip_formatting_from_selection(state: &mut ControlPanelState) -> bool {
     true
 }
 
+/// Fügt `#*Name` als eigene Zeile am Anfang der Cursorzeile ein. Steht die Zeile mitten
+/// in einer Strophe, wird davor eine Leerzeile gesetzt, damit eine neue Folie beginnt.
+pub fn insert_stanza_label(state: &mut ControlPanelState, name: &str) -> bool {
+    let text = state.song_editor.text.clone();
+    let cursor_char = state.song_editor.selection.0.min(state.song_editor.selection.1);
+    let cursor_byte = char_to_byte_idx(&text, cursor_char).min(text.len());
+    let line_start = text[..cursor_byte].rfind('\n').map(|i| i + 1).unwrap_or(0);
+    let line_end = text[line_start..].find('\n').map(|i| line_start + i).unwrap_or(text.len());
+    let current_line = text[line_start..line_end].trim();
+
+    // Bereits eine Bezeichnung in dieser Zeile → ersetzen statt doppelt einfügen.
+    if current_line.starts_with("#*") {
+        let label = format!("#*{name}");
+        let updated = format!("{}{}{}", &text[..line_start], label, &text[line_end..]);
+        let pos = text[..line_start].chars().count() + label.chars().count();
+        state.song_editor.text = updated;
+        state.song_editor.selection = (pos, pos);
+        return true;
+    }
+
+    let before = &text[..line_start];
+    let needs_blank = !before.trim().is_empty() && !before.ends_with("\n\n");
+    let mut snippet = String::new();
+    if needs_blank {
+        snippet.push('\n');
+    }
+    snippet.push_str("#*");
+    snippet.push_str(name);
+    snippet.push('\n');
+    let updated = format!("{}{}{}", before, snippet, &text[line_start..]);
+    let pos = before.chars().count() + snippet.chars().count();
+    state.song_editor.text = updated;
+    state.song_editor.selection = (pos, pos);
+    true
+}
+
 /// Inserts text at current selection / cursor position.
 pub fn insert_text_at_selection(state: &mut ControlPanelState, snippet: &str) -> bool {
     let text = &state.song_editor.text;
@@ -616,4 +652,31 @@ pub fn apply_directive_all_stanzas(
         original_selection.1.min(len),
     );
     changed
+}
+
+#[cfg(test)]
+mod stanza_label_tests {
+    use super::*;
+
+    #[test]
+    fn inserts_label_with_blank_line_and_replaces_existing() {
+        let mut state = ControlPanelState::default();
+        state.song_editor.text = "Zeile 1\nZeile 2".into();
+        state.song_editor.selection = (9, 9); // in "Zeile 2"
+        assert!(insert_stanza_label(&mut state, "Refrain"));
+        assert_eq!(state.song_editor.text, "Zeile 1\n\n#*Refrain\nZeile 2");
+        // Cursor steht jetzt am Anfang von "Zeile 2"; auf die Label-Zeile setzen und ersetzen.
+        state.song_editor.selection = (10, 10);
+        assert!(insert_stanza_label(&mut state, "Bridge"));
+        assert_eq!(state.song_editor.text, "Zeile 1\n\n#*Bridge\nZeile 2");
+    }
+
+    #[test]
+    fn inserts_at_start_without_blank_line() {
+        let mut state = ControlPanelState::default();
+        state.song_editor.text = "Text".into();
+        state.song_editor.selection = (0, 0);
+        insert_stanza_label(&mut state, "Strophe");
+        assert_eq!(state.song_editor.text, "#*Strophe\nText");
+    }
 }

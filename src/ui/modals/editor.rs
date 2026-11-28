@@ -216,6 +216,59 @@ pub fn render_editor_modal(
     }
 }
 
+/// Feste Knöpfe, die eine Strophen-Bezeichnung (`#*Name`) an der Cursorzeile einfügen.
+const STANZA_LABELS: [(&str, [u8; 3]); 5] = [
+    ("Strophe", [100, 116, 139]),
+    ("Refrain", [14, 165, 233]),
+    ("Pre-Chorus", [236, 72, 153]),
+    ("Bridge", [168, 85, 247]),
+    ("Schluss", [249, 115, 22]),
+];
+
+fn stanza_label_bar(ui: &mut egui::Ui, state: &mut ControlPanelState, _tokens: &AppTheme) {
+    let mut clicked: Option<&str> = None;
+    ui.horizontal_wrapped(|ui| {
+        ui.spacing_mut().item_spacing = Vec2::new(6.0, 6.0);
+        for (name, fallback) in STANZA_LABELS {
+            let [r, g, b] =
+                crate::core::preferences::StropheTagDefinition::color_for(&state.settings.strophe_tags, name, fallback);
+            let color = egui::Color32::from_rgb(r, g, b);
+            let button = egui::Button::new(
+                egui::RichText::new(format!("+ {name}"))
+                    .color(egui::Color32::WHITE)
+                    .strong()
+                    .size(12.5),
+            )
+            .fill(color)
+            .stroke(Stroke::NONE)
+            .corner_radius(12.0)
+            .min_size(Vec2::new(0.0, 24.0));
+            let response = ui.add(button).on_hover_text(format!("Bezeichnung „{name}“ einfügen"));
+            let hit = response.clicked()
+                || ui.input(|i| {
+                    i.pointer.primary_clicked()
+                        && i.pointer.interact_pos().is_some_and(|p| response.rect.contains(p))
+                });
+            if hit {
+                clicked = Some(name);
+            }
+        }
+    });
+    if let Some(name) = clicked {
+        if actions::insert_stanza_label(state, name) {
+            let id = egui::Id::unique(editing::TEXT_EDIT_ID);
+            let pos = state.song_editor.selection.0;
+            if let Some(mut edit) = egui::TextEdit::load_state(ui.ctx(), id) {
+                edit.cursor.set_char_range(Some(egui::text_selection::CCursorRange::one(
+                    egui::text::CCursor::new(pos),
+                )));
+                edit.store(ui.ctx(), id);
+            }
+            ui.memory_mut(|m| m.request_focus(id));
+        }
+    }
+}
+
 fn snapshot(state: &ControlPanelState, theme: &PresentationTheme) -> EditorSnapshot {
     EditorSnapshot {
         target: state.song_editor.target,
@@ -455,6 +508,9 @@ fn render_sidebar(
             "workspace-text"
         };
         field_label(ui, crate::ui::i18n::text(ui, text_label), tokens);
+        if !is_text {
+            stanza_label_bar(ui, state, tokens);
+        }
         let remaining = (ui.available_height() - 4.0).max(60.0);
         egui::Frame::new()
             .fill(tokens.bg_pill)
