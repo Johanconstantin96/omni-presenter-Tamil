@@ -13,7 +13,7 @@ pub(crate) fn jump_input(
     deck: &mut SlideDeck,
     state: &mut ControlPanelState,
 ) {
-    let is_song = deck.is_live_song();
+    let is_song = deck.is_live_song() && state.settings.projection.lyrics.show_title_slide;
     let total = deck.total_slides();
     let is_blank = deck.current_slide_text().trim().is_empty() && deck.current_index() + 1 == total;
     let current = if is_song {

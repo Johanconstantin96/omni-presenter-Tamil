@@ -616,7 +616,7 @@ pub fn render_presentation_dock(
                     ui.horizontal_top(|ui| {
                         ui.spacing_mut().item_spacing.x = gap;
                         for index in row_start..(row_start + cols).min(slides.len()) {
-                            let response = text_slide_card(
+                            let clicked = text_slide_card(
                                 ui,
                                 &tokens,
                                 &slides[index],
@@ -624,7 +624,7 @@ pub fn render_presentation_dock(
                                 index == current_idx,
                                 grid_card_w,
                             );
-                            if response.clicked() {
+                            if clicked {
                                 clicked_index = Some(index);
                             }
                         }
@@ -789,7 +789,7 @@ fn text_slide_card(
     index: usize,
     active: bool,
     width: f32,
-) -> egui::Response {
+) -> bool {
     let label = crate::core::markup::extract_strophe_tag(content);
     let body = crate::core::markup::strip_strophe_tag(content);
     let body = crate::core::markup::strip_comments(&crate::core::markup::strip_directive_commands(&body));
@@ -837,14 +837,23 @@ fn text_slide_card(
                 } else {
                     ui.add(
                         egui::Label::new(RichText::new(line).size(14.0).color(tokens.text_primary))
-                            .wrap(),
+                            .wrap()
+                            .selectable(false),
                     );
                 }
             }
             });
         });
-    ui.interact(frame.response.rect, ui.make_persistent_id(("dock_text_card", index)), egui::Sense::click())
-        .on_hover_cursor(egui::CursorIcon::PointingHand)
+    let mut response = ui
+        .interact(frame.response.rect, ui.make_persistent_id(("dock_text_card", index)), egui::Sense::click())
+        .on_hover_cursor(egui::CursorIcon::PointingHand);
+    // Zusätzlich direkt über die Zeigerposition prüfen, damit der Klick sicher ankommt.
+    let rect = frame.response.rect;
+    let clicked_here = ui.input(|i| {
+        i.pointer.primary_clicked() && i.pointer.interact_pos().is_some_and(|p| rect.contains(p))
+    }) && ui.clip_rect().contains(ui.input(|i| i.pointer.interact_pos()).unwrap_or_default());
+    let _ = &mut response;
+    response.clicked() || clicked_here
 }
 
 /// Kleine Symbol-Knöpfe oben rechts: Text ausblenden (Hintergrund + Logo
