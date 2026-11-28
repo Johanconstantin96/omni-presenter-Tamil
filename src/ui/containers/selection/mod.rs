@@ -25,7 +25,85 @@ struct LibrarySearchCache {
     count: usize,
     first_id: Option<i64>,
     last_id: Option<i64>,
+    content_sig: u64,
     entries: std::sync::Arc<[(i64, String)]>,
+}
+
+/// Cheap signature over the library content so edited lyrics refresh the search cache.
+fn library_content_signature(kind: LibraryKind, deck: &SlideDeck, entries: &[LibraryEntry]) -> u64 {
+    use std::hash::{Hash, Hasher};
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    match kind {
+        LibraryKind::Song => {
+            for song in deck.library() {
+                song.id.hash(&mut hasher);
+                song.title.len().hash(&mut hasher);
+                song.text.len().hash(&mut hasher);
+                song.folder.len().hash(&mut hasher);
+                song.tags.len().hash(&mut hasher);
+            }
+        }
+        _ => {
+            for entry in entries {
+                entry.id.hash(&mut hasher);
+                entry.title.len().hash(&mut hasher);
+                entry.content.len().hash(&mut hasher);
+            }
+        }
+    }
+    hasher.finish()
+}
+
+/// For songs found through their lyrics (not their title), show the matching line as subtitle.
+fn annotate_lyric_matches(
+    entries: &mut [LibraryEntry],
+    deck: &SlideDeck,
+    ids: &std::collections::HashSet<i64>,
+    tokens: &[&str],
+) {
+    let library = deck.library();
+    for entry in entries.iter_mut() {
+        if !ids.contains(&entry.id) {
+            continue;
+        }
+        let title = fold(&entry.title);
+        if tokens.iter().all(|token| title.contains(token)) {
+            continue;
+        }
+        let Some(song) = library.get(entry.index) else {
+            continue;
+        };
+        if let Some(line) = matching_lyric_line(&song.text, tokens) {
+            entry.subtitle = format!("„{line}“");
+        }
+    }
+}
+
+pub(super) fn matching_lyric_line(text: &str, tokens: &[&str]) -> Option<String> {
+    let lines: Vec<&str> = text
+        .lines()
+        .map(str::trim)
+        .filter(|line| {
+            !line.is_empty()
+                && !line.starts_with('#')
+                && !line.chars().all(|c| c == '\u{200D}' || c.is_whitespace())
+        })
+        .collect();
+    let folded: Vec<String> = lines.iter().map(|line| fold(line)).collect();
+    let best = folded
+        .iter()
+        .position(|line| tokens.iter().all(|token| line.contains(token)))
+        .or_else(|| {
+            folded
+                .iter()
+                .position(|line| tokens.iter().any(|token| line.contains(token)))
+        })?;
+    let line = lines[best];
+    let mut out: String = line.chars().take(70).collect();
+    if line.chars().count() > 70 {
+        out.push('…');
+    }
+    Some(out)
 }
 
 pub fn render_selection_column(
@@ -42,7 +120,7 @@ pub fn render_selection_column(
         return;
     }
     let kind = LibraryKind::from_tab(state.selected_tab);
-    let entries = model::entries(kind, state, deck);
+    let mut entries = model::entries(kind, state, deck);
     let folders = model::collect_folders(kind, state, &entries, db);
     let query_trimmed = state.search_query.trim();
     let query = fold(query_trimmed);
@@ -55,17 +133,22 @@ pub fn render_selection_column(
             .ctx()
             .data_mut(|d| d.get_temp::<LibrarySearchCache>(cache_id))
             .unwrap_or_default();
+        let content_sig = library_content_signature(kind, deck, &entries);
         let current_fingerprint = (
             state.selected_tab,
             entries.len(),
             entries.first().map(|e| e.id),
             entries.last().map(|e| e.id),
+            content_sig,
         );
-        if (cache.tab, cache.count, cache.first_id, cache.last_id) != current_fingerprint {
+        if (cache.tab, cache.count, cache.first_id, cache.last_id, cache.content_sig)
+            != current_fingerprint
+        {
             cache.tab = current_fingerprint.0;
             cache.count = current_fingerprint.1;
             cache.first_id = current_fingerprint.2;
             cache.last_id = current_fingerprint.3;
+            cache.content_sig = current_fingerprint.4;
             let raw_entries: Vec<(i64, String)> = match kind {
                 LibraryKind::Song => deck
                     .library()
@@ -90,14 +173,16 @@ pub fn render_selection_column(
         }
 
         let tokens: Vec<&str> = query.split_whitespace().collect();
-        Some(
-            cache
-                .entries
-                .iter()
-                .filter(|(_, text)| tokens.iter().all(|token| text.contains(token)))
-                .map(|(id, _)| *id)
-                .collect(),
-        )
+        let ids: std::collections::HashSet<i64> = cache
+            .entries
+            .iter()
+            .filter(|(_, text)| tokens.iter().all(|token| text.contains(token)))
+            .map(|(id, _)| *id)
+            .collect();
+        if kind == LibraryKind::Song {
+            annotate_lyric_matches(&mut entries, deck, &ids, &tokens);
+        }
+        Some(ids)
     };
 
     let filtered = model::filter_and_sort(

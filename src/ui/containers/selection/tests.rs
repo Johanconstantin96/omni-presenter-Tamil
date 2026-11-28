@@ -656,3 +656,11 @@ fn test_search_bar_does_not_overflow_container_width() {
         );
     }
 }
+
+#[test]
+fn lyric_search_snippet_skips_labels_and_spacers() {
+    let text = "#*Strophe\nகர்த்தர் நல்லவர்\nKarthar nallavar\n\u{200D}\nAvar kirubai endrum ullathu";
+    let line = super::matching_lyric_line(text, &["kirubai"]).unwrap();
+    assert_eq!(line, "Avar kirubai endrum ullathu");
+    assert!(super::matching_lyric_line(text, &["strophe"]).is_none());
+}
