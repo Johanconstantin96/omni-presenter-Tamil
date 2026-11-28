@@ -600,9 +600,9 @@ pub fn render_presentation_dock(
         // genau diese Folie live, ohne Zwischenfolien.
         let slides = slide_deck.live_slides().to_vec();
         let n = slides.len().max(1);
-        let gap = 8.0;
+        let gap = 6.0;
         let avail_w = ui.available_width().max(100.0);
-        let min_card_w = 240.0;
+        let min_card_w = 190.0;
         let cols = ((avail_w + gap) / (min_card_w + gap)).floor().clamp(1.0, n as f32) as usize;
         let grid_card_w = ((avail_w - gap * (cols as f32 - 1.0)) / cols as f32).floor();
         let current_idx = slide_deck.live_index();
@@ -810,17 +810,18 @@ fn text_slide_card(
         .fill(fill)
         .stroke(stroke)
         .corner_radius(8.0)
-        .inner_margin(Margin::symmetric(10, 8))
+        .inner_margin(Margin::symmetric(8, 6))
         .show(ui, |ui| {
-            ui.set_width(width - 20.0);
-            ui.set_min_height(60.0);
+            ui.set_width(width - 16.0);
+            ui.set_min_height(40.0);
             // Senkrecht stapeln (die Zeile drumherum ist waagrecht).
             ui.vertical(|ui| {
-            ui.set_width(width - 20.0);
+            ui.set_width(width - 16.0);
+            ui.spacing_mut().item_spacing.y = 1.0;
             ui.horizontal(|ui| {
                 ui.label(
                     RichText::new(format!("{}", index + 1))
-                        .size(12.0)
+                        .size(11.0)
                         .strong()
                         .color(if active { tokens.accent } else { tokens.text_muted }),
                 );
@@ -833,10 +834,10 @@ fn text_slide_card(
             }
             for line in &lines {
                 if line.is_empty() {
-                    ui.add_space(4.0);
+                    ui.add_space(3.0);
                 } else {
                     ui.add(
-                        egui::Label::new(RichText::new(line).size(14.0).color(tokens.text_primary))
+                        egui::Label::new(RichText::new(line).size(12.0).color(tokens.text_primary))
                             .wrap()
                             .selectable(false),
                     );
