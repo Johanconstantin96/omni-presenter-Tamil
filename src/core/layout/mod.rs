@@ -311,8 +311,14 @@ impl LayoutTree {
                     direction: SplitDirection::Horizontal,
                     fraction: 0.55,
                     first: Box::new(LayoutNode::Leaf(ContainerKind::Lyrics)),
+                    // Rechts: oben Vorschau, unten Live (wie VideoPsalm).
                     // Designs werden über „Design“ oben rechts gewählt.
-                    second: Box::new(LayoutNode::Leaf(ContainerKind::Stage)),
+                    second: Box::new(LayoutNode::Split {
+                        direction: SplitDirection::Vertical,
+                        fraction: 0.5,
+                        first: Box::new(LayoutNode::Leaf(ContainerKind::Preview)),
+                        second: Box::new(LayoutNode::Leaf(ContainerKind::Stage)),
+                    }),
                 }),
             },
         }

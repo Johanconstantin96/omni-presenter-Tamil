@@ -1040,3 +1040,5 @@ workspace-theme-exported = Tema "{ $name }" exportado com sucesso!
 workspace-playlist-export-started = Exportando lista de reprodução…
 theme-aradhanai-black = Preto
 theme-aradhanai-white = Branco
+workspace-live-off = Ao vivo desligado
+workspace-live-toggle-hint = Ligar/desligar ao vivo.

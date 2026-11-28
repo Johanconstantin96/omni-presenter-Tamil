@@ -79,7 +79,7 @@ pub fn render_top_bar(
             .iter()
             .filter(|s| s.enabled)
             .count();
-        let show_status = *is_presentation_open;
+        let show_status = true;
         let show_controls = *is_presentation_open && (!state.show_presentation_dock || state.active_sidebar_page==crate::core::state::SidebarPage::Design);
         let right_reserve = options_cluster_width(
             ui,
@@ -295,13 +295,30 @@ pub fn render_top_bar(
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             ui.spacing_mut().item_spacing.x = 8.0;
 
-            if show_status {
-                let (label, fg, bg) = if slide_deck.is_content_hidden() {
-                    (language.text("workspace-hidden"), tokens.status_warning_fg, tokens.status_warning_bg)
+            // Aradhanai: „Live“ ist ein Schalter. Aus → Klicks zeigen nur die Vorschau.
+            // An → die Vorschau-Strophe geht live, weitere Klicks schalten sofort live.
+            let _ = show_status;
+            let (label, fg, bg) = if !*is_presentation_open {
+                (language.text("workspace-live-off"), tokens.text_muted, tokens.bg_pill)
+            } else if slide_deck.is_content_hidden() {
+                (language.text("workspace-hidden"), tokens.status_warning_fg, tokens.status_warning_bg)
+            } else {
+                (language.text("workspace-live-label"), tokens.status_success_fg, tokens.status_success_bg)
+            };
+            let live_response = pill(ui, None, Some(fg), label, fg, bg)
+                .on_hover_text(language.text("workspace-live-toggle-hint"))
+                .on_hover_cursor(egui::CursorIcon::PointingHand);
+            if live_response.clicked() {
+                if *is_presentation_open {
+                    *is_presentation_open = false;
                 } else {
-                    (language.text("workspace-live-label"), tokens.status_success_fg, tokens.status_success_bg)
-                };
-                pill(ui, None, Some(fg), label, fg, bg);
+                    if slide_deck.total_slides() > 0 {
+                        let index = slide_deck.preview_slide_index();
+                        slide_deck.project_preview_slide(index);
+                        state.apply_theme_to_live();
+                    }
+                    *is_presentation_open = true;
+                }
             }
 
             if show_controls
@@ -549,14 +566,14 @@ fn pill(
     text: &str,
     fg: Color32,
     bg: Color32,
-) {
+) -> egui::Response {
     let lead = if dot.is_some() {
         PILL_DOT_W
     } else {
         PILL_ICON_W
     };
     let width = PILL_PAD * 2.0 + lead + PILL_GAP + label_width(ui, text);
-    let (rect, _) = ui.allocate_exact_size(egui::vec2(width, PILL_H), egui::Sense::hover());
+    let (rect, response) = ui.allocate_exact_size(egui::vec2(width, PILL_H), egui::Sense::click());
     ui.painter().rect_filled(rect, 8.0, bg);
     ui.painter().rect_stroke(
         rect,
@@ -590,6 +607,7 @@ fn pill(
         egui::FontId::proportional(12.5),
         fg,
     );
+    response
 }
 
 #[allow(dead_code)]

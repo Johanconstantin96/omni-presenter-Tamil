@@ -1040,3 +1040,5 @@ workspace-theme-exported = Theme "{ $name }" exported successfully!
 workspace-playlist-export-started = Exporting playlist…
 theme-aradhanai-black = Black
 theme-aradhanai-white = White
+workspace-live-off = Live off
+workspace-live-toggle-hint = Live on/off: when off, clicking a stanza only previews it; when on, it goes straight to the projector.

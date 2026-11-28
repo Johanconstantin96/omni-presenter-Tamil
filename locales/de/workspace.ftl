@@ -1040,3 +1040,5 @@ workspace-theme-exported = Design „{ $name }“ erfolgreich exportiert!
 workspace-playlist-export-started = Ablaufplan wird exportiert…
 theme-aradhanai-black = Schwarz
 theme-aradhanai-white = Weiß
+workspace-live-off = Live aus
+workspace-live-toggle-hint = Live an/aus: Ist Live aus, zeigt ein Klick auf eine Strophe nur die Vorschau. Ist Live an, geht die Strophe sofort auf den Beamer.

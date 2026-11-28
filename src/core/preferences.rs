@@ -56,7 +56,7 @@ fn default_dock_height() -> f32 {
 impl Default for OperatorProfile {
     fn default() -> Self {
         Self {
-            aradhanai_layout_version: 4,
+            aradhanai_layout_version: 5,
             id: "operator_default".into(),
             name: "Hauptbediener".into(),
             dark_mode: false,
@@ -65,7 +65,7 @@ impl Default for OperatorProfile {
             scale: 100,
             reduce_motion: false,
             keyboard_shortcuts: true,
-            show_dock: true,
+            show_dock: false,
             dock_preview_bg: false,
             dock_height: 175.0,
             lyrics_cards_layout: false,
@@ -895,12 +895,13 @@ impl AppSettings {
         self.server_port = self.server_port.max(1);
         self.physical_transition_ms = self.physical_transition_ms.min(2000);
         for p in &mut self.operators {
-            if p.aradhanai_layout_version < 4 {
+            if p.aradhanai_layout_version < 5 {
                 p.layout = LayoutTree::default_4_columns();
-                p.aradhanai_layout_version = 4;
+                p.aradhanai_layout_version = 5;
             }
             p.scale = p.scale.clamp(80, 150);
-            p.show_dock = true;
+            // Aradhanai: keine Leiste unten; Steuerung oben rechts.
+            p.show_dock = false;
             p.keyboard_shortcuts = true;
             p.chat_notifications = true;
             if p.interface_theme_id == "midnight" {
@@ -911,12 +912,7 @@ impl AppSettings {
                 && p.layout.root.contains(ContainerKind::Themes)
                 && p.layout.root.remove_leaf(ContainerKind::Themes)
             {}
-            // Aradhanai: Vorschau und Live in einem Fenster – eigener
-            // Vorschau-Bereich wird entfernt (spart Platz).
-            while matches!(p.layout.root, crate::core::layout::LayoutNode::Split { .. })
-                && p.layout.root.contains(ContainerKind::Preview)
-                && p.layout.root.remove_leaf(ContainerKind::Preview)
-            {}
+            // Aradhanai: Vorschau (oben) und Live (unten) als eigene Fenster.
             // Aradhanai: Player-Bereich wird nicht gebraucht und entfernt.
             while matches!(p.layout.root, crate::core::layout::LayoutNode::Split { .. })
                 && p.layout.root.contains(ContainerKind::Player)

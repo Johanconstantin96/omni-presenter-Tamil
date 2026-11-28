@@ -473,10 +473,12 @@ pub fn render_lyrics_column(
                         if interact.hovered() {
                             ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
                         }
+                        // Aradhanai (wie VideoPsalm): Live aus → Klick zeigt nur die
+                        // Vorschau; Live an → ein Klick schaltet die Strophe sofort live.
                         if interact.clicked() {
                             slide_deck.select_preview_slide(index);
                         }
-                        if interact.double_clicked() {
+                        if (interact.clicked() && *is_presentation_open) || interact.double_clicked() {
                             slide_deck.project_preview_slide(index);
                             state.apply_theme_to_live();
                             *is_presentation_open = true;
