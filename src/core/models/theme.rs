@@ -300,6 +300,12 @@ impl PresentationTheme {
             shadow_offset_y: 0.0,
             is_gradient: false,
             sort_order: sort,
+            // Großer Textbereich: fast die ganze Folie.
+            box_x: 0.04,
+            box_y: 0.05,
+            box_w: 0.92,
+            box_h: 0.90,
+            line_spacing: 1.15,
             options: super::theme_options::ThemeOptions {
                 wrap_text: false,
                 auto_fit: true,

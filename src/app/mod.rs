@@ -138,6 +138,20 @@ impl PresentationApp {
             }
             control_state.settings.aradhanai_settings_version = 2;
         }
+        // Aradhanai v3: Schwarz/Weiß nutzen fast die ganze Folie für den Text.
+        if control_state.settings.aradhanai_settings_version < 3 {
+            for theme in &mut control_state.themes {
+                if theme.id.starts_with("aradhanai_") {
+                    theme.box_x = 0.04;
+                    theme.box_y = 0.05;
+                    theme.box_w = 0.92;
+                    theme.box_h = 0.90;
+                    theme.line_spacing = 1.15;
+                    let _ = db.save_theme(theme);
+                }
+            }
+            control_state.settings.aradhanai_settings_version = 3;
+        }
         slide_deck.lyrics_settings = control_state.settings.projection.lyrics.clone();
         slide_deck.sync_slides();
         crate::services::plugins::sync_shader_themes(&mut control_state);
