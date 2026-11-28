@@ -251,6 +251,23 @@ pub fn layout(
             }
         }
         result = make_layout(low);
+    } else if theme.options.auto_fit && !theme.options.wrap_text && !styled.is_empty() {
+        // Aradhanai: im Modus „Anpassen“ die Schrift auch VERGRÖSSERN, bis der
+        // Text die Folie gut ausfüllt (höchstens 2,5-fach, max. 150 px).
+        let mut low = requested;
+        let mut high = (requested * 2.5).min(150.0).max(requested);
+        if high > low + 0.5 {
+            for _ in 0..14 {
+                let middle = (low + high) * 0.5;
+                let candidate = make_layout(middle);
+                if candidate.size.x <= available.x * 0.96 && candidate.size.y <= available.y * 0.92 {
+                    low = middle;
+                } else {
+                    high = middle;
+                }
+            }
+            result = make_layout(low);
+        }
     }
     result
 }
