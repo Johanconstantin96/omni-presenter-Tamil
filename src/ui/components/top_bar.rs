@@ -80,7 +80,7 @@ pub fn render_top_bar(
             .filter(|s| s.enabled)
             .count();
         let show_status = true;
-        let show_controls = *is_presentation_open && (!state.show_presentation_dock || state.active_sidebar_page==crate::core::state::SidebarPage::Design);
+        let show_controls = false;
         let right_reserve = options_cluster_width(
             ui,
             &operator_name,
@@ -321,14 +321,8 @@ pub fn render_top_bar(
                 }
             }
 
-            if show_controls
-                && tokens
-                    .icon_button(ui, EYE, language.text("workspace-show-controls"), false, egui::vec2(28.0, 26.0))
-                    .clicked()
-                {
-                    state.show_presentation_dock = true;
-                    if state.active_sidebar_page==crate::core::state::SidebarPage::Design {state.active_sidebar_page=crate::core::state::SidebarPage::Home;}
-                }
+            // Aradhanai: kein Knopf mehr, der die untere Folienleiste einblendet.
+            let _ = show_controls;
 
             // Aradhanai: Live-Steuerung als kleine Symbole statt Web-Bildschirm-Anzeige.
             let _ = screen_count;
